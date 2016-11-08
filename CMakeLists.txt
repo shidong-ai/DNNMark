@@ -34,28 +34,31 @@ if(CUDA_FOUND)
   else()
       set(CUDA_HAVE_GPU FALSE CACHE BOOL "Whether CUDA-capable GPU is present")
   endif()
-else()
-  set(CUDA_HAVE_GPU FALSE CACHE BOOL "Whether CUDA-capable GPU is present")
 endif()
 
 # Buld NICE library with/without CUDA
-if (CUDA_HAVE_GPU)
+if (CUDA_FOUND)
 
-  # Print messge to indicate that CUDA exists
-  message(STATUS "GPU device exists")
+  # Print messge to indicate whether GPU device exists
+  if (CUDA_HAVE_GPU)
+    message(STATUS "GPU device exists")
+  else()
+    message(WARNING "GPU device does not exist")
+  endif()
 
   #include the built-in findCUDA cmake scripts
   include(FindCUDA)
   
-  # Set CuDNN default path
-  if (NOT ${CUDNN_ROOT})
-    set(CUDNN_ROOT ${CMAKE_SOURCE_DIR}/libs/cudnn)
+  # Stop if CUDNN_ROOT is not defined
+  if (NOT DEFINED CUDNN_ROOT)
+    message(FATAL_ERROR "Path to CuDNN is not defined")
   endif()
+
   if(EXISTS ${CUDNN_ROOT})
-    message(STATUS "CuDNN library path: " ${CUDNN_ROOT})
+    message(STATUS "CuDNN library root path: " ${CUDNN_ROOT})
     include_directories(${CUDNN_ROOT}/include)
   else()
-    message(SEND_ERROR "Path to CuDNN library not exists")
+    message(FATAL_ERROR "Path to CuDNN library not exists")
   endif()
 
   # Add deinition of C++11 stardard
@@ -90,7 +93,7 @@ if (CUDA_HAVE_GPU)
 
 else()
 
-  message(SEND_ERROR "GPU device not exists")
+  message(FATAL_ERROR "CUDA not exists")
 
 endif()
 
@@ -99,21 +102,21 @@ option (enable-benchmarking "Compile all benchmarks of DNNMark" ON)
 
 if (enable-benchmarking)
   # Include the cmake file of gflag
-  include(gflag)
+  #include(gflag)
 
   # Invoke cmake files of each benchmark
   add_subdirectory(benchmarks/test_fwd_conv)
-  add_subdirectory(benchmarks/test_bwd_conv)
-  add_subdirectory(benchmarks/test_fwd_pooling)
-  add_subdirectory(benchmarks/test_bwd_pooling)
-  add_subdirectory(benchmarks/test_fwd_activation)
-  add_subdirectory(benchmarks/test_bwd_activation)
-  add_subdirectory(benchmarks/test_fwd_lrn)
-  add_subdirectory(benchmarks/test_bwd_lrn)
-  add_subdirectory(benchmarks/test_fwd_fully_connected)
-  add_subdirectory(benchmarks/test_bwd_fully_connected)
-  add_subdirectory(benchmarks/test_fwd_softmax)
-  add_subdirectory(benchmarks/test_bwd_softmax)
+  #add_subdirectory(benchmarks/test_bwd_conv)
+  #add_subdirectory(benchmarks/test_fwd_pooling)
+  #add_subdirectory(benchmarks/test_bwd_pooling)
+  #add_subdirectory(benchmarks/test_fwd_activation)
+  #add_subdirectory(benchmarks/test_bwd_activation)
+  #add_subdirectory(benchmarks/test_fwd_lrn)
+  #add_subdirectory(benchmarks/test_bwd_lrn)
+  #add_subdirectory(benchmarks/test_fwd_fully_connected)
+  #add_subdirectory(benchmarks/test_bwd_fully_connected)
+  #add_subdirectory(benchmarks/test_fwd_softmax)
+  #add_subdirectory(benchmarks/test_bwd_softmax)
 
 endif()
 

@@ -20,34 +20,37 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef CORE_INCLUDE_CUDNN_UTILITY_H_
-#define CORE_INCLUDE_CUDNN_UTILITY_H_
-
-#include <vector>
-#include "cudnn.h"
+#include "dnnmark.h"
 
 namespace dnnmark {
 
-template <typename T>
-class TensorManager {
- private:
-  map<int, cudnnTensorDescriptor_t> bottom_tensors_;
-  map<int, cudnnTensorDescriptor_t> top_tensors_;
+//
+// Internal data type. Code courtesy of Caffe
 
-  // For convolution layer only
-  map<int, cudnnConvolutionDescriptor_t> conv_tensors_;
 
-  int number_of_layers_;
- public:
-  void createTensor(int layer_id) {
-  }
-  void setTensor(int n, int c, int h, int w) {
-  }
-  void setTensor(int n, int c, int h, int w,
-                 int stride_n, int stride_c, int stride_h, int stride_w) {
-  }
+float DataType<float>::oneval = 1.0;
+float DataType<float>::zeroval = 0.0;
+const void* DataType<float>::one =
+    static_cast<void *>(&DataType<float>::oneval);
+const void* DataType<float>::zero =
+    static_cast<void *>(&DataType<float>::zeroval);
+
+double DataType<double>::oneval = 1.0;
+double DataType<double>::zeroval = 0.0;
+const void* DataType<double>::one =
+    static_cast<void *>(&DataType<double>::oneval);
+const void* DataType<double>::zero =
+    static_cast<void *>(&DataType<double>::zeroval);
+
+//
+// DNNMark class definition
+//
+
+DNNMark::DNNMark() {
+}
+
+int DNNMark::ParseConfigAndInitialize(string &config_file) {
 }
 
 } // namespace dnnmark
 
-#endif // CORE_INCLUDE_CUDNN_UTILITY_H_

@@ -20,22 +20,40 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef CORE_INCLUDE_CUDNN_UTILITY_H_ 
-#define CORE_INCLUDE_CUDNN_UTILITY_H_
-
-#include <vector>
-#include "cudnn.h"
+#include "dnn_utility.h"
 
 namespace dnnmark {
 
-template <typename T>
-class DnnPrimitiveManager {
- private:
- public:
+Handle::Handle() {
+  handles_ = new cudnnHandle_t[1];
+  CUDNN_CALL(cudnnCreate(&handles_[0]));
+  size_ = 1;
 }
 
+Handle::Handle(int num) {
+  handles_ = new cudnnHandle_t[num];
+  for (int i = 0; i < num; i++)
+    CUDNN_CALL(cudnnCreate(&handles_[i]));
+  size_ = num;
+}
 
+Handle::~Handle() {
+  for (int i = 0; i < size_; i++)
+    CUDNN_CALL(cudnnDestroy(handles[i]));
+  delete []handles;
+}
+
+cudnnHandle_t Handle::getHandle() { return handles[0]; }
+cudnnHandle_t Handle::getHandle(int index) { return handles[index]; }
+
+Descriptor::Descriptor()
+: set_(false) {}
+
+Descriptor::~Descriptor() {
+  set_ = false;
+}
+
+bool Descriptor::isSet() { return set_; }
 
 } // namespace dnnmark
 
-#endif // CORE_INCLUDE_CUDNN_UTILITY_H_
