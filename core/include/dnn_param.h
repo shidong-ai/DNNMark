@@ -27,8 +27,25 @@
 
 namespace dnnmark {
 
+class DataParam {
+ private:
+  int n_;
+  int c_;
+  int h_;
+  int w_;
+ public:
+  DataParam(int n, int c, int h, int w)
+  : n_(n), c_(c), h_(h), w_(w) {}
+  DataParam(int n, int c)
+  : n_(n), c_(c), h_(1), w_(1) {}
+  int getN() { return n_; }
+  int getC() { return c_; }
+  int getH() { return h_; }
+  int getW() { return w_; }
+};
+
 class ConvolutionParam {
-private:
+ private:
   cudnnConvolutionMode_t mode_;
   int output_num;
   int pad_h_;
@@ -39,7 +56,7 @@ private:
   int upscale_y_;
   int kernel_size_h_;
   int kernel_size_w_;
-public:
+ public:
   ConvolutionParam(int output_num,
                    int pad,
                    int stride,

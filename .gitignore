@@ -1,5 +1,13 @@
+####################
+# Temp files #
+####################
 *.swp
 .project
 .cproject
 .settings
+
+####################
+# Unfavorable dir #
+####################
+libs/
 build/

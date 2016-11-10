@@ -32,6 +32,9 @@
 #include <curand.h>
 #include <cudnn.h>
 
+#include "dnn_param.h"
+
+
 namespace dnnmark {
 
 #define CUDA_CALL(x) \
@@ -113,6 +116,15 @@ enum LayerType {
 };
 
 
+// Input data 
+struct DataConfig {
+  int n;
+  int c;
+  int h;
+  int w;
+};
+
+
 template <typename T>
 class DNNMark {
  private:
@@ -121,9 +133,18 @@ class DNNMark {
   std::map<int, LayerType> layer_type_map_;
   std::vector<Layer<T> *> composed_model_;
   int num_layers_;
+
+  // Memory manager
+  
+  // Parameters
+  DataParam data_param_;
+  ConvolutionParam conv_param_;
  public:
   DNNMark();
-  int ParseConfigAndInitialize(string &config_file);
+  int ParseAllConfig(const std::string &config_file);
+  int ParseDataConfig(const std::string &config_file);
+  int ParseConvolutionConfig(const std::string &config_file);
+  int Initialize();
   
 };
 

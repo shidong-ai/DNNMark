@@ -20,70 +20,48 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "dnnmark.h"
-#include "utitlity.h"
+#include <algorithm>
 #include "dnn_config_keywords.h"
 
 namespace dnnmark {
 
-//
-// Internal data type. Code courtesy of Caffe
-//
+bool isSection(std::string &s) {
+  return std::find(section_keywords.begin(),
+                   section_keywords.end(), s)
+         != section_keywords.end();
+}
 
-float DataType<TestType>::oneval = 1.0;
-float DataType<TestType>::zeroval = 0.0;
-const void* DataType<TestType>::one =
-    static_cast<void *>(&DataType<TestType>::oneval);
-const void* DataType<TestType>::zero =
-    static_cast<void *>(&DataType<TestType>::zeroval);
+bool isDNNMarkSection(std::string &s) {
+  return s.compare("[DNNMark]") == 0;
+}
 
+bool isDataKeywordExist(std::string &s) {
+  return std::find(dnnmark_config_keywords.begin(),
+                   dnnmark_config_keywords.end(), s)
+         != data_config_keywords.end();
+}
 
-//
-// DNNMark class definition
-//
+bool isDataSection(std::string &s) {
+  return s.compare("[Data]") == 0;
+}
 
-DNNMark::DNNMark()
-: run_mode_(NONE) {
+bool isDataKeywordExist(std::string &s) {
+  return std::find(data_config_keywords.begin(),
+                   data_config_keywords.end(), s)
+         != data_config_keywords.end();
+}
+
+bool isConvSection(std::string &s) {
+  return s.compare("[Convolution]") == 0;
+}
+
+bool isConvKeywordExist(std::string &s) {
+  return std::find(conv_config_keywords.begin(),
+                   conv_config_keywords.end(), s)
+         != conv_config_keywords.end();
+}
+
 
 }
 
-int DNNMark::ParseAllConfig(string &config_file) {
-  std::ifstream is;
-  is.open(config_file.c_str(), std::ifstream::in);
-
-  // TODO: insert assert regarding run_mode_
-
-  // TODO: use multithread in the future
-  // Parse DNNMark config
-  std::string s;
-  while (!is.eof()) {
-    // Obtain the string in one line
-    std::getline(is, s);
-    TrimStr(&s);
-
-    // Check the specific configuration section markers
-    if (isDNNMarkSection(s))
-      continue;
-    else if (isSection(s))
-      break;
-
-    // Obtain the acutal variable and value
-    std::string var;
-    std::string val;
-    SplitStr(s, &var, &val);
-    
-  }
-
-  // Parse Data config
-
-  // Parse Conv config
-
-  is.close();
-  return 0;
-}
-
-// Explicit instantiation
-template class DNNMark<TestType>;
-
-} // namespace dnnmark
 
