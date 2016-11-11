@@ -41,19 +41,33 @@ const void* DataType<TestType>::zero =
 //
 // DNNMark class definition
 //
-
+template <typename T>
 DNNMark::DNNMark()
-: run_mode_(NONE) {
+: run_mode_(NONE), data_param_(), conv_param_() {
 
 }
 
-int DNNMark::ParseAllConfig(string &config_file) {
+template <typename T>
+int DNNMark::ParseAllConfig(std::string &config_file) {
+  // TODO: use multithread in the future
+  // Parse DNNMark specific config
+  ParseDNNMarkConfig(config_file);
+
+  // Parse Data specific config
+  ParseDataConfig(config_file);
+
+  // Parse Convolution specific config
+  ParseConvolutionConfig(config_file);
+
+}
+
+template <typename T>
+int DNNMark::ParseDNNMarkConfig(std::string &config_file) {
   std::ifstream is;
   is.open(config_file.c_str(), std::ifstream::in);
 
   // TODO: insert assert regarding run_mode_
 
-  // TODO: use multithread in the future
   // Parse DNNMark config
   std::string s;
   while (!is.eof()) {
@@ -62,7 +76,7 @@ int DNNMark::ParseAllConfig(string &config_file) {
     TrimStr(&s);
 
     // Check the specific configuration section markers
-    if (isDNNMarkSection(s))
+    if (isDNNMarkSection(s) || isCommentStr(s))
       continue;
     else if (isSection(s))
       break;
@@ -71,12 +85,123 @@ int DNNMark::ParseAllConfig(string &config_file) {
     std::string var;
     std::string val;
     SplitStr(s, &var, &val);
-    
+    TrimStr(&var);
+    TrimStr(&val);
+
+    // Process all the keywords in config
+    if(isDNNMarkKeywordExist(var)) {
+      if (!var.compare("run_mode") {
+        if (!val.compare("None"))
+          run_mode_ = NONE;
+        else if(!val.compare("Standalone"))
+          run_mode_ = STANDALONE;
+        else if(!val.compare("Composed"))
+          run_mode_ = COMPOSED;
+        else
+          std::cerr << "Unknown run mode" << std::endl;
+      }
+    } else {
+      std::cerr << "Keywords not exists" << std::endl;
+      //TODO return error
+    }
   }
 
-  // Parse Data config
+  is.close();
+  return 0;
+}
 
-  // Parse Conv config
+template <typename T>
+int DNNMark::ParseDataConfig(std::string &config_file) {
+  std::ifstream is;
+  is.open(config_file.c_str(), std::ifstream::in);
+
+  // Parse DNNMark config
+  std::string s;
+  while (!is.eof()) {
+    // Obtain the string in one line
+    std::getline(is, s);
+    TrimStr(&s);
+
+    // Check the specific configuration section markers
+    if (isDataSection(s) || isCommentStr(s))
+      continue;
+    else if (isSection(s))
+      break;
+
+    // Obtain the acutal variable and value
+    std::string var;
+    std::string val;
+    SplitStr(s, &var, &val);
+    TrimStr(&var);
+    TrimStr(&val);
+
+    // Process all the keywords in config
+    if(isDataKeywordExist(var)) {
+      if (!var.compare("n") {
+        data_param_.n_ = atoi(val.c_str());
+      } else if (!var.compare("c") {
+        data_param_.c_ = atoi(val.c_str());
+      } else if (!var.compare("h") {
+        data_param_.h_ = atoi(val.c_str());
+      } else if (!var.compare("w") {
+        data_param_.w_ = atoi(val.c_str());
+      }
+    } else {
+      std::cerr << "Keywords not exists" << std::endl;
+      //TODO return error
+    }
+  }
+
+  is.close();
+  return 0;
+}
+
+int DNNMark::ParseConvolutionConfig(std::string &config_file) {
+  std::ifstream is;
+  is.open(config_file.c_str(), std::ifstream::in);
+
+  // Parse Convolution config
+  std::string s;
+  while (!is.eof()) {
+    // Obtain the string in one line
+    std::getline(is, s);
+    TrimStr(&s);
+
+    // Check the specific configuration section markers
+    if (isConvolutionSection(s) || isCommentStr(s))
+      continue;
+    else if (isSection(s))
+      break;
+
+    // Create a layer in the main class
+    int layer_id = num_layers_;
+    
+
+    // Obtain the acutal variable and value
+    std::string var;
+    std::string val;
+    SplitStr(s, &var, &val);
+    TrimStr(&var);
+    TrimStr(&val);
+
+    // Process all the keywords in config
+    if(isConvolutionKeywordExist(var)) {
+      if (!var.compare("name") {
+        name_.assign(val);
+      } else if (!var.compare("")) {
+      } else if (!var.compare("")) {
+      } else if (!var.compare("")) {
+      } else if (!var.compare("")) {
+      } else if (!var.compare("")) {
+      } else if (!var.compare("")) {
+      } else if (!var.compare("")) {
+      } else if (!var.compare("")) {
+      }
+    } else {
+      std::cerr << "Keywords not exists" << std::endl;
+      //TODO return error
+    }
+  }
 
   is.close();
   return 0;

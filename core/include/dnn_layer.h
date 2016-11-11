@@ -24,6 +24,7 @@
 #define CORE_INCLUDE_DNN_LAYER_H_
 
 #include "cudnn.h"
+#include "dnn_param.h"
 
 namespace dnnmark {
 
@@ -43,6 +44,8 @@ class ConvolutionLayer : public Layer {
   ConvolutionParam param_;
   int layer_id_;
  public:
+  ConvolutionLayer()
+  : param_() {}
   void Setup() {
   }
   void ForwardPropagation() {

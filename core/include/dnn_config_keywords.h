@@ -51,9 +51,9 @@ std::vector<std::string> data_config_keywords = {
 // Convolution layer keywords
 std::vector<std::string> conv_config_keywords = {
   "name",
-  "previous_layer",
-  "next_layer",
-  "mode",
+  "bottom",
+  "top",
+  "conv_mode",
   "num_output",
   "kernel_size",
   "pad",

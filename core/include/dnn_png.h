@@ -20,18 +20,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef CORE_INCLUDE_MEMORY_MANAGER_H_
-#define CORE_INCLUDE_MEMORY_MANAGER_H_
+#ifndef CORE_INCLUDE_DNN_PNG_H_
+#define CORE_INCLUDE_DNN_PNG_H_
 
 #include <vector>
 #include <map>
-#include "cudnn.h"
-#include "dnn_png.h"
 
 namespace dnnmark {
 
 template <typename T>
-class MemoryManager {
+class PseudoNumberGenerator {
  private:
   // Memory pool indexed by chunk id
   std::map<int, T *> gpu_memory_pool;
@@ -42,4 +40,5 @@ class MemoryManager {
 
 } // namespace dnnmark
 
-#endif // CORE_INCLUDE_MEMORY_MANAGER_H_
+#endif // CORE_INCLUDE_DNN_PNG_H_
+

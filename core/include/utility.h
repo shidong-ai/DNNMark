@@ -44,6 +44,12 @@ void TrimStrRight(std::string *s);
 void SplitStr(const std::string &s, std::string *var, std::string *val,
               std::string delimiter = "=");
 
+//
+// Detect comment str
+//
+
+bool isCommentStr(const std::string &s, char comment_marker = "#");
+
 } // namespace dnnmark
 
 #endif // CORE_INCLUDE_UTILITY_H_

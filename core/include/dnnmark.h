@@ -23,6 +23,7 @@
 #ifndef CORE_INCLUDE_DNNMARK_H_
 #define CORE_INCLUDE_DNNMARK_H_
 
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -73,6 +74,14 @@ do {\
   }\
 } while(0)\
 
+#define CONFIG_CHECK(x) \
+do {\
+  if ((x) != 0) {\
+    std::cout << "Parse configuration Error at " << __FILE__ << __LINE__;\
+    exit(EXIT_FAILURE);\
+  }\
+} while(0)\
+
 #ifdef DOUBLE_TEST
 #define TestType double
 #else
@@ -107,21 +116,13 @@ enum RunMode {
 
 // Layer type
 enum LayerType {
-  CONVOLUTION = 0,
+  DATA = 0,
+  CONVOLUTION,
   POOLING,
   ACTIVIATION,
   LRN,
   FC,
   SOFTMAX
-};
-
-
-// Input data 
-struct DataConfig {
-  int n;
-  int c;
-  int h;
-  int w;
 };
 
 
@@ -136,12 +137,10 @@ class DNNMark {
 
   // Memory manager
   
-  // Parameters
-  DataParam data_param_;
-  ConvolutionParam conv_param_;
  public:
   DNNMark();
   int ParseAllConfig(const std::string &config_file);
+  int ParseDNNMarkConfig(const std::string &config_file);
   int ParseDataConfig(const std::string &config_file);
   int ParseConvolutionConfig(const std::string &config_file);
   int Initialize();

@@ -51,5 +51,10 @@ void SplitStr(const std::string &s, std::string *var, std::string *val,
   *val = s.substr(pos+1, std::string::npos);
 }
 
+bool isCommentStr(const std::string &s, char comment_marker = "#") {
+  TrimStr(&s);
+  return s[0] == comment_marker;
+}
+
 } // namespace dnnmark
 
