@@ -115,15 +115,15 @@ class ConvolutionDesc : public Descriptor {
   void Set(const ConvolutionParam &param, int num_channel) {
     if (!set_) {
       CUDNN_CALL(cudnnSetConvolution2dDescriptor(conv_desc_,
-                 param.getPadH(), param.getPadW(),
-                 param.getStrideU(), param.getStrideV(),
-                 param.getUpscaleX(), param.getUpscaleY(),
-                 param.getMode()));
+                 param.pad_h_, param.pad_w_,
+                 param.stride_u_, param.stride_v_,
+                 param.upscale_x_, param.upscale_y_,
+                 param.mode_));
 
       CUDNN_CALL(cudnnSetFilter4dDescriptor(filter_desc_,
                  DataType<T>::type, CUDNN_TENSOR_NCHW,
-                 param.getOutputNum(), num_channel,
-                 param.getKernelSizeH(), param.getKernelSizeW()));
+                 param.output_num_, num_channel,
+                 param.kernel_size_h_, param.kernel_size_w_));
     }
     set_ = true;
   }

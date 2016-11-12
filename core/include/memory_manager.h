@@ -23,22 +23,61 @@
 #ifndef CORE_INCLUDE_MEMORY_MANAGER_H_
 #define CORE_INCLUDE_MEMORY_MANAGER_H_
 
-#include <vector>
+#include <memory>
 #include <map>
 #include "cudnn.h"
-#include "dnn_png.h"
+//#include "dnn_png.h"
 
 namespace dnnmark {
+
+template <typename T>
+class Data {
+ private:
+  T *gpu_ptr;
+ public:
+  Data(int size) {
+    CUDA_CALL(cudaMalloc(&gpu_ptr, size * sizeof(T)));
+  }
+  ~Data() {
+    CUDA_CALL(cudaFree(gpu_ptr));
+  }
+  void Filler() {
+  }
+  T *Get() { return gpu_ptr; }
+};
 
 template <typename T>
 class MemoryManager {
  private:
   // Memory pool indexed by chunk id
-  std::map<int, T *> gpu_memory_pool;
-  int num_memory_chunk_;
+  std::map<int, std::shared_ptr<Data<T>>> gpu_data_pool;
+  int num_data_chunks_;
+
+  // Constructor
+  MemoryManager()
+  : num_data_chunks_(0) {
+  }
+
+  // Memory manager instance
+  static std::unique_ptr<MemoryManager<T>> instance;
  public:
-   
-}
+  static MemoryManager<T> *GetInstance() {
+    if (instance.get())
+      return instance;
+    instance.reset(new MemoryManager());
+    return instance.get();
+  }
+
+  int CreateData(int size) {
+    int gen_chunk_id = num_data_chunks_;
+    num_data_chunks_++;
+    gpu_data_pool.emplace(gen_chunk_id, std::make_shared<Data<T>>(size));
+  }
+
+  Data<T> *GetData(int chunk_id) {
+    return gpu_data_pool[chunk_id].get();
+  }
+};
 
 } // namespace dnnmark
 

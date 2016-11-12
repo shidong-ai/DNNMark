@@ -48,7 +48,7 @@ void SplitStr(const std::string &s, std::string *var, std::string *val,
 // Detect comment str
 //
 
-bool isCommentStr(const std::string &s, char comment_marker = "#");
+bool isCommentStr(const std::string &s, char comment_marker = '#');
 
 } // namespace dnnmark
 

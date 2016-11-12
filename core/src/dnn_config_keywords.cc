@@ -35,7 +35,7 @@ bool isDNNMarkSection(std::string &s) {
   return s.compare("[DNNMark]") == 0;
 }
 
-bool isDataKeywordExist(std::string &s) {
+bool isDNNMarkKeywordExist(std::string &s) {
   return std::find(dnnmark_config_keywords.begin(),
                    dnnmark_config_keywords.end(), s)
          != data_config_keywords.end();

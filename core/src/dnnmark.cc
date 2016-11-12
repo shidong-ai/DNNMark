@@ -21,7 +21,7 @@
 // SOFTWARE.
 
 #include "dnnmark.h"
-#include "utitlity.h"
+#include "utility.h"
 #include "dnn_config_keywords.h"
 
 namespace dnnmark {
@@ -30,25 +30,30 @@ namespace dnnmark {
 // Internal data type. Code courtesy of Caffe
 //
 
-float DataType<TestType>::oneval = 1.0;
-float DataType<TestType>::zeroval = 0.0;
-const void* DataType<TestType>::one =
-    static_cast<void *>(&DataType<TestType>::oneval);
-const void* DataType<TestType>::zero =
-    static_cast<void *>(&DataType<TestType>::zeroval);
-
+float DataType<float>::oneval = 1.0;
+float DataType<float>::zeroval = 0.0;
+const void* DataType<float>::one =
+    static_cast<void *>(&DataType<float>::oneval);
+const void* DataType<float>::zero =
+    static_cast<void *>(&DataType<float>::zeroval);
+double DataType<double>::oneval = 1.0;
+double DataType<double>::zeroval = 0.0;
+const void* DataType<double>::one =
+    static_cast<void *>(&DataType<double>::oneval);
+const void* DataType<double>::zero =
+    static_cast<void *>(&DataType<double>::zeroval);
 
 //
 // DNNMark class definition
 //
 template <typename T>
-DNNMark::DNNMark()
-: run_mode_(NONE), data_param_(), conv_param_() {
-
+DNNMark<T>::DNNMark()
+: run_mode_(NONE) {
+  mem_manager_ = MemoryManager<T>::GetInstance();
 }
 
 template <typename T>
-int DNNMark::ParseAllConfig(std::string &config_file) {
+int DNNMark<T>::ParseAllConfig(const std::string &config_file) {
   // TODO: use multithread in the future
   // Parse DNNMark specific config
   ParseDNNMarkConfig(config_file);
@@ -62,7 +67,7 @@ int DNNMark::ParseAllConfig(std::string &config_file) {
 }
 
 template <typename T>
-int DNNMark::ParseDNNMarkConfig(std::string &config_file) {
+int DNNMark<T>::ParseDNNMarkConfig(const std::string &config_file) {
   std::ifstream is;
   is.open(config_file.c_str(), std::ifstream::in);
 
@@ -90,7 +95,7 @@ int DNNMark::ParseDNNMarkConfig(std::string &config_file) {
 
     // Process all the keywords in config
     if(isDNNMarkKeywordExist(var)) {
-      if (!var.compare("run_mode") {
+      if (!var.compare("run_mode")) {
         if (!val.compare("None"))
           run_mode_ = NONE;
         else if(!val.compare("Standalone"))
@@ -111,7 +116,7 @@ int DNNMark::ParseDNNMarkConfig(std::string &config_file) {
 }
 
 template <typename T>
-int DNNMark::ParseDataConfig(std::string &config_file) {
+int DNNMark<T>::ParseDataConfig(const std::string &config_file) {
   std::ifstream is;
   is.open(config_file.c_str(), std::ifstream::in);
 
@@ -123,10 +128,16 @@ int DNNMark::ParseDataConfig(std::string &config_file) {
     TrimStr(&s);
 
     // Check the specific configuration section markers
-    if (isDataSection(s) || isCommentStr(s))
+    if (isCommentStr(s)){
       continue;
-    else if (isSection(s))
+    } else if (isDataSection(s)) {
+      // Create a layer in the main class
+      int layer_id = num_layers_;
+      layers_map[layer_id].emplace(std::make_shared(DataLayer<T>()));
+
+    } else if (isSection(s)) {
       break;
+    }
 
     // Obtain the acutal variable and value
     std::string var;
@@ -135,15 +146,16 @@ int DNNMark::ParseDataConfig(std::string &config_file) {
     TrimStr(&var);
     TrimStr(&val);
 
+
     // Process all the keywords in config
     if(isDataKeywordExist(var)) {
-      if (!var.compare("n") {
+      if (!var.compare("n")) {
         data_param_.n_ = atoi(val.c_str());
-      } else if (!var.compare("c") {
+      } else if (!var.compare("c")) {
         data_param_.c_ = atoi(val.c_str());
-      } else if (!var.compare("h") {
+      } else if (!var.compare("h")) {
         data_param_.h_ = atoi(val.c_str());
-      } else if (!var.compare("w") {
+      } else if (!var.compare("w")) {
         data_param_.w_ = atoi(val.c_str());
       }
     } else {
@@ -156,7 +168,8 @@ int DNNMark::ParseDataConfig(std::string &config_file) {
   return 0;
 }
 
-int DNNMark::ParseConvolutionConfig(std::string &config_file) {
+template <typename T>
+int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
   std::ifstream is;
   is.open(config_file.c_str(), std::ifstream::in);
 
@@ -186,7 +199,7 @@ int DNNMark::ParseConvolutionConfig(std::string &config_file) {
 
     // Process all the keywords in config
     if(isConvolutionKeywordExist(var)) {
-      if (!var.compare("name") {
+      if (!var.compare("name")) {
         name_.assign(val);
       } else if (!var.compare("")) {
       } else if (!var.compare("")) {

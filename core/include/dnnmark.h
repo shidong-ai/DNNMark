@@ -25,15 +25,19 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
 #include <string>
-#include <vector>
+#include <list>
 #include <map>
+#include <memory>
 #include <cuda.h>
 #include <cuda_profiler_api.h>
 #include <curand.h>
 #include <cudnn.h>
 
 #include "dnn_param.h"
+#include "dnn_layer.h"
+#include "memory_manager.h"
 
 
 namespace dnnmark {
@@ -91,13 +95,13 @@ do {\
 // Code courtesy of Caffe
 template <typename T>
 class DataType;
-template class DataType<float>  {
+template <> class DataType<float>  {
  public:
   static const cudnnDataType_t type = CUDNN_DATA_FLOAT;
   static float oneval, zeroval;
   static const void *one, *zero;
 };
-template class DataType<double> {
+template <> class DataType<double> {
  public:
   static const cudnnDataType_t type = CUDNN_DATA_DOUBLE;
   static double oneval, zeroval;
@@ -114,28 +118,16 @@ enum RunMode {
   COMPOSED
 };
 
-// Layer type
-enum LayerType {
-  DATA = 0,
-  CONVOLUTION,
-  POOLING,
-  ACTIVIATION,
-  LRN,
-  FC,
-  SOFTMAX
-};
-
-
 template <typename T>
 class DNNMark {
  private:
   RunMode run_mode_;
-  std::map<int, Layer<T> *> layers_map_;
-  std::map<int, LayerType> layer_type_map_;
-  std::vector<Layer<T> *> composed_model_;
+  std::map<int, std::shared_ptr<Layer<T>>> layers_map_;
+  std::list<std::shared_ptr<Layer<T>>> composed_model_;
   int num_layers_;
 
   // Memory manager
+  MemoryManager<T> *mem_manager_;
   
  public:
   DNNMark();

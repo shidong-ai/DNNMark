@@ -39,12 +39,12 @@ Handle::Handle(int num) {
 
 Handle::~Handle() {
   for (int i = 0; i < size_; i++)
-    CUDNN_CALL(cudnnDestroy(handles[i]));
-  delete []handles;
+    CUDNN_CALL(cudnnDestroy(handles_[i]));
+  delete []handles_;
 }
 
-cudnnHandle_t Handle::getHandle() { return handles[0]; }
-cudnnHandle_t Handle::getHandle(int index) { return handles[index]; }
+cudnnHandle_t Handle::getHandle() { return handles_[0]; }
+cudnnHandle_t Handle::getHandle(int index) { return handles_[index]; }
 
 Descriptor::Descriptor()
 : set_(false) {}

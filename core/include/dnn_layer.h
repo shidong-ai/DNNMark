@@ -28,31 +28,46 @@
 
 namespace dnnmark {
 
+// Layer type
+enum LayerType {
+  DATA = 0,
+  CONVOLUTION,
+  POOLING,
+  ACTIVIATION,
+  LRN,
+  FC,
+  SOFTMAX
+};
+
 template <typename T>
 class Layer {
  protected:
   bool has_learnable_params_;
+  LayerType type_;
+  int layer_id_;
  public:
   virtual void Setup() {}
   virtual void ForwardPropagation() {}
   virtual void BackwardPropagation() {}
+  int getLayerId() { return layer_id_; }
+  LayerType getLayerType() { return layer_type_; }
 };
 
 template <typename T>
-class ConvolutionLayer : public Layer {
+class ConvolutionLayer : public Layer<T> {
  private:
-  ConvolutionParam param_;
-  int layer_id_;
+  ConvolutionParam conv_param_;
  public:
   ConvolutionLayer()
-  : param_() {}
+  : conv_param_() {}
   void Setup() {
   }
   void ForwardPropagation() {
   }
-  void BackwardPropagation() {
-  };
-}
+  void BackwardPropagation(){ 
+  }
+
+};
 
 
 

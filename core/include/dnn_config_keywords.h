@@ -29,7 +29,7 @@
 namespace dnnmark {
 
 // Configuration section keywords
-std::vector<std::string> section_kerwords = {
+std::vector<std::string> section_keywords = {
   "[DNNMark]",
   "[Data]",
   "[Convolution]"
@@ -51,8 +51,7 @@ std::vector<std::string> data_config_keywords = {
 // Convolution layer keywords
 std::vector<std::string> conv_config_keywords = {
   "name",
-  "bottom",
-  "top",
+  "data",
   "conv_mode",
   "num_output",
   "kernel_size",

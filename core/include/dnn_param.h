@@ -27,7 +27,9 @@
 
 namespace dnnmark {
 
-struct DataParam {
+struct Param {};
+
+struct DataParam : public Param {
   int n_;
   int c_;
   int h_;
@@ -36,10 +38,10 @@ struct DataParam {
   : n_(0), c_(0), h_(0), w_(0) {}
 };
 
-class ConvolutionParam {
+struct ConvolutionParam : public Param {
   std::string name_;
   cudnnConvolutionMode_t mode_;
-  int output_num;
+  int output_num_;
   int pad_h_;
   int pad_w_;
   int stride_u_;
@@ -54,12 +56,12 @@ class ConvolutionParam {
   ConvolutionParam()
   : mode_(CUDNN_CROSS_CORRELATION), output_num_(32),
     pad_h_(2), pad_w_(2),
-    stride_u_(1), strid_v_(1),
+    stride_u_(1), stride_v_(1),
     upscale_x_(1), upscale_y_(1),
     kernel_size_h_(5), kernel_size_w_(5),
-    conv_fwd_pref(CUDNN_CONVOLUTION_FWD_PREFER_FASTEST),
-    conv_bwd_filter_pref(CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST),
-    conv_bwd_data_pref(CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST) {}
+    conv_fwd_pref_(CUDNN_CONVOLUTION_FWD_PREFER_FASTEST),
+    conv_bwd_filter_pref_(CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST),
+    conv_bwd_data_pref_(CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST) {}
 };
 
 } // namespace dnnmark

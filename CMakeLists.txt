@@ -1,6 +1,6 @@
 # CMake version related
 cmake_minimum_required(VERSION 2.8.9)
-if (${CMAKE_VERSION} VERSION_GREATER 3.5)
+if (${CMAKE_VERSION} VERSION_GREATER 3.0)
   cmake_policy(SET CMP0046 OLD)
 endif()
 
@@ -36,7 +36,9 @@ if(CUDA_FOUND)
   endif()
 endif()
 
-# Buld NICE library with/without CUDA
+option (double-test "Make data type double" OFF)
+
+# Buld NICE library only with CUDA
 if (CUDA_FOUND)
 
   # Print messge to indicate whether GPU device exists
@@ -54,7 +56,7 @@ if (CUDA_FOUND)
     message(FATAL_ERROR "Path to CuDNN is not defined")
   endif()
 
-  if(EXISTS ${CUDNN_ROOT})
+  if (EXISTS ${CUDNN_ROOT})
     message(STATUS "CuDNN library root path: " ${CUDNN_ROOT})
     include_directories(${CUDNN_ROOT}/include)
   else()
@@ -63,10 +65,15 @@ if (CUDA_FOUND)
 
   # Add deinition of C++11 stardard
   add_definitions(-std=c++11)
+
+  # Enable double data type
+  if (double-test)
+    add_definitions(-DDOUBLE_TEST)
+  endif()
   
   # Set path of DNNMark include files
   set(DNNMARK_INCLUDES ${CMAKE_SOURCE_DIR}/core/include)
-  include_directories(${COMMON_INCLUDES}) 
+  include_directories(${DNNMARK_INCLUDES}) 
   
   # Set source files
   file(GLOB_RECURSE DNNMARK_SOURCES RELATIVE ${CMAKE_SOURCE_DIR} core/src/*.cc)
