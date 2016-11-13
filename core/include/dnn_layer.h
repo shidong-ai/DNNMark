@@ -46,6 +46,8 @@ class Layer {
   bool has_learnable_params_;
   LayerType type_;
   int layer_id_;
+  std::string layer_name_;
+  std::string previous_layer_name_;
   DataDim data_dim_;
   DataManager<T> *data_manager_;  
   std::vector<Data<T> *> bottoms_;
@@ -62,6 +64,12 @@ class Layer {
   virtual void ForwardPropagation() {}
   virtual void BackwardPropagation() {}
   DataDim *getDataDim() { return &data_dim_; }
+  void setLayerName(const char *layer_name) {
+    layer_name_.assign(layer_name);
+  }
+  void setPrevLayerName(const char *previous_layer_name) {
+    previous_layer_name_.assign(previous_layer_name);
+  }
   void setLayerId(int layer_id) { layer_id_ = layer_id; }
   int getLayerId() { return layer_id_; }
   void setLayerType(LayerType type) { type = type_; }

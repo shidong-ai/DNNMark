@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "cudnn.h"
+
 #include "dnnmark.h"
 
 namespace dnnmark {
@@ -158,28 +160,115 @@ int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
     if(isConvKeywordExist(var)) {
       if (!var.compare("n")) {
         data_dim->n_ = atoi(val.c_str());
+        continue;
       }
       if (!var.compare("c")) {
         data_dim->c_ = atoi(val.c_str());
+        continue;
       }
       if (!var.compare("h")) {
         data_dim->h_ = atoi(val.c_str());
+        continue;
       }
       if (!var.compare("w")) {
         data_dim->w_ = atoi(val.c_str());
+        continue;
+      }
+      if (!var.compare("name")) {
+        std::dynamic_pointer_cast<ConvolutionLayer<T>>
+          (layers_map_[current_layer_id])->setLayerName(val.c_str());
+        continue;
+      }
+      if (!var.compare("previous_layer_name")) {
+        std::dynamic_pointer_cast<ConvolutionLayer<T>>
+          (layers_map_[current_layer_id])->setPrevLayerName(val.c_str());
+        continue;
+      }
+      if (!var.compare("conv_mode")) {
+        if (!val.compare("convolution"))
+          conv_param->mode_ = CUDNN_CONVOLUTION;
+        else if (!val.compare("cross_correlation"))
+          conv_param->mode_ = CUDNN_CROSS_CORRELATION;
+        continue;
+      }
+      if (!var.compare("num_output")) {
+        conv_param->output_num_ = atoi(val.c_str());
+        continue;
+      }
+      if (!var.compare("kernel_size")) {
+        conv_param->kernel_size_h_ = atoi(val.c_str());
+        conv_param->kernel_size_w_ = atoi(val.c_str());
+        continue;
+      }
+      if (!var.compare("pad")) {
+        conv_param->pad_h_ = atoi(val.c_str());
+        conv_param->pad_w_ = atoi(val.c_str());
+        continue;
+      }
+      if (!var.compare("stride")) {
+        conv_param->stride_u_ = atoi(val.c_str());
+        conv_param->stride_v_ = atoi(val.c_str());
+        continue;
+      }
+      if (!var.compare("kernel_size_h")) {
+        conv_param->kernel_size_h_ = atoi(val.c_str());
+        continue;
+      }
+      if (!var.compare("kernel_size_w")) {
+        conv_param->kernel_size_w_ = atoi(val.c_str());
+        continue;
+      }
+      if (!var.compare("pad_h")) {
+        conv_param->pad_h_ = atoi(val.c_str());
+        continue;
+      }
+      if (!var.compare("pad_w")) {
+        conv_param->pad_w_ = atoi(val.c_str());
+        continue;
+      }
+      if (!var.compare("stride_h")) {
+        conv_param->stride_u_ = atoi(val.c_str());
+        continue;
+      }
+      if (!var.compare("stride_w")) {
+        conv_param->stride_v_ = atoi(val.c_str());
+        continue;
+      }
+      if (!var.compare("conv_fwd_pref")) {
+        if (!val.compare("no_workspace"))
+          conv_param->conv_fwd_pref_ = CUDNN_CONVOLUTION_FWD_NO_WORKSPACE;
+        else if (!val.compare("fastest"))
+          conv_param->conv_fwd_pref_ = CUDNN_CONVOLUTION_FWD_PREFER_FASTEST;
+        else if (!val.compare("specify_workspace_limit"))
+          conv_param->conv_fwd_pref_ =
+            CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT;
+        continue;
+      }
+      if (!var.compare("conv_bwd_filter_pref")) {
+        if (!val.compare("no_workspace"))
+          conv_param->conv_bwd_filter_pref_ =
+            CUDNN_CONVOLUTION_BWD_FILTER_NO_WORKSPACE;
+        else if (!val.compare("fastest"))
+          conv_param->conv_bwd_filter_pref_ =
+            CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST;
+        else if (!val.compare("specify_workspace_limit"))
+          conv_param->conv_bwd_filter_pref_ =
+            CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT;
+        continue;
+      }
+      if (!var.compare("conv_bwd_data_pref")) {
+        if (!val.compare("no_workspace"))
+          conv_param->conv_bwd_data_pref_ =
+            CUDNN_CONVOLUTION_BWD_DATA_NO_WORKSPACE;
+        else if (!val.compare("fastest"))
+          conv_param->conv_bwd_data_pref_ =
+            CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST;
+        else if (!val.compare("specify_workspace_limit"))
+          conv_param->conv_bwd_data_pref_ =
+            CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT;
+        continue;
       }
 
-      if (!var.compare("name")) {
-        conv_param->name_.assign(val);
-      } else if (!var.compare("")) {
-      } else if (!var.compare("")) {
-      } else if (!var.compare("")) {
-      } else if (!var.compare("")) {
-      } else if (!var.compare("")) {
-      } else if (!var.compare("")) {
-      } else if (!var.compare("")) {
-      } else if (!var.compare("")) {
-      }
     } else {
       std::cerr << "Keywords not exists" << std::endl;
       //TODO return error

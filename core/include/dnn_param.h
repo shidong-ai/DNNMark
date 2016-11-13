@@ -38,7 +38,6 @@ struct DataDim {
 };
 
 struct ConvolutionParam {
-  std::string name_;
   cudnnConvolutionMode_t mode_;
   int output_num_;
   int pad_h_;
