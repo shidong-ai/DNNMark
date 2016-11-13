@@ -23,22 +23,21 @@
 #ifndef CORE_INCLUDE_DNN_PARAM_H_
 #define CORE_INCLUDE_DNN_PARAM_H_
 
+#include <string>
 #include <cudnn.h>
 
 namespace dnnmark {
 
-struct Param {};
-
-struct DataParam : public Param {
+struct DataDim {
   int n_;
   int c_;
   int h_;
   int w_;
-  DataParam()
+  DataDim()
   : n_(0), c_(0), h_(0), w_(0) {}
 };
 
-struct ConvolutionParam : public Param {
+struct ConvolutionParam {
   std::string name_;
   cudnnConvolutionMode_t mode_;
   int output_num_;

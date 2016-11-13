@@ -38,17 +38,7 @@ bool isDNNMarkSection(std::string &s) {
 bool isDNNMarkKeywordExist(std::string &s) {
   return std::find(dnnmark_config_keywords.begin(),
                    dnnmark_config_keywords.end(), s)
-         != data_config_keywords.end();
-}
-
-bool isDataSection(std::string &s) {
-  return s.compare("[Data]") == 0;
-}
-
-bool isDataKeywordExist(std::string &s) {
-  return std::find(data_config_keywords.begin(),
-                   data_config_keywords.end(), s)
-         != data_config_keywords.end();
+         != dnnmark_config_keywords.end();
 }
 
 bool isConvSection(std::string &s) {

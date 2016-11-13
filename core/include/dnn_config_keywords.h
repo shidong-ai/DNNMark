@@ -29,29 +29,24 @@
 namespace dnnmark {
 
 // Configuration section keywords
-std::vector<std::string> section_keywords = {
+const std::vector<std::string> section_keywords = {
   "[DNNMark]",
-  "[Data]",
   "[Convolution]"
 };
 
 // DNNMark keywords
-std::vector<std::string> dnnmark_config_keywords = {
+const std::vector<std::string> dnnmark_config_keywords = {
   "run_mode"
 };
 
-// Data layer keywords
-std::vector<std::string> data_config_keywords = {
+// Convolution layer keywords
+const std::vector<std::string> conv_config_keywords = {
+  "name",
   "n",
   "c",
   "h",
-  "w"
-};
-
-// Convolution layer keywords
-std::vector<std::string> conv_config_keywords = {
-  "name",
-  "data",
+  "w",
+  "previous_layer",
   "conv_mode",
   "num_output",
   "kernel_size",
@@ -71,8 +66,6 @@ std::vector<std::string> conv_config_keywords = {
 bool isSection(std::string &s);
 bool isDNNMarkSection(std::string &s);
 bool isDNNMarkKeywordExist(std::string &s);
-bool isDataSection(std::string &s);
-bool isDataKeywordExist(std::string &s);
 bool isConvSection(std::string &s);
 bool isConvKeywordExist(std::string &s);
 

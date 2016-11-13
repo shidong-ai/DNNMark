@@ -40,7 +40,7 @@ void TrimStrRight(std::string *s) {
 }
 
 void SplitStr(const std::string &s, std::string *var, std::string *val,
-              std::string delimiter = "=") {
+              std::string delimiter) {
   // Obtain the position of equal sign
   std::size_t pos = s.find_first_of(delimiter);
 
@@ -51,9 +51,10 @@ void SplitStr(const std::string &s, std::string *var, std::string *val,
   *val = s.substr(pos+1, std::string::npos);
 }
 
-bool isCommentStr(const std::string &s, char comment_marker = "#") {
-  TrimStr(&s);
-  return s[0] == comment_marker;
+bool isCommentStr(const std::string &s, char comment_marker) {
+  std::string local_s = s;
+  TrimStr(&local_s);
+  return local_s[0] == comment_marker;
 }
 
 } // namespace dnnmark

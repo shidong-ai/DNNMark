@@ -21,8 +21,6 @@
 // SOFTWARE.
 
 #include "dnnmark.h"
-#include "utility.h"
-#include "dnn_config_keywords.h"
 
 namespace dnnmark {
 
@@ -48,9 +46,7 @@ const void* DataType<double>::zero =
 //
 template <typename T>
 DNNMark<T>::DNNMark()
-: run_mode_(NONE) {
-  mem_manager_ = MemoryManager<T>::GetInstance();
-}
+: run_mode_(NONE) {}
 
 template <typename T>
 int DNNMark<T>::ParseAllConfig(const std::string &config_file) {
@@ -116,12 +112,15 @@ int DNNMark<T>::ParseDNNMarkConfig(const std::string &config_file) {
 }
 
 template <typename T>
-int DNNMark<T>::ParseDataConfig(const std::string &config_file) {
+int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
   std::ifstream is;
   is.open(config_file.c_str(), std::ifstream::in);
 
   // Parse DNNMark config
   std::string s;
+  int current_layer_id;
+  DataDim *data_dim;
+  ConvolutionParam *conv_param;
   while (!is.eof()) {
     // Obtain the string in one line
     std::getline(is, s);
@@ -130,10 +129,13 @@ int DNNMark<T>::ParseDataConfig(const std::string &config_file) {
     // Check the specific configuration section markers
     if (isCommentStr(s)){
       continue;
-    } else if (isDataSection(s)) {
+    } else if (isConvSection(s)) {
       // Create a layer in the main class
-      int layer_id = num_layers_;
-      layers_map[layer_id].emplace(std::make_shared(DataLayer<T>()));
+      current_layer_id = num_layers_;
+      layers_map_.emplace(current_layer_id,
+        std::make_shared<ConvolutionLayer<T>>());
+      layers_map_[current_layer_id]->setLayerId(current_layer_id);
+      layers_map_[current_layer_id]->setLayerType(CONVOLUTION);
 
     } else if (isSection(s)) {
       break;
@@ -146,61 +148,29 @@ int DNNMark<T>::ParseDataConfig(const std::string &config_file) {
     TrimStr(&var);
     TrimStr(&val);
 
+    // Obtain the data dimension and parameters variable within layer class
+    data_dim = std::dynamic_pointer_cast<ConvolutionLayer<T>>
+                (layers_map_[current_layer_id])->getDataDim();
+    conv_param = std::dynamic_pointer_cast<ConvolutionLayer<T>>
+                 (layers_map_[current_layer_id])->getConvParam();
 
     // Process all the keywords in config
-    if(isDataKeywordExist(var)) {
+    if(isConvKeywordExist(var)) {
       if (!var.compare("n")) {
-        data_param_.n_ = atoi(val.c_str());
-      } else if (!var.compare("c")) {
-        data_param_.c_ = atoi(val.c_str());
-      } else if (!var.compare("h")) {
-        data_param_.h_ = atoi(val.c_str());
-      } else if (!var.compare("w")) {
-        data_param_.w_ = atoi(val.c_str());
+        data_dim->n_ = atoi(val.c_str());
       }
-    } else {
-      std::cerr << "Keywords not exists" << std::endl;
-      //TODO return error
-    }
-  }
+      if (!var.compare("c")) {
+        data_dim->c_ = atoi(val.c_str());
+      }
+      if (!var.compare("h")) {
+        data_dim->h_ = atoi(val.c_str());
+      }
+      if (!var.compare("w")) {
+        data_dim->w_ = atoi(val.c_str());
+      }
 
-  is.close();
-  return 0;
-}
-
-template <typename T>
-int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
-  std::ifstream is;
-  is.open(config_file.c_str(), std::ifstream::in);
-
-  // Parse Convolution config
-  std::string s;
-  while (!is.eof()) {
-    // Obtain the string in one line
-    std::getline(is, s);
-    TrimStr(&s);
-
-    // Check the specific configuration section markers
-    if (isConvolutionSection(s) || isCommentStr(s))
-      continue;
-    else if (isSection(s))
-      break;
-
-    // Create a layer in the main class
-    int layer_id = num_layers_;
-    
-
-    // Obtain the acutal variable and value
-    std::string var;
-    std::string val;
-    SplitStr(s, &var, &val);
-    TrimStr(&var);
-    TrimStr(&val);
-
-    // Process all the keywords in config
-    if(isConvolutionKeywordExist(var)) {
       if (!var.compare("name")) {
-        name_.assign(val);
+        conv_param->name_.assign(val);
       } else if (!var.compare("")) {
       } else if (!var.compare("")) {
       } else if (!var.compare("")) {
@@ -219,6 +189,7 @@ int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
   is.close();
   return 0;
 }
+
 
 // Explicit instantiation
 template class DNNMark<TestType>;

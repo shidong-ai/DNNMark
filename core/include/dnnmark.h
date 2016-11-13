@@ -37,7 +37,9 @@
 
 #include "dnn_param.h"
 #include "dnn_layer.h"
-#include "memory_manager.h"
+#include "data_manager.h"
+#include "utility.h"
+#include "dnn_config_keywords.h"
 
 
 namespace dnnmark {
@@ -123,12 +125,10 @@ class DNNMark {
  private:
   RunMode run_mode_;
   std::map<int, std::shared_ptr<Layer<T>>> layers_map_;
+  std::map<std::string, int> name_id_map_;
   std::list<std::shared_ptr<Layer<T>>> composed_model_;
   int num_layers_;
 
-  // Memory manager
-  MemoryManager<T> *mem_manager_;
-  
  public:
   DNNMark();
   int ParseAllConfig(const std::string &config_file);

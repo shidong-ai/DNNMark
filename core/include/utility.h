@@ -24,6 +24,7 @@
 #define CORE_INCLUDE_UTILITY_H_
 
 #include <string>
+#include <algorithm>
 #include <cctype>
 #include <functional>
 

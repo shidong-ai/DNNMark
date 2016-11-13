@@ -20,8 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef CORE_INCLUDE_MEMORY_MANAGER_H_
-#define CORE_INCLUDE_MEMORY_MANAGER_H_
+#ifndef CORE_INCLUDE_DATA_MANAGER_H_
+#define CORE_INCLUDE_DATA_MANAGER_H_
 
 #include <memory>
 #include <map>
@@ -47,24 +47,24 @@ class Data {
 };
 
 template <typename T>
-class MemoryManager {
+class DataManager {
  private:
   // Memory pool indexed by chunk id
   std::map<int, std::shared_ptr<Data<T>>> gpu_data_pool;
   int num_data_chunks_;
 
   // Constructor
-  MemoryManager()
+  DataManager()
   : num_data_chunks_(0) {
   }
 
   // Memory manager instance
-  static std::unique_ptr<MemoryManager<T>> instance;
+  static std::unique_ptr<DataManager<T>> instance;
  public:
-  static MemoryManager<T> *GetInstance() {
+  static DataManager<T> *GetInstance() {
     if (instance.get())
-      return instance;
-    instance.reset(new MemoryManager());
+      return instance.get();
+    instance.reset(new DataManager());
     return instance.get();
   }
 
@@ -81,4 +81,5 @@ class MemoryManager {
 
 } // namespace dnnmark
 
-#endif // CORE_INCLUDE_MEMORY_MANAGER_H_
+#endif // CORE_INCLUDE_DATA_MANAGER_H_
+

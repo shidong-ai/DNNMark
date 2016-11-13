@@ -23,15 +23,16 @@
 #ifndef CORE_INCLUDE_DNN_LAYER_H_ 
 #define CORE_INCLUDE_DNN_LAYER_H_
 
+#include <vector>
 #include "cudnn.h"
 #include "dnn_param.h"
+#include "data_manager.h"
 
 namespace dnnmark {
 
 // Layer type
 enum LayerType {
-  DATA = 0,
-  CONVOLUTION,
+  CONVOLUTION = 0,
   POOLING,
   ACTIVIATION,
   LRN,
@@ -45,12 +46,26 @@ class Layer {
   bool has_learnable_params_;
   LayerType type_;
   int layer_id_;
+  DataDim data_dim_;
+  DataManager<T> *data_manager_;  
+  std::vector<Data<T> *> bottoms_;
+  std::vector<Data<T> *> bottom_diffs_;
+  std::vector<Data<T> *> tops_;
+  std::vector<Data<T> *> top_diffs_;
  public:
+  Layer()
+  : layer_id_(0), has_learnable_params_(false),
+    data_dim_() {
+    data_manager_ = DataManager<T>::GetInstance();
+  }
   virtual void Setup() {}
   virtual void ForwardPropagation() {}
   virtual void BackwardPropagation() {}
+  DataDim *getDataDim() { return &data_dim_; }
+  void setLayerId(int layer_id) { layer_id_ = layer_id; }
   int getLayerId() { return layer_id_; }
-  LayerType getLayerType() { return layer_type_; }
+  void setLayerType(LayerType type) { type = type_; }
+  LayerType getLayerType() { return type_; }
 };
 
 template <typename T>
@@ -66,6 +81,7 @@ class ConvolutionLayer : public Layer<T> {
   }
   void BackwardPropagation(){ 
   }
+  ConvolutionParam *getConvParam() { return &conv_param_; }
 
 };
 
