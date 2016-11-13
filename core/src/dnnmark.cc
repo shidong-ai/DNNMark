@@ -56,9 +56,6 @@ int DNNMark<T>::ParseAllConfig(const std::string &config_file) {
   // Parse DNNMark specific config
   ParseDNNMarkConfig(config_file);
 
-  // Parse Data specific config
-  ParseDataConfig(config_file);
-
   // Parse Convolution specific config
   ParseConvolutionConfig(config_file);
 
@@ -138,7 +135,7 @@ int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
         std::make_shared<ConvolutionLayer<T>>());
       layers_map_[current_layer_id]->setLayerId(current_layer_id);
       layers_map_[current_layer_id]->setLayerType(CONVOLUTION);
-
+      num_layers_++;
     } else if (isSection(s)) {
       break;
     }
@@ -177,6 +174,7 @@ int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
       if (!var.compare("name")) {
         std::dynamic_pointer_cast<ConvolutionLayer<T>>
           (layers_map_[current_layer_id])->setLayerName(val.c_str());
+        name_id_map_[val] = current_layer_id;
         continue;
       }
       if (!var.compare("previous_layer_name")) {
@@ -279,6 +277,17 @@ int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
   return 0;
 }
 
+template <typename T>
+int DNNMark<T>::Initialize() {
+  if (run_mode_ == STANDALONE) {
+    for (auto it = layers_map_.begin(); it != layers_map_.end(); it++) {
+      if (it->second->getLayerType() == CONVOLUTION) {
+        std::dynamic_pointer_cast<ConvolutionLayer<T>>(it->second)->Setup();
+      }
+    }
+  }
+
+}
 
 // Explicit instantiation
 template class DNNMark<TestType>;

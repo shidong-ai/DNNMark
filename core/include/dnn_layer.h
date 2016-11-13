@@ -26,6 +26,7 @@
 #include <vector>
 #include "cudnn.h"
 #include "dnn_param.h"
+#include "dnn_utility.h"
 #include "data_manager.h"
 
 namespace dnnmark {
@@ -49,6 +50,8 @@ class Layer {
   std::string layer_name_;
   std::string previous_layer_name_;
   DataDim data_dim_;
+  DataTensor<T> bottom_desc_;
+  DataTensor<T> top_desc_;
   DataManager<T> *data_manager_;  
   std::vector<Data<T> *> bottoms_;
   std::vector<Data<T> *> bottom_diffs_;
@@ -57,7 +60,7 @@ class Layer {
  public:
   Layer()
   : layer_id_(0), has_learnable_params_(false),
-    data_dim_() {
+    data_dim_(), bottom_desc_(), top_desc_() {
     data_manager_ = DataManager<T>::GetInstance();
   }
   virtual void Setup() {}
@@ -84,10 +87,34 @@ class ConvolutionLayer : public Layer<T> {
   ConvolutionLayer()
   : conv_param_() {}
   void Setup() {
+    if (Layer<T>::data_dim_.n_ != 0 && Layer<T>::data_dim_.c_ != 0 &&
+        Layer<T>::data_dim_.h_ != 0 && Layer<T>::data_dim_.w_ != 0) {
+      // Standalone mode
+      ComputeOutputDim();
+      Layer<T>::bottom_desc_.Set(Layer<T>::data_dim_.n_,
+                                 Layer<T>::data_dim_.c_,
+                                 Layer<T>::data_dim_.h_,
+                                 Layer<T>::data_dim_.w_);
+      Layer<T>::top_desc_.Set(Layer<T>::data_dim_.output_n_,
+                              Layer<T>::data_dim_.output_c_,
+                              Layer<T>::data_dim_.output_h_,
+                              Layer<T>::data_dim_.output_w_);
+    }
+  }
+
+  void ComputeOutputDim() {
+    Layer<T>::data_dim_.output_n_ = Layer<T>::data_dim_.n_;
+    Layer<T>::data_dim_.output_c_ = conv_param_.output_num_;
+    Layer<T>::data_dim_.output_h_ = (Layer<T>::data_dim_.h_ +
+      2 * conv_param_.pad_h_ - conv_param_.kernel_size_h_) /
+      conv_param_.stride_u_ + 1;
+    Layer<T>::data_dim_.output_w_ = (Layer<T>::data_dim_.w_ +
+      2 * conv_param_.pad_w_ - conv_param_.kernel_size_w_) /
+      conv_param_.stride_v_ + 1;
   }
   void ForwardPropagation() {
   }
-  void BackwardPropagation(){ 
+  void BackwardPropagation() {
   }
   ConvolutionParam *getConvParam() { return &conv_param_; }
 

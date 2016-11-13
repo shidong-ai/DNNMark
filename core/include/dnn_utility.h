@@ -23,8 +23,10 @@
 #ifndef CORE_INCLUDE_DNN_UTILITY_H_
 #define CORE_INCLUDE_DNN_UTILITY_H_
 
-#include <cudnn.h>
-#include "dnnmark.h"
+#include <iostream>
+#include "cudnn.h"
+#include "common.h"
+#include "dnn_param.h"
 
 namespace dnnmark {
 
@@ -54,12 +56,6 @@ class Descriptor {
 template <typename T>
 class DataTensor : public Descriptor {
  private:
-  // Tensor dimensions
-  int n_;
-  int c_;
-  int h_;
-  int w_;
-
   cudnnTensorDescriptor_t desc_;
   
  public:
@@ -74,14 +70,10 @@ class DataTensor : public Descriptor {
 
   void Set(int n, int c, int h, int w) {
     if (!set_) {
-      n_ = n;
-      c_ = c;
-      h_ = h;
-      w_ = w;
       CUDNN_CALL(cudnnSetTensor4dDescriptor(desc_,
                                             CUDNN_TENSOR_NCHW,
                                             DataType<T>::type,
-                                            n_, c_, h_, w_));
+                                            n, c, h, w));
     }
     set_ = true;
   }

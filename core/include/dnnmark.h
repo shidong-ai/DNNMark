@@ -30,85 +30,17 @@
 #include <list>
 #include <map>
 #include <memory>
-#include <cuda.h>
-#include <cuda_profiler_api.h>
-#include <curand.h>
-#include <cudnn.h>
 
-#include "dnn_param.h"
-#include "dnn_layer.h"
-#include "data_manager.h"
+#include "common.h"
 #include "utility.h"
 #include "dnn_config_keywords.h"
+#include "dnn_param.h"
+#include "dnn_utility.h"
+#include "data_manager.h"
+#include "dnn_layer.h"
 
 
 namespace dnnmark {
-
-#define CUDA_CALL(x) \
-do {\
-  cudaError_t ret = x;\
-  if(ret != cudaSuccess) {\
-    std::cout << "CUDA Error at " << __FILE__ << __LINE__ << std::endl;\
-    std::cout << cudaGetErrorString(ret) << std::endl;\
-    exit(EXIT_FAILURE);\
-  }\
-} while(0)\
-
-#define CURAND_CALL(x) \
-do {\
-  if((x) != CURAND_STATUS_SUCCESS) {\
-    std::cout << "CURAND Error at " << __FILE__ << __LINE__;\
-    exit(EXIT_FAILURE);\
-  }\
-} while(0)\
-
-#define CUDNN_CALL(x) \
-do {\
-  cudnnStatus_t ret = x;\
-  if(ret != CUDNN_STATUS_SUCCESS) {\
-    std::cout << "CUDNN Error at " << __FILE__ << __LINE__;\
-    std::cout << cudnnGetErrorString(ret) << std::endl;\
-    exit(EXIT_FAILURE);\
-  }\
-} while(0)\
-
-#define CUBLAS_CALL(x) \
-do {\
-  if((x) != CUBLAS_STATUS_SUCCESS) {\
-    std::cout << "CUDNN Error at " << __FILE__ << __LINE__;\
-    exit(EXIT_FAILURE);\
-  }\
-} while(0)\
-
-#define CONFIG_CHECK(x) \
-do {\
-  if ((x) != 0) {\
-    std::cout << "Parse configuration Error at " << __FILE__ << __LINE__;\
-    exit(EXIT_FAILURE);\
-  }\
-} while(0)\
-
-#ifdef DOUBLE_TEST
-#define TestType double
-#else
-#define TestType float
-#endif
-
-// Code courtesy of Caffe
-template <typename T>
-class DataType;
-template <> class DataType<float>  {
- public:
-  static const cudnnDataType_t type = CUDNN_DATA_FLOAT;
-  static float oneval, zeroval;
-  static const void *one, *zero;
-};
-template <> class DataType<double> {
- public:
-  static const cudnnDataType_t type = CUDNN_DATA_DOUBLE;
-  static double oneval, zeroval;
-  static const void *one, *zero;
-};
 
 // Benchmark running mode
 // None: the benchmark haven't been setup
@@ -133,10 +65,10 @@ class DNNMark {
   DNNMark();
   int ParseAllConfig(const std::string &config_file);
   int ParseDNNMarkConfig(const std::string &config_file);
-  int ParseDataConfig(const std::string &config_file);
   int ParseConvolutionConfig(const std::string &config_file);
   int Initialize();
-  
+  int Run();
+
 };
 
 } // namespace dnnmark

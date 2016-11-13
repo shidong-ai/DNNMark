@@ -20,67 +20,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef CORE_INCLUDE_DATA_MANAGER_H_
-#define CORE_INCLUDE_DATA_MANAGER_H_
-
-#include <memory>
-#include <map>
-#include "cudnn.h"
-
 #include "common.h"
 
 namespace dnnmark {
 
-template <typename T>
-class Data {
- private:
-  T *gpu_ptr;
- public:
-  Data(int size) {
-    CUDA_CALL(cudaMalloc(&gpu_ptr, size * sizeof(T)));
-  }
-  ~Data() {
-    CUDA_CALL(cudaFree(gpu_ptr));
-  }
-  void Filler() {
-  }
-  T *Get() { return gpu_ptr; }
-};
+//
+// Internal data type. Code courtesy of Caffe
+//
 
-template <typename T>
-class DataManager {
- private:
-  // Memory pool indexed by chunk id
-  std::map<int, std::shared_ptr<Data<T>>> gpu_data_pool;
-  int num_data_chunks_;
-
-  // Constructor
-  DataManager()
-  : num_data_chunks_(0) {
-  }
-
-  // Memory manager instance
-  static std::unique_ptr<DataManager<T>> instance;
- public:
-  static DataManager<T> *GetInstance() {
-    if (instance.get())
-      return instance.get();
-    instance.reset(new DataManager());
-    return instance.get();
-  }
-
-  int CreateData(int size) {
-    int gen_chunk_id = num_data_chunks_;
-    num_data_chunks_++;
-    gpu_data_pool.emplace(gen_chunk_id, std::make_shared<Data<T>>(size));
-  }
-
-  Data<T> *GetData(int chunk_id) {
-    return gpu_data_pool[chunk_id].get();
-  }
-};
+float DataType<float>::oneval = 1.0;
+float DataType<float>::zeroval = 0.0;
+const void* DataType<float>::one =
+    static_cast<void *>(&DataType<float>::oneval);
+const void* DataType<float>::zero =
+    static_cast<void *>(&DataType<float>::zeroval);
+double DataType<double>::oneval = 1.0;
+double DataType<double>::zeroval = 0.0;
+const void* DataType<double>::one =
+    static_cast<void *>(&DataType<double>::oneval);
+const void* DataType<double>::zero =
+    static_cast<void *>(&DataType<double>::zeroval);
 
 } // namespace dnnmark
-
-#endif // CORE_INCLUDE_DATA_MANAGER_H_
 
