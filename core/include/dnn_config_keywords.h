@@ -32,7 +32,7 @@ namespace dnnmark {
 // Configuration section keywords
 const std::vector<std::string> section_keywords = {
   "[DNNMark]",
-  "[Convolution]"
+  "[Convolution]",
   "[Pooling]"
 };
 

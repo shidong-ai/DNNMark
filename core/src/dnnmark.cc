@@ -48,6 +48,7 @@ template <typename T>
 int DNNMark<T>::ParseDNNMarkConfig(const std::string &config_file) {
   std::ifstream is;
   is.open(config_file.c_str(), std::ifstream::in);
+  LOG(INFO) << "Search and parse general DNNMark configuration";
 
   // TODO: insert assert regarding run_mode_
 
@@ -103,7 +104,7 @@ template <typename T>
 int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
   std::ifstream is;
   is.open(config_file.c_str(), std::ifstream::in);
-  LOG(INFO) << "Parse convolution layer configuration";
+  LOG(INFO) << "Search and parse convolution layer configuration";
 
   // Parse DNNMark config
   std::string s;
