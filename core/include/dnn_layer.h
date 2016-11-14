@@ -24,6 +24,7 @@
 #define CORE_INCLUDE_DNN_LAYER_H_
 
 #include <vector>
+#include <glog/logging.h>
 #include "cudnn.h"
 #include "dnn_param.h"
 #include "dnn_utility.h"
@@ -69,6 +70,9 @@ class Layer {
     input_dim_(), bottom_desc_(),
     num_inputs_(1) {
     data_manager_ = DataManager<T>::GetInstance();
+  }
+  ~Layer() {
+    data_manager_->DataManager<T>::~DataManager(); 
   }
   DataDim *getInputDim() { return &input_dim_; }
   void setLayerName(const char *layer_name) {

@@ -53,16 +53,21 @@ int DNNMark<T>::ParseDNNMarkConfig(const std::string &config_file) {
 
   // Parse DNNMark config
   std::string s;
+  bool is_dnnmark_section = false;
   while (!is.eof()) {
     // Obtain the string in one line
     std::getline(is, s);
     TrimStr(&s);
 
     // Check the specific configuration section markers
-    if (isDNNMarkSection(s) || isCommentStr(s) || isEmptyStr(s))
+    if (isDNNMarkSection(s) || isCommentStr(s) || isEmptyStr(s)) {
+      is_dnnmark_section = true;
       continue;
-    else if (isSection(s))
+    } else if (isSection(s) && is_dnnmark_section) {
       break;
+    } else if (!is_dnnmark_section) {
+      continue;
+    }
 
     // Obtain the acutal variable and value
     std::string var;
@@ -97,12 +102,14 @@ template <typename T>
 int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
   std::ifstream is;
   is.open(config_file.c_str(), std::ifstream::in);
+  LOG(INFO) << "Parse convolution layer configuration";
 
   // Parse DNNMark config
   std::string s;
   int current_layer_id;
   DataDim *input_dim;
   ConvolutionParam *conv_param;
+  bool is_conv_section = false;
   while (!is.eof()) {
     // Obtain the string in one line
     std::getline(is, s);
@@ -112,6 +119,8 @@ int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
     if (isCommentStr(s) || isEmptyStr(s)){
       continue;
     } else if (isConvSection(s)) {
+      LOG(INFO) << "Add convolution layer";
+      is_conv_section = true;
       // Create a layer in the main class
       current_layer_id = num_layers_;
       layers_map_.emplace(current_layer_id,
@@ -119,8 +128,11 @@ int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
       layers_map_[current_layer_id]->setLayerId(current_layer_id);
       layers_map_[current_layer_id]->setLayerType(CONVOLUTION);
       num_layers_++;
-    } else if (isSection(s)) {
+      continue;
+    } else if (isSection(s) && is_conv_section) {
       break;
+    } else if (!is_conv_section) {
+      continue;
     }
 
     // Obtain the acutal variable and value
@@ -262,9 +274,13 @@ int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
 
 template <typename T>
 int DNNMark<T>::Initialize() {
+  LOG(INFO) << "DNNMark: Initialize...";
+  LOG(INFO) << "Running mode: " << run_mode_;
+  LOG(INFO) << "Number of Layers: " << layers_map_.size();
   if (run_mode_ == STANDALONE) {
     for (auto it = layers_map_.begin(); it != layers_map_.end(); it++) {
       if (it->second->getLayerType() == CONVOLUTION) {
+        LOG(INFO) << "DNNMark: Setup parameters of Convolution layer";
         std::dynamic_pointer_cast<ConvolutionLayer<T>>(it->second)->Setup();
       }
     }
@@ -292,8 +308,10 @@ int DNNMark<T>::Forward() {
   if (run_mode_ == STANDALONE) {
     for (auto it = layers_map_.begin(); it != layers_map_.end(); it++) {
       if (it->second->getLayerType() == CONVOLUTION) {
+        LOG(INFO) << "DNNMark: Running convolution forward: STARTED";
         std::dynamic_pointer_cast<ConvolutionLayer<T>>(it->second)
           ->ForwardPropagation();
+        LOG(INFO) << "DNNMark: Running convolution forward: FINISHED";
       }
     }
   }
@@ -305,8 +323,10 @@ int DNNMark<T>::Backward() {
   if (run_mode_ == STANDALONE) {
     for (auto it = layers_map_.begin(); it != layers_map_.end(); it++) {
       if (it->second->getLayerType() == CONVOLUTION) {
+        LOG(INFO) << "DNNMark: Running convolution backward: STARTED";
         std::dynamic_pointer_cast<ConvolutionLayer<T>>(it->second)
           ->BackwardPropagation();
+        LOG(INFO) << "DNNMark: Running convolution backward: FINISHED";
       }
     }
   }

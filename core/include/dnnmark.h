@@ -30,6 +30,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <glog/logging.h>
 
 #include "common.h"
 #include "utility.h"

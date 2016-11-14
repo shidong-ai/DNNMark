@@ -87,6 +87,9 @@ if (CUDA_FOUND)
   find_library(CUDA_BLAS_LIBRARY cublas HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib64)
   find_library(CUDA_RAND_LIBRARY curand HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib64)
 
+  # Find glog library
+  find_library(GLOG_LIBRARY glog)
+
   # Add NICE library together with CUDA
   include_directories(${CUDA_INCLUDE_DIR})
   cuda_add_library(${PROJECT_NAME} SHARED ${DNNMARK_SOURCES})
@@ -94,11 +97,13 @@ if (CUDA_FOUND)
   add_dependencies(${PROJECT_NAME} ${CUDA_BLAS_LIBRARY})
   add_dependencies(${PROJECT_NAME} ${CUDA_RAND_LIBRARY})
   add_dependencies(${PROJECT_NAME} ${CUDA_LIBRARIES})
+  add_dependencies(${PROJECT_NAME} ${GLOG_LIBRARY})
   target_link_libraries(${PROJECT_NAME} 
                         ${CUDNN_LIBRARY}
                         ${CUDA_BLAS_LIBRARY}
                         ${CUDA_RAND_LIBRARY} 
-                        ${CUDA_LIBRARIES} 
+                        ${CUDA_LIBRARIES}
+                        ${GLOG_LIBRARY}
                         m)
 
 else()

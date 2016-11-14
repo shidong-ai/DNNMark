@@ -25,6 +25,7 @@
 
 #include <memory>
 #include <map>
+#include <glog/logging.h>
 
 #include "common.h"
 #include "dnn_png.h"
@@ -40,10 +41,13 @@ class Data {
  public:
   Data(int size)
   : size_(size) {
+    LOG(INFO) << "Create Data chunk of size " << size_;
     CUDA_CALL(cudaMalloc(&gpu_ptr_, size * sizeof(T)));
   }
   ~Data() {
+    LOG(INFO) << "Free Data chunk of size " << size_;
     CUDA_CALL(cudaFree(gpu_ptr_));
+    cudaFree(gpu_ptr_);
   }
   void Filler() {
     png_ = PseudoNumGenerator::GetInstance();
@@ -57,7 +61,7 @@ template <typename T>
 class DataManager {
  private:
   // Memory pool indexed by chunk id
-  std::map<int, std::shared_ptr<Data<T>>> gpu_data_pool;
+  std::map<int, std::shared_ptr<Data<T>>> gpu_data_pool_;
   int num_data_chunks_;
 
   // Constructor
@@ -75,14 +79,20 @@ class DataManager {
     return instance_.get();
   }
 
+  ~DataManager() {
+    gpu_data_pool_.clear();
+  }
+
   int CreateData(int size) {
     int gen_chunk_id = num_data_chunks_;
     num_data_chunks_++;
-    gpu_data_pool.emplace(gen_chunk_id, std::make_shared<Data<T>>(size));
+    gpu_data_pool_.emplace(gen_chunk_id, std::make_shared<Data<T>>(size));
+    LOG(INFO) << "Create data with ID: " << gen_chunk_id;
+    return gen_chunk_id;
   }
 
   Data<T> *GetData(int chunk_id) {
-    return gpu_data_pool[chunk_id].get();
+    return gpu_data_pool_[chunk_id].get();
   }
 };
 
