@@ -118,7 +118,7 @@ int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
   // Parse DNNMark config
   std::string s;
   int current_layer_id;
-  DataDim *data_dim;
+  DataDim *input_dim;
   ConvolutionParam *conv_param;
   while (!is.eof()) {
     // Obtain the string in one line
@@ -148,27 +148,27 @@ int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
     TrimStr(&val);
 
     // Obtain the data dimension and parameters variable within layer class
-    data_dim = std::dynamic_pointer_cast<ConvolutionLayer<T>>
-                (layers_map_[current_layer_id])->getDataDim();
+    input_dim = std::dynamic_pointer_cast<ConvolutionLayer<T>>
+                (layers_map_[current_layer_id])->getInputDim();
     conv_param = std::dynamic_pointer_cast<ConvolutionLayer<T>>
                  (layers_map_[current_layer_id])->getConvParam();
 
     // Process all the keywords in config
     if(isConvKeywordExist(var)) {
       if (!var.compare("n")) {
-        data_dim->n_ = atoi(val.c_str());
+        input_dim->n_ = atoi(val.c_str());
         continue;
       }
       if (!var.compare("c")) {
-        data_dim->c_ = atoi(val.c_str());
+        input_dim->c_ = atoi(val.c_str());
         continue;
       }
       if (!var.compare("h")) {
-        data_dim->h_ = atoi(val.c_str());
+        input_dim->h_ = atoi(val.c_str());
         continue;
       }
       if (!var.compare("w")) {
-        data_dim->w_ = atoi(val.c_str());
+        input_dim->w_ = atoi(val.c_str());
         continue;
       }
       if (!var.compare("name")) {

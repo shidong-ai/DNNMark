@@ -32,14 +32,9 @@ struct DataDim {
   int c_;
   int h_;
   int w_;
-  int output_n_;
-  int output_c_;
-  int output_h_;
-  int output_w_;
 
   DataDim()
-  : n_(0), c_(0), h_(0), w_(0),
-    output_n_(0), output_c_(0), output_h_(0), output_w_(0) {}
+  : n_(0), c_(0), h_(0), w_(0) {}
 };
 
 struct ConvolutionParam {

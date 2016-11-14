@@ -25,7 +25,6 @@
 
 #include <memory>
 #include <map>
-#include "cudnn.h"
 
 #include "common.h"
 

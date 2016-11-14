@@ -67,7 +67,9 @@ class DNNMark {
   int ParseDNNMarkConfig(const std::string &config_file);
   int ParseConvolutionConfig(const std::string &config_file);
   int Initialize();
-  int Run();
+  int RunAll();
+  int Forward();
+  int Backward();
 
 };
 
