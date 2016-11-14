@@ -86,6 +86,9 @@ class DataManager {
   }
 };
 
+template <typename T>
+std::unique_ptr<DataManager<T>> DataManager<T>::instance_ = nullptr;
+
 } // namespace dnnmark
 
 #endif // CORE_INCLUDE_DATA_MANAGER_H_

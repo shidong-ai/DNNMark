@@ -63,6 +63,8 @@ class PseudoNumGenerator {
   }  
 };
 
+std::unique_ptr<PseudoNumGenerator> PseudoNumGenerator::instance_ = nullptr;
+
 } // namespace dnnmark
 
 #endif // CORE_INCLUDE_DNN_PNG_H_

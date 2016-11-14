@@ -27,23 +27,6 @@
 namespace dnnmark {
 
 //
-// Internal data type. Code courtesy of Caffe
-//
-
-float DataType<float>::oneval = 1.0;
-float DataType<float>::zeroval = 0.0;
-const void* DataType<float>::one =
-    static_cast<void *>(&DataType<float>::oneval);
-const void* DataType<float>::zero =
-    static_cast<void *>(&DataType<float>::zeroval);
-double DataType<double>::oneval = 1.0;
-double DataType<double>::zeroval = 0.0;
-const void* DataType<double>::one =
-    static_cast<void *>(&DataType<double>::oneval);
-const void* DataType<double>::zero =
-    static_cast<void *>(&DataType<double>::zeroval);
-
-//
 // DNNMark class definition
 //
 template <typename T>
