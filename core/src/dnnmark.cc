@@ -59,7 +59,7 @@ int DNNMark<T>::ParseDNNMarkConfig(const std::string &config_file) {
     TrimStr(&s);
 
     // Check the specific configuration section markers
-    if (isDNNMarkSection(s) || isCommentStr(s))
+    if (isDNNMarkSection(s) || isCommentStr(s) || isEmptyStr(s))
       continue;
     else if (isSection(s))
       break;
@@ -74,17 +74,17 @@ int DNNMark<T>::ParseDNNMarkConfig(const std::string &config_file) {
     // Process all the keywords in config
     if(isDNNMarkKeywordExist(var)) {
       if (!var.compare("run_mode")) {
-        if (!val.compare("None"))
+        if (!val.compare("none"))
           run_mode_ = NONE;
-        else if(!val.compare("Standalone"))
+        else if(!val.compare("standalone"))
           run_mode_ = STANDALONE;
-        else if(!val.compare("Composed"))
+        else if(!val.compare("composed"))
           run_mode_ = COMPOSED;
         else
           std::cerr << "Unknown run mode" << std::endl;
       }
     } else {
-      std::cerr << "Keywords not exists" << std::endl;
+      std::cerr << var << "Keywords not exists" << std::endl;
       //TODO return error
     }
   }
@@ -109,7 +109,7 @@ int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
     TrimStr(&s);
 
     // Check the specific configuration section markers
-    if (isCommentStr(s)){
+    if (isCommentStr(s) || isEmptyStr(s)){
       continue;
     } else if (isConvSection(s)) {
       // Create a layer in the main class
@@ -251,7 +251,7 @@ int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
       }
 
     } else {
-      std::cerr << "Keywords not exists" << std::endl;
+      std::cerr << var << "Keywords not exists" << std::endl;
       //TODO return error
     }
   }

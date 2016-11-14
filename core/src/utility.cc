@@ -47,7 +47,7 @@ void SplitStr(const std::string &s, std::string *var, std::string *val,
   // TODO: Add an error detetion here
 
   // Obtain the substring of variable and value
-  *var = s.substr(0, pos-1);
+  *var = s.substr(0, pos);
   *val = s.substr(pos+1, std::string::npos);
 }
 
@@ -55,6 +55,12 @@ bool isCommentStr(const std::string &s, char comment_marker) {
   std::string local_s = s;
   TrimStr(&local_s);
   return local_s[0] == comment_marker;
+}
+
+bool isEmptyStr(const std::string &s) {
+  std::string local_s = s;
+  TrimStr(&local_s);
+  return !local_s.compare("");
 }
 
 } // namespace dnnmark

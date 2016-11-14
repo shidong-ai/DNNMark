@@ -22,9 +22,11 @@ message(STATUS ${BENCHMARK_NAME} ": Benchmark source files: " ${BENCHMARK_SRC_FI
 add_executable(${BENCHMARK_NAME} ${BENCHMARK_SRC_FILE})
 
 # Add dependencies of current benchmark
-#add_dependencies(${BENCHMARK_NAME} ${PROJECT_NAME})
+add_dependencies(${BENCHMARK_NAME} ${PROJECT_NAME})
+add_dependencies(${BENCHMARK_NAME} ${GFLAGS_LIBRARY})
 
 # Link libraries
 target_link_libraries(${BENCHMARK_NAME}
-    ${PROJECT_NAME})
+    ${PROJECT_NAME}
+    ${GFLAGS_LIBRARY})
 

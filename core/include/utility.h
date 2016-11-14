@@ -46,10 +46,12 @@ void SplitStr(const std::string &s, std::string *var, std::string *val,
               std::string delimiter = "=");
 
 //
-// Detect comment str
+// Detect useless str
 //
 
 bool isCommentStr(const std::string &s, char comment_marker = '#');
+
+bool isEmptyStr(const std::string &s);
 
 } // namespace dnnmark
 

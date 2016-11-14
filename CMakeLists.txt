@@ -112,7 +112,7 @@ option (enable-benchmarking "Compile all benchmarks of DNNMark" ON)
 
 if (enable-benchmarking)
   # Include the cmake file of gflag
-  #include(gflag)
+  find_library(GFLAGS_LIBRARY gflags)
 
   # Invoke cmake files of each benchmark
   add_subdirectory(benchmarks/test_fwd_conv)
