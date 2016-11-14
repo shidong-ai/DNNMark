@@ -56,6 +56,7 @@ template <typename T>
 class DNNMark {
  private:
   RunMode run_mode_;
+  Handle handle_;
   std::map<int, std::shared_ptr<Layer<T>>> layers_map_;
   std::map<std::string, int> name_id_map_;
   std::list<std::shared_ptr<Layer<T>>> composed_model_;

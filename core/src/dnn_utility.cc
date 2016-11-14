@@ -27,18 +27,18 @@ namespace dnnmark {
 Handle::Handle() {
   handles_ = new cudnnHandle_t[1];
   CUDNN_CALL(cudnnCreate(&handles_[0]));
-  size_ = 1;
+  num_handles_ = 1;
 }
 
 Handle::Handle(int num) {
   handles_ = new cudnnHandle_t[num];
   for (int i = 0; i < num; i++)
     CUDNN_CALL(cudnnCreate(&handles_[i]));
-  size_ = num;
+  num_handles_ = num;
 }
 
 Handle::~Handle() {
-  for (int i = 0; i < size_; i++)
+  for (int i = 0; i < num_handles_; i++)
     CUDNN_CALL(cudnnDestroy(handles_[i]));
   delete []handles_;
 }

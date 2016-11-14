@@ -28,15 +28,40 @@
 
 namespace dnnmark {
 
-template <typename T>
-class PseudoNumberGenerator {
+// Seed of random number generator
+static unsigned long long int seed = 1234;
+
+class PseudoNumGenerator {
  private:
-  // Memory pool indexed by chunk id
-  std::map<int, T *> gpu_memory_pool;
-  int num_memory_chunk_;
+  curandGenerator_t gen_;  
+
+  // Constructor
+  PseudoNumGenerator() {
+    CURAND_CALL(curandCreateGenerator(&gen_, CURAND_RNG_PSEUDO_DEFAULT));
+    CURAND_CALL(curandSetPseudoRandomGeneratorSeed(gen_, seed));
+  }
+
+  // PNG instance
+  static std::unique_ptr<PseudoNumGenerator> instance_;
  public:
-   
-}
+
+  ~PseudoNumGenerator() {
+    CURAND_CALL(curandDestroyGenerator(gen_));
+  }
+
+  static PseudoNumGenerator *GetInstance() {
+    if (instance_.get())
+      return instance_.get();
+    instance_.reset(new PseudoNumGenerator());
+    return instance_.get();
+  }
+  void GenerateUniformData(float *dev_ptr, int size) {
+    CURAND_CALL(curandGenerateUniform(gen_, dev_ptr, size));
+  }
+  void GenerateUniformData(double *dev_ptr, int size) {
+    CURAND_CALL(curandGenerateUniformDouble(gen_, dev_ptr, size));
+  }  
+};
 
 } // namespace dnnmark
 

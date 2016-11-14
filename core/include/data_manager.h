@@ -27,24 +27,31 @@
 #include <map>
 
 #include "common.h"
+#include "dnn_png.h"
 
 namespace dnnmark {
 
 template <typename T>
 class Data {
  private:
-  T *gpu_ptr;
+  PseudoNumGenerator *png_;
+  int size_;
+  T *gpu_ptr_;
  public:
-  Data(int size) {
-    CUDA_CALL(cudaMalloc(&gpu_ptr, size * sizeof(T)));
+  Data(int size)
+  : size_(size) {
+    CUDA_CALL(cudaMalloc(&gpu_ptr_, size * sizeof(T)));
   }
   ~Data() {
-    CUDA_CALL(cudaFree(gpu_ptr));
+    CUDA_CALL(cudaFree(gpu_ptr_));
   }
   void Filler() {
+    png_ = PseudoNumGenerator::GetInstance();
+    png_->GenerateUniformData(gpu_ptr_, size_);
   }
-  T *Get() { return gpu_ptr; }
+  T *Get() { return gpu_ptr_; }
 };
+
 
 template <typename T>
 class DataManager {
@@ -59,13 +66,13 @@ class DataManager {
   }
 
   // Memory manager instance
-  static std::unique_ptr<DataManager<T>> instance;
+  static std::unique_ptr<DataManager<T>> instance_;
  public:
   static DataManager<T> *GetInstance() {
-    if (instance.get())
-      return instance.get();
-    instance.reset(new DataManager());
-    return instance.get();
+    if (instance_.get())
+      return instance_.get();
+    instance_.reset(new DataManager());
+    return instance_.get();
   }
 
   int CreateData(int size) {

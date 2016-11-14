@@ -48,7 +48,7 @@ const void* DataType<double>::zero =
 //
 template <typename T>
 DNNMark<T>::DNNMark()
-: run_mode_(NONE) {}
+: run_mode_(NONE), handle_() {}
 
 template <typename T>
 int DNNMark<T>::ParseAllConfig(const std::string &config_file) {
@@ -132,7 +132,7 @@ int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
       // Create a layer in the main class
       current_layer_id = num_layers_;
       layers_map_.emplace(current_layer_id,
-        std::make_shared<ConvolutionLayer<T>>());
+        std::make_shared<ConvolutionLayer<T>>(&handle_));
       layers_map_[current_layer_id]->setLayerId(current_layer_id);
       layers_map_[current_layer_id]->setLayerType(CONVOLUTION);
       num_layers_++;
@@ -286,7 +286,48 @@ int DNNMark<T>::Initialize() {
       }
     }
   }
+  return 0;
+}
 
+template <typename T>
+int DNNMark<T>::RunAll() {
+  if (run_mode_ == STANDALONE) {
+    for (auto it = layers_map_.begin(); it != layers_map_.end(); it++) {
+      if (it->second->getLayerType() == CONVOLUTION) {
+        std::dynamic_pointer_cast<ConvolutionLayer<T>>(it->second)
+          ->ForwardPropagation();
+        std::dynamic_pointer_cast<ConvolutionLayer<T>>(it->second)
+          ->BackwardPropagation();
+      }
+    }
+  }
+  return 0;
+}
+
+template <typename T>
+int DNNMark<T>::Forward() {
+  if (run_mode_ == STANDALONE) {
+    for (auto it = layers_map_.begin(); it != layers_map_.end(); it++) {
+      if (it->second->getLayerType() == CONVOLUTION) {
+        std::dynamic_pointer_cast<ConvolutionLayer<T>>(it->second)
+          ->ForwardPropagation();
+      }
+    }
+  }
+  return 0;
+}
+
+template <typename T>
+int DNNMark<T>::Backward() {
+  if (run_mode_ == STANDALONE) {
+    for (auto it = layers_map_.begin(); it != layers_map_.end(); it++) {
+      if (it->second->getLayerType() == CONVOLUTION) {
+        std::dynamic_pointer_cast<ConvolutionLayer<T>>(it->second)
+          ->BackwardPropagation();
+      }
+    }
+  }
+  return 0;
 }
 
 // Explicit instantiation

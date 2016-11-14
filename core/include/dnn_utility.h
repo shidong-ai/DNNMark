@@ -33,14 +33,14 @@ namespace dnnmark {
 class Handle {
  private:
   cudnnHandle_t *handles_;
-  int size_;
+  int num_handles_;
  public:
   Handle();
   Handle(int num);
   ~Handle();
   cudnnHandle_t getHandle();
   cudnnHandle_t getHandle(int index);
-  int size() { return size_; }
+  int num() { return num_handles_; }
 
 };
 
@@ -126,7 +126,7 @@ class ConvolutionDesc : public Descriptor {
     return nullptr;
   }
 
-  cudnnFilterDescriptor_t GetConv() {
+  cudnnConvolutionDescriptor_t GetConv() {
     if (set_)
       return conv_desc_;
     return nullptr;
