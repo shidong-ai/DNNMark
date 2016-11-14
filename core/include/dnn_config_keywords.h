@@ -33,6 +33,7 @@ namespace dnnmark {
 const std::vector<std::string> section_keywords = {
   "[DNNMark]",
   "[Convolution]"
+  "[Pooling]"
 };
 
 // DNNMark keywords
@@ -64,11 +65,32 @@ const std::vector<std::string> conv_config_keywords = {
   "conv_bwd_data_pref"
 };
 
-bool isSection(std::string &s);
-bool isDNNMarkSection(std::string &s);
-bool isDNNMarkKeywordExist(std::string &s);
-bool isConvSection(std::string &s);
-bool isConvKeywordExist(std::string &s);
+// Convolution layer keywords
+const std::vector<std::string> pool_config_keywords = {
+  "name",
+  "n",
+  "c",
+  "h",
+  "w",
+  "previous_layer",
+  "pool_mode",
+  "num_output",
+  "kernel_size",
+  "pad",
+  "stride",
+  "kernel_size_h",
+  "kernel_size_w",
+  "pad_h",
+  "pad_w",
+  "stride_h",
+  "stride_w"
+};
+
+bool isSection(const std::string &s);
+bool isSpecifiedSection(const std::string &s,
+                        const char *section);
+bool isSectionKeywordExist(const std::string &s,
+                           const std::vector<std::string> &config_keywords);
 
 } // namespace dnnmark
 

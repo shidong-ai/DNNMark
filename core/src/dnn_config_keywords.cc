@@ -24,32 +24,22 @@
 
 namespace dnnmark {
 
-bool isSection(std::string &s) {
+bool isSection(const std::string &s) {
   return std::find(section_keywords.begin(),
                    section_keywords.end(), s)
          != section_keywords.end();
 }
 
-bool isDNNMarkSection(std::string &s) {
-  return s.compare("[DNNMark]") == 0;
+bool isSpecifiedSection(const std::string &s, const char *section) {
+  return s.compare(section) == 0;
 }
 
-bool isDNNMarkKeywordExist(std::string &s) {
-  return std::find(dnnmark_config_keywords.begin(),
-                   dnnmark_config_keywords.end(), s)
-         != dnnmark_config_keywords.end();
+bool isSectionKeywordExist(const std::string &s,
+                           const std::vector<std::string> &config_keywords) {
+  return std::find(config_keywords.begin(),
+                   config_keywords.end(), s)
+         != config_keywords.end();
 }
-
-bool isConvSection(std::string &s) {
-  return s.compare("[Convolution]") == 0;
-}
-
-bool isConvKeywordExist(std::string &s) {
-  return std::find(conv_config_keywords.begin(),
-                   conv_config_keywords.end(), s)
-         != conv_config_keywords.end();
-}
-
 
 }
 

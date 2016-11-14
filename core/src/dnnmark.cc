@@ -60,7 +60,8 @@ int DNNMark<T>::ParseDNNMarkConfig(const std::string &config_file) {
     TrimStr(&s);
 
     // Check the specific configuration section markers
-    if (isDNNMarkSection(s) || isCommentStr(s) || isEmptyStr(s)) {
+    if (isSpecifiedSection(s, "[DNNMark]") ||
+        isCommentStr(s) || isEmptyStr(s)) {
       is_dnnmark_section = true;
       continue;
     } else if (isSection(s) && is_dnnmark_section) {
@@ -77,7 +78,7 @@ int DNNMark<T>::ParseDNNMarkConfig(const std::string &config_file) {
     TrimStr(&val);
 
     // Process all the keywords in config
-    if(isDNNMarkKeywordExist(var)) {
+    if(isSectionKeywordExist(var, dnnmark_config_keywords)) {
       if (!var.compare("run_mode")) {
         if (!val.compare("none"))
           run_mode_ = NONE;
@@ -118,7 +119,7 @@ int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
     // Check the specific configuration section markers
     if (isCommentStr(s) || isEmptyStr(s)){
       continue;
-    } else if (isConvSection(s)) {
+    } else if (isSpecifiedSection(s, "[Convolution]")) {
       LOG(INFO) << "Add convolution layer";
       is_conv_section = true;
       // Create a layer in the main class
@@ -149,7 +150,7 @@ int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
                  (layers_map_[current_layer_id])->getConvParam();
 
     // Process all the keywords in config
-    if(isConvKeywordExist(var)) {
+    if(isSectionKeywordExist(var, conv_config_keywords)) {
       if (!var.compare("n")) {
         input_dim->n_ = atoi(val.c_str());
         continue;
