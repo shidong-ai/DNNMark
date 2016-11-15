@@ -96,6 +96,15 @@ template <> class DataType<double> {
   static const void *one, *zero;
 };
 
+// Layer type
+enum LayerType {
+  CONVOLUTION = 1,
+  POOLING,
+  ACTIVATION,
+  LRN,
+  FC,
+  SOFTMAX
+};
 
 } // namespace dnnmark
 

@@ -16,8 +16,8 @@ int main(int argc, char **argv) {
   FLAGS_alsologtostderr = FLAGS_debug_info;
   LOG(INFO) << "DNNMark suites: Start...";
   DNNMark<TestType> dnnmark;
-  dnnmark.ParseDNNMarkConfig(FLAGS_config);
-  dnnmark.ParsePoolingConfig(FLAGS_config);
+  dnnmark.ParseGeneralConfig(FLAGS_config);
+  dnnmark.ParseSpecifiedConfig(FLAGS_config, POOLING);
   dnnmark.Initialize();
   dnnmark.Forward();
   LOG(INFO) << "DNNMark suites: Tear down...";

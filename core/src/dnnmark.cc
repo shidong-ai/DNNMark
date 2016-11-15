@@ -34,18 +34,218 @@ DNNMark<T>::DNNMark()
 : run_mode_(NONE), handle_() {}
 
 template <typename T>
+void DNNMark<T>::SetLayerParams(LayerType layer_type,
+                    int current_layer_id,
+                    const std::string &var,
+                    const std::string &val) {
+  DataDim *input_dim; 
+  ConvolutionParam *conv_param;
+  PoolingParam *pool_param;
+  LRNParam *lrn_param;
+  CHECK_GT(num_layers_, 0);
+
+  switch(layer_type) {
+    case CONVOLUTION: {
+      // Obtain the data dimension and parameters variable
+      // within specified layer
+      input_dim = std::dynamic_pointer_cast<ConvolutionLayer<T>>
+                  (layers_map_[current_layer_id])->getInputDim();
+      conv_param = std::dynamic_pointer_cast<ConvolutionLayer<T>>
+                   (layers_map_[current_layer_id])->getConvParam();
+
+      if(isKeywordExist(var, data_config_keywords))
+        break;
+
+      // Process all the corresponding keywords in config
+      if(isKeywordExist(var, conv_config_keywords)) {
+        if (!var.compare("conv_mode")) {
+          if (!val.compare("convolution"))
+            conv_param->mode_ = CUDNN_CONVOLUTION;
+          else if (!val.compare("cross_correlation"))
+            conv_param->mode_ = CUDNN_CROSS_CORRELATION;
+        } else if (!var.compare("num_output")) {
+          conv_param->output_num_ = atoi(val.c_str());
+        } else if (!var.compare("kernel_size")) {
+          conv_param->kernel_size_h_ = atoi(val.c_str());
+          conv_param->kernel_size_w_ = atoi(val.c_str());
+        } else if (!var.compare("pad")) {
+          conv_param->pad_h_ = atoi(val.c_str());
+          conv_param->pad_w_ = atoi(val.c_str());
+        } else if (!var.compare("stride")) {
+          conv_param->stride_u_ = atoi(val.c_str());
+          conv_param->stride_v_ = atoi(val.c_str());
+        } else if (!var.compare("kernel_size_h")) {
+          conv_param->kernel_size_h_ = atoi(val.c_str());
+        } else if (!var.compare("kernel_size_w")) {
+          conv_param->kernel_size_w_ = atoi(val.c_str());
+        } else if (!var.compare("pad_h")) {
+          conv_param->pad_h_ = atoi(val.c_str());
+        } else if (!var.compare("pad_w")) {
+          conv_param->pad_w_ = atoi(val.c_str());
+        } else if (!var.compare("stride_h")) {
+          conv_param->stride_u_ = atoi(val.c_str());
+        } else if (!var.compare("stride_w")) {
+          conv_param->stride_v_ = atoi(val.c_str());
+        } else if (!var.compare("conv_fwd_pref")) {
+          if (!val.compare("no_workspace"))
+            conv_param->conv_fwd_pref_ = CUDNN_CONVOLUTION_FWD_NO_WORKSPACE;
+          else if (!val.compare("fastest"))
+            conv_param->conv_fwd_pref_ = CUDNN_CONVOLUTION_FWD_PREFER_FASTEST;
+          else if (!val.compare("specify_workspace_limit"))
+            conv_param->conv_fwd_pref_ =
+              CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT;
+        } else if (!var.compare("conv_bwd_filter_pref")) {
+          if (!val.compare("no_workspace"))
+            conv_param->conv_bwd_filter_pref_ =
+              CUDNN_CONVOLUTION_BWD_FILTER_NO_WORKSPACE;
+          else if (!val.compare("fastest"))
+            conv_param->conv_bwd_filter_pref_ =
+              CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST;
+          else if (!val.compare("specify_workspace_limit"))
+            conv_param->conv_bwd_filter_pref_ =
+              CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT;
+        } else if (!var.compare("conv_bwd_data_pref")) {
+          if (!val.compare("no_workspace"))
+            conv_param->conv_bwd_data_pref_ =
+              CUDNN_CONVOLUTION_BWD_DATA_NO_WORKSPACE;
+          else if (!val.compare("fastest"))
+            conv_param->conv_bwd_data_pref_ =
+              CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST;
+          else if (!val.compare("specify_workspace_limit"))
+            conv_param->conv_bwd_data_pref_ =
+              CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT;
+        }
+      } else {
+        LOG(FATAL) << var << ": Keywords not exists" << std::endl;
+      }
+      break;
+    } // End of case CONVOLUTION
+    case POOLING: {
+      // Obtain the data dimension and parameters variable within layer class
+      input_dim = std::dynamic_pointer_cast<PoolingLayer<T>>
+                  (layers_map_[current_layer_id])->getInputDim();
+      pool_param = std::dynamic_pointer_cast<PoolingLayer<T>>
+                   (layers_map_[current_layer_id])->getPoolParam();
+
+      if(isKeywordExist(var, data_config_keywords))
+        break;
+
+      // Process all the keywords in config
+      if(isKeywordExist(var, pool_config_keywords)) {
+        if (!var.compare("pool_mode")) {
+          if (!val.compare("max"))
+            pool_param->mode_ = CUDNN_POOLING_MAX;
+          else if (!val.compare("avg_include_padding"))
+            pool_param->mode_ = CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING;
+          else if (!val.compare("avg_exclude_padding"))
+            pool_param->mode_ = CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
+        } else if (!var.compare("kernel_size")) {
+          pool_param->kernel_size_h_ = atoi(val.c_str());
+          pool_param->kernel_size_w_ = atoi(val.c_str());
+        } else if (!var.compare("pad")) {
+          pool_param->pad_h_ = atoi(val.c_str());
+          pool_param->pad_w_ = atoi(val.c_str());
+        } else if (!var.compare("stride")) {
+          pool_param->stride_h_ = atoi(val.c_str());
+          pool_param->stride_w_ = atoi(val.c_str());
+        } else if (!var.compare("kernel_size_h")) {
+          pool_param->kernel_size_h_ = atoi(val.c_str());
+        } else if (!var.compare("kernel_size_w")) {
+          pool_param->kernel_size_w_ = atoi(val.c_str());
+        } else if (!var.compare("pad_h")) {
+          pool_param->pad_h_ = atoi(val.c_str());
+        } else if (!var.compare("pad_w")) {
+          pool_param->pad_w_ = atoi(val.c_str());
+        } else if (!var.compare("stride_h")) {
+          pool_param->stride_h_ = atoi(val.c_str());
+        } else if (!var.compare("stride_w")) {
+          pool_param->stride_w_ = atoi(val.c_str());
+        }
+      } else {
+        LOG(FATAL) << var << ": Keywords not exists" << std::endl;
+      }
+      break;
+    } // End of case POOLING
+    case LRN: {
+      // Obtain the data dimension and parameters variable within layer class
+      input_dim = std::dynamic_pointer_cast<LRNLayer<T>>
+                  (layers_map_[current_layer_id])->getInputDim();
+      lrn_param = std::dynamic_pointer_cast<LRNLayer<T>>
+                   (layers_map_[current_layer_id])->getLRNParam();
+
+      if(isKeywordExist(var, data_config_keywords))
+        break;
+
+      // Process all the keywords in config
+      if(isKeywordExist(var, lrn_config_keywords)) {
+        if (!var.compare("lrn_mode")) {
+          if (!val.compare("cross_channel_dim1"))
+            lrn_param->mode_ = CUDNN_LRN_CROSS_CHANNEL_DIM1;
+        } else if (!var.compare("local_size")) {
+          lrn_param->local_size_ = atoi(val.c_str());
+        } else if (!var.compare("alpha")) {
+          lrn_param->alpha_ = atof(val.c_str());
+        } else if (!var.compare("beta")) {
+          lrn_param->beta_ = atof(val.c_str());
+        } else if (!var.compare("k")) {
+          lrn_param->k_ = atof(val.c_str());
+        }
+      } else {
+        LOG(FATAL) << var << ": Keywords not exists" << std::endl;
+      }
+      break;
+    } // End of case LRN
+    case ACTIVATION: {
+
+      break;
+    } // End of case ACTIVATION
+    case FC: {
+
+      break;
+    } // End of case FC
+    case SOFTMAX: {
+
+      break;
+    } // End of case SOFTMAX
+    default: {
+      LOG(WARNING) << "NOT supported layer";
+      break;
+    } // End of case default
+
+  }
+
+  // Set data configuration at last, since all layers share same parameters
+  if(isKeywordExist(var, data_config_keywords)) {
+    if (!var.compare("n")) {
+      input_dim->n_ = atoi(val.c_str());
+    } else if (!var.compare("c")) {
+      input_dim->c_ = atoi(val.c_str());
+    } else if (!var.compare("h")) {
+      input_dim->h_ = atoi(val.c_str());
+    } else if (!var.compare("w")) {
+      input_dim->w_ = atoi(val.c_str());
+    } else if (!var.compare("name")) {
+      layers_map_[current_layer_id]->setLayerName(val.c_str());
+      name_id_map_[val] = current_layer_id;
+    } else if (!var.compare("previous_layer_name")) {
+      layers_map_[current_layer_id]->setPrevLayerName(val.c_str());
+    }
+  }
+}
+
+template <typename T>
 int DNNMark<T>::ParseAllConfig(const std::string &config_file) {
   // TODO: use multithread in the future
   // Parse DNNMark specific config
-  ParseDNNMarkConfig(config_file);
+  ParseGeneralConfig(config_file);
 
   // Parse Convolution specific config
-  ParseConvolutionConfig(config_file);
+  ParseSpecifiedConfig(config_file, CONVOLUTION);
 
 }
 
 template <typename T>
-int DNNMark<T>::ParseDNNMarkConfig(const std::string &config_file) {
+int DNNMark<T>::ParseGeneralConfig(const std::string &config_file) {
   std::ifstream is;
   is.open(config_file.c_str(), std::ifstream::in);
   LOG(INFO) << "Search and parse general DNNMark configuration";
@@ -75,11 +275,9 @@ int DNNMark<T>::ParseDNNMarkConfig(const std::string &config_file) {
     std::string var;
     std::string val;
     SplitStr(s, &var, &val);
-    TrimStr(&var);
-    TrimStr(&val);
 
     // Process all the keywords in config
-    if(isSectionKeywordExist(var, dnnmark_config_keywords)) {
+    if(isKeywordExist(var, dnnmark_config_keywords)) {
       if (!var.compare("run_mode")) {
         if (!val.compare("none"))
           run_mode_ = NONE;
@@ -101,17 +299,47 @@ int DNNMark<T>::ParseDNNMarkConfig(const std::string &config_file) {
 }
 
 template <typename T>
-int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
+int DNNMark<T>::ParseSpecifiedConfig(const std::string &config_file,
+                                     LayerType layer_type) {
   std::ifstream is;
   is.open(config_file.c_str(), std::ifstream::in);
-  LOG(INFO) << "Search and parse convolution layer configuration";
 
   // Parse DNNMark config
   std::string s;
   int current_layer_id;
-  DataDim *input_dim;
-  ConvolutionParam *conv_param;
-  bool is_conv_section = false;
+  bool is_specified_section = false;
+  std::string section;
+  switch(layer_type) {
+    case CONVOLUTION: {
+      section.assign("[Convolution]");
+      break;
+    }
+    case POOLING: {
+      section.assign("[Pooling]");
+      break;
+    }
+    case LRN: {
+      section.assign("[LRN]");
+      break;
+    }
+    case ACTIVATION: {
+      section.assign("[Activation]");
+      break;
+    }
+    case FC: {
+      section.assign("[FullyConnected]");
+      break;
+    }
+    case SOFTMAX: {
+      section.assign("[Softmax]");
+      break;
+    }
+    default: {
+      break;
+    }
+  }
+  LOG(INFO) << "Search and parse layer "
+            << section << " configuration";
   while (!is.eof()) {
     // Obtain the string in one line
     std::getline(is, s);
@@ -120,20 +348,29 @@ int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
     // Check the specific configuration section markers
     if (isCommentStr(s) || isEmptyStr(s)){
       continue;
-    } else if (isSpecifiedSection(s, "[Convolution]")) {
-      LOG(INFO) << "Add convolution layer";
-      is_conv_section = true;
+    } else if (isSpecifiedSection(s, section.c_str())) {
+      LOG(INFO) << "Add "
+                << section
+                << " layer";
+      is_specified_section = true;
       // Create a layer in the main class
       current_layer_id = num_layers_;
-      layers_map_.emplace(current_layer_id,
-        std::make_shared<ConvolutionLayer<T>>(&handle_));
+      if (layer_type == CONVOLUTION)
+        layers_map_.emplace(current_layer_id,
+          std::make_shared<ConvolutionLayer<T>>(&handle_));
+      else if (layer_type == POOLING)
+        layers_map_.emplace(current_layer_id,
+          std::make_shared<PoolingLayer<T>>(&handle_));
+      else if (layer_type == LRN)
+        layers_map_.emplace(current_layer_id,
+          std::make_shared<LRNLayer<T>>(&handle_));
       layers_map_[current_layer_id]->setLayerId(current_layer_id);
-      layers_map_[current_layer_id]->setLayerType(CONVOLUTION);
+      layers_map_[current_layer_id]->setLayerType(layer_type);
       num_layers_++;
       continue;
-    } else if (isSection(s) && is_conv_section) {
+    } else if (isSection(s) && is_specified_section) {
       break;
-    } else if (!is_conv_section) {
+    } else if (!is_specified_section) {
       continue;
     }
 
@@ -141,405 +378,16 @@ int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
     std::string var;
     std::string val;
     SplitStr(s, &var, &val);
-    TrimStr(&var);
-    TrimStr(&val);
 
     // Obtain the data dimension and parameters variable within layer class
-    input_dim = std::dynamic_pointer_cast<ConvolutionLayer<T>>
-                (layers_map_[current_layer_id])->getInputDim();
-    conv_param = std::dynamic_pointer_cast<ConvolutionLayer<T>>
-                 (layers_map_[current_layer_id])->getConvParam();
-
-    // Process all the keywords in config
-    if(isSectionKeywordExist(var, conv_config_keywords)) {
-      if (!var.compare("n")) {
-        input_dim->n_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("c")) {
-        input_dim->c_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("h")) {
-        input_dim->h_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("w")) {
-        input_dim->w_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("name")) {
-        std::dynamic_pointer_cast<ConvolutionLayer<T>>
-          (layers_map_[current_layer_id])->setLayerName(val.c_str());
-        name_id_map_[val] = current_layer_id;
-        continue;
-      }
-      if (!var.compare("previous_layer_name")) {
-        std::dynamic_pointer_cast<ConvolutionLayer<T>>
-          (layers_map_[current_layer_id])->setPrevLayerName(val.c_str());
-        continue;
-      }
-      if (!var.compare("conv_mode")) {
-        if (!val.compare("convolution"))
-          conv_param->mode_ = CUDNN_CONVOLUTION;
-        else if (!val.compare("cross_correlation"))
-          conv_param->mode_ = CUDNN_CROSS_CORRELATION;
-        continue;
-      }
-      if (!var.compare("num_output")) {
-        conv_param->output_num_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("kernel_size")) {
-        conv_param->kernel_size_h_ = atoi(val.c_str());
-        conv_param->kernel_size_w_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("pad")) {
-        conv_param->pad_h_ = atoi(val.c_str());
-        conv_param->pad_w_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("stride")) {
-        conv_param->stride_u_ = atoi(val.c_str());
-        conv_param->stride_v_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("kernel_size_h")) {
-        conv_param->kernel_size_h_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("kernel_size_w")) {
-        conv_param->kernel_size_w_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("pad_h")) {
-        conv_param->pad_h_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("pad_w")) {
-        conv_param->pad_w_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("stride_h")) {
-        conv_param->stride_u_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("stride_w")) {
-        conv_param->stride_v_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("conv_fwd_pref")) {
-        if (!val.compare("no_workspace"))
-          conv_param->conv_fwd_pref_ = CUDNN_CONVOLUTION_FWD_NO_WORKSPACE;
-        else if (!val.compare("fastest"))
-          conv_param->conv_fwd_pref_ = CUDNN_CONVOLUTION_FWD_PREFER_FASTEST;
-        else if (!val.compare("specify_workspace_limit"))
-          conv_param->conv_fwd_pref_ =
-            CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT;
-        continue;
-      }
-      if (!var.compare("conv_bwd_filter_pref")) {
-        if (!val.compare("no_workspace"))
-          conv_param->conv_bwd_filter_pref_ =
-            CUDNN_CONVOLUTION_BWD_FILTER_NO_WORKSPACE;
-        else if (!val.compare("fastest"))
-          conv_param->conv_bwd_filter_pref_ =
-            CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST;
-        else if (!val.compare("specify_workspace_limit"))
-          conv_param->conv_bwd_filter_pref_ =
-            CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT;
-        continue;
-      }
-      if (!var.compare("conv_bwd_data_pref")) {
-        if (!val.compare("no_workspace"))
-          conv_param->conv_bwd_data_pref_ =
-            CUDNN_CONVOLUTION_BWD_DATA_NO_WORKSPACE;
-        else if (!val.compare("fastest"))
-          conv_param->conv_bwd_data_pref_ =
-            CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST;
-        else if (!val.compare("specify_workspace_limit"))
-          conv_param->conv_bwd_data_pref_ =
-            CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT;
-        continue;
-      }
-
-    } else {
-      std::cerr << var << "Keywords not exists" << std::endl;
-      //TODO return error
-    }
+    SetLayerParams(layer_type,
+                   current_layer_id,
+                   var, val);
   }
-
-  LOG(INFO) << *conv_param;
 
   is.close();
   return 0;
 }
-
-template <typename T>
-int DNNMark<T>::ParsePoolingConfig(const std::string &config_file) {
-  std::ifstream is;
-  is.open(config_file.c_str(), std::ifstream::in);
-  LOG(INFO) << "Search and parse pooling layer configuration";
-
-  // Parse DNNMark config
-  std::string s;
-  int current_layer_id;
-  DataDim *input_dim;
-  PoolingParam *pool_param;
-  bool is_pooling_section = false;
-  while (!is.eof()) {
-    // Obtain the string in one line
-    std::getline(is, s);
-    TrimStr(&s);
-
-    // Check the specific configuration section markers
-    if (isCommentStr(s) || isEmptyStr(s)){
-      continue;
-    } else if (isSpecifiedSection(s, "[Pooling]")) {
-      LOG(INFO) << "Add pooling layer";
-      is_pooling_section = true;
-      // Create a layer in the main class
-      current_layer_id = num_layers_;
-      layers_map_.emplace(current_layer_id,
-        std::make_shared<PoolingLayer<T>>(&handle_));
-      layers_map_[current_layer_id]->setLayerId(current_layer_id);
-      layers_map_[current_layer_id]->setLayerType(POOLING);
-      num_layers_++;
-      continue;
-    } else if (isSection(s) && is_pooling_section) {
-      break;
-    } else if (!is_pooling_section) {
-      continue;
-    }
-
-    // Obtain the acutal variable and value
-    std::string var;
-    std::string val;
-    SplitStr(s, &var, &val);
-    TrimStr(&var);
-    TrimStr(&val);
-
-    // Obtain the data dimension and parameters variable within layer class
-    input_dim = std::dynamic_pointer_cast<PoolingLayer<T>>
-                (layers_map_[current_layer_id])->getInputDim();
-    pool_param = std::dynamic_pointer_cast<PoolingLayer<T>>
-                 (layers_map_[current_layer_id])->getPoolParam();
-
-    // Process all the keywords in config
-    if(isSectionKeywordExist(var, pool_config_keywords)) {
-      if (!var.compare("n")) {
-        input_dim->n_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("c")) {
-        input_dim->c_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("h")) {
-        input_dim->h_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("w")) {
-        input_dim->w_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("name")) {
-        std::dynamic_pointer_cast<PoolingLayer<T>>
-          (layers_map_[current_layer_id])->setLayerName(val.c_str());
-        name_id_map_[val] = current_layer_id;
-        continue;
-      }
-      if (!var.compare("previous_layer_name")) {
-        std::dynamic_pointer_cast<PoolingLayer<T>>
-          (layers_map_[current_layer_id])->setPrevLayerName(val.c_str());
-        continue;
-      }
-      if (!var.compare("pool_mode")) {
-        if (!val.compare("max"))
-          pool_param->mode_ = CUDNN_POOLING_MAX;
-        else if (!val.compare("avg_include_padding"))
-          pool_param->mode_ = CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING;
-        else if (!val.compare("avg_exclude_padding"))
-          pool_param->mode_ = CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
-        continue;
-      }
-      if (!var.compare("kernel_size")) {
-        pool_param->kernel_size_h_ = atoi(val.c_str());
-        pool_param->kernel_size_w_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("pad")) {
-        pool_param->pad_h_ = atoi(val.c_str());
-        pool_param->pad_w_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("stride")) {
-        pool_param->stride_h_ = atoi(val.c_str());
-        pool_param->stride_w_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("kernel_size_h")) {
-        pool_param->kernel_size_h_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("kernel_size_w")) {
-        pool_param->kernel_size_w_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("pad_h")) {
-        pool_param->pad_h_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("pad_w")) {
-        pool_param->pad_w_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("stride_h")) {
-        pool_param->stride_h_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("stride_w")) {
-        pool_param->stride_w_ = atoi(val.c_str());
-        continue;
-      }
-    } else {
-      std::cerr << var << "Keywords not exists" << std::endl;
-      //TODO return error
-    }
-  }
-
-  LOG(INFO) << *pool_param;
-
-  is.close();
-  return 0;
-}
-
-template <typename T>
-int DNNMark<T>::ParseLRNConfig(const std::string &config_file) {
-  std::ifstream is;
-  is.open(config_file.c_str(), std::ifstream::in);
-  LOG(INFO) << "Search and parse LRN layer configuration";
-
-  // Parse DNNMark config
-  std::string s;
-  int current_layer_id;
-  DataDim *input_dim;
-  LRNParam *lrn_param;
-  bool is_lrn_section = false;
-  while (!is.eof()) {
-    // Obtain the string in one line
-    std::getline(is, s);
-    TrimStr(&s);
-
-    // Check the specific configuration section markers
-    if (isCommentStr(s) || isEmptyStr(s)){
-      continue;
-    } else if (isSpecifiedSection(s, "[LRN]")) {
-      LOG(INFO) << "Add LRN layer";
-      is_lrn_section = true;
-      // Create a layer in the main class
-      current_layer_id = num_layers_;
-      layers_map_.emplace(current_layer_id,
-        std::make_shared<LRNLayer<T>>(&handle_));
-      layers_map_[current_layer_id]->setLayerId(current_layer_id);
-      layers_map_[current_layer_id]->setLayerType(LRN);
-      num_layers_++;
-      continue;
-    } else if (isSection(s) && is_lrn_section) {
-      break;
-    } else if (!is_lrn_section) {
-      continue;
-    }
-
-    // Obtain the acutal variable and value
-    std::string var;
-    std::string val;
-    SplitStr(s, &var, &val);
-    TrimStr(&var);
-    TrimStr(&val);
-
-    // Obtain the data dimension and parameters variable within layer class
-    input_dim = std::dynamic_pointer_cast<LRNLayer<T>>
-                (layers_map_[current_layer_id])->getInputDim();
-    lrn_param = std::dynamic_pointer_cast<LRNLayer<T>>
-                 (layers_map_[current_layer_id])->getLRNParam();
-
-    // Process all the keywords in config
-    if(isSectionKeywordExist(var, lrn_config_keywords)) {
-      if (!var.compare("n")) {
-        input_dim->n_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("c")) {
-        input_dim->c_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("h")) {
-        input_dim->h_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("w")) {
-        input_dim->w_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("name")) {
-        std::dynamic_pointer_cast<LRNLayer<T>>
-          (layers_map_[current_layer_id])->setLayerName(val.c_str());
-        name_id_map_[val] = current_layer_id;
-        continue;
-      }
-      if (!var.compare("previous_layer_name")) {
-        std::dynamic_pointer_cast<PoolingLayer<T>>
-          (layers_map_[current_layer_id])->setPrevLayerName(val.c_str());
-        continue;
-      }
-      if (!var.compare("lrn_mode")) {
-        if (!val.compare("cross_channel_dim1"))
-          lrn_param->mode_ = CUDNN_LRN_CROSS_CHANNEL_DIM1;
-        continue;
-      }
-      if (!var.compare("local_size")) {
-        lrn_param->local_size_ = atoi(val.c_str());
-        continue;
-      }
-      if (!var.compare("alpha")) {
-        lrn_param->alpha_ = atof(val.c_str());
-        continue;
-      }
-      if (!var.compare("beta")) {
-        lrn_param->beta_ = atof(val.c_str());
-        continue;
-      }
-      if (!var.compare("k")) {
-        lrn_param->k_ = atof(val.c_str());
-        continue;
-      }
-    } else {
-      std::cerr << var << "Keywords not exists" << std::endl;
-      //TODO return error
-    }
-  }
-
-  LOG(INFO) << *lrn_param;
-
-  is.close();
-  return 0;
-}
-
-template <typename T>
-int DNNMark<T>::ParseActivationConfig(const std::string &config_file) {
-}
-
-template <typename T>
-int DNNMark<T>::ParseFullyConnectedConfig(const std::string &config_file) {
-}
-
-template <typename T>
-int DNNMark<T>::ParseSoftmaxConfig(const std::string &config_file) {
-}
-
-
 
 template <typename T>
 int DNNMark<T>::Initialize() {

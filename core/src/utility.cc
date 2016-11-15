@@ -48,7 +48,9 @@ void SplitStr(const std::string &s, std::string *var, std::string *val,
 
   // Obtain the substring of variable and value
   *var = s.substr(0, pos);
+  TrimStr(var);
   *val = s.substr(pos+1, std::string::npos);
+  TrimStr(val);
 }
 
 bool isCommentStr(const std::string &s, char comment_marker) {

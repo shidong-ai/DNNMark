@@ -63,16 +63,18 @@ class DNNMark {
   std::list<std::shared_ptr<Layer<T>>> composed_model_;
   int num_layers_;
 
+  // Private functions
+  void SetLayerParams(LayerType layer_type,
+                      int current_layer_id,
+                      const std::string &var,
+                      const std::string &val);
+
  public:
   DNNMark();
   int ParseAllConfig(const std::string &config_file);
-  int ParseDNNMarkConfig(const std::string &config_file);
-  int ParseConvolutionConfig(const std::string &config_file);
-  int ParsePoolingConfig(const std::string &config_file);
-  int ParseLRNConfig(const std::string &config_file);
-  int ParseActivationConfig(const std::string &config_file);
-  int ParseFullyConnectedConfig(const std::string &config_file);
-  int ParseSoftmaxConfig(const std::string &config_file);
+  int ParseGeneralConfig(const std::string &config_file);
+  int ParseSpecifiedConfig(const std::string &config_file,
+                           LayerType layer_type);
   int Initialize();
   int RunAll();
   int Forward();

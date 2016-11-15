@@ -26,21 +26,12 @@
 #include <vector>
 #include <glog/logging.h>
 #include "cudnn.h"
+#include "common.h"
 #include "dnn_param.h"
 #include "dnn_utility.h"
 #include "data_manager.h"
 
 namespace dnnmark {
-
-// Layer type
-enum LayerType {
-  CONVOLUTION = 1,
-  POOLING,
-  ACTIVIATION,
-  LRN,
-  FC,
-  SOFTMAX
-};
 
 template <typename T>
 class Layer {

@@ -34,8 +34,8 @@ bool isSpecifiedSection(const std::string &s, const char *section) {
   return s.compare(section) == 0;
 }
 
-bool isSectionKeywordExist(const std::string &s,
-                           const std::vector<std::string> &config_keywords) {
+bool isKeywordExist(const std::string &s,
+                    const std::vector<std::string> &config_keywords) {
   return std::find(config_keywords.begin(),
                    config_keywords.end(), s)
          != config_keywords.end();

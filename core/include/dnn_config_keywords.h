@@ -35,7 +35,9 @@ const std::vector<std::string> section_keywords = {
   "[Convolution]",
   "[Pooling]",
   "[LRN]",
-  "[Activation]"
+  "[Activation]",
+  "[FC]",
+  "[Softmax]"
 };
 
 // DNNMark keywords
@@ -43,14 +45,18 @@ const std::vector<std::string> dnnmark_config_keywords = {
   "run_mode"
 };
 
-// Convolution layer keywords
-const std::vector<std::string> conv_config_keywords = {
+// Data config keywords
+const std::vector<std::string> data_config_keywords = {
   "name",
   "n",
   "c",
   "h",
   "w",
-  "previous_layer",
+  "previous_layer"
+};
+
+// Convolution layer keywords
+const std::vector<std::string> conv_config_keywords = {
   "conv_mode",
   "num_output",
   "kernel_size",
@@ -69,12 +75,6 @@ const std::vector<std::string> conv_config_keywords = {
 
 // Pooling layer keywords
 const std::vector<std::string> pool_config_keywords = {
-  "name",
-  "n",
-  "c",
-  "h",
-  "w",
-  "previous_layer",
   "pool_mode",
   "kernel_size",
   "pad",
@@ -89,12 +89,6 @@ const std::vector<std::string> pool_config_keywords = {
 
 // LRN layer keywords
 const std::vector<std::string> lrn_config_keywords = {
-  "name",
-  "n",
-  "c",
-  "h",
-  "w",
-  "previous_layer",
   "lrn_mode",
   "local_size",
   "alpha",
@@ -102,10 +96,15 @@ const std::vector<std::string> lrn_config_keywords = {
   "k"
 };
 
+// Activation layer keywords
+const std::vector<std::string> activation_config_keywords = {
+  "activation_mode"
+};
+
 bool isSection(const std::string &s);
 bool isSpecifiedSection(const std::string &s,
                         const char *section);
-bool isSectionKeywordExist(const std::string &s,
+bool isKeywordExist(const std::string &s,
                            const std::vector<std::string> &config_keywords);
 
 } // namespace dnnmark
