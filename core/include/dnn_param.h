@@ -62,6 +62,21 @@ struct ConvolutionParam {
     conv_bwd_data_pref_(CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST) {}
 };
 
+struct PoolingParam {
+  cudnnPoolingMode_t mode_;
+  int pad_h_;
+  int pad_w_;
+  int stride_h_;
+  int stride_w_;
+  int kernel_size_h_;
+  int kernel_size_w_;
+  PoolingParam()
+  : mode_(CUDNN_POOLING_MAX),
+    pad_h_(0), pad_w_(0),
+    stride_h_(2), stride_w_(2),
+    kernel_size_h_(3), kernel_size_w_(3) {}
+};
+
 } // namespace dnnmark
 
 #endif // CORE_INCLUDE_DNN_PARAM_H_

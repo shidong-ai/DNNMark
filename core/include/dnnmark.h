@@ -68,6 +68,11 @@ class DNNMark {
   int ParseAllConfig(const std::string &config_file);
   int ParseDNNMarkConfig(const std::string &config_file);
   int ParseConvolutionConfig(const std::string &config_file);
+  int ParsePoolingConfig(const std::string &config_file);
+  int ParseLRNConfig(const std::string &config_file);
+  int ParseActivationConfig(const std::string &config_file);
+  int ParseFullyConnectedConfig(const std::string &config_file);
+  int ParseSoftmaxConfig(const std::string &config_file);
   int Initialize();
   int RunAll();
   int Forward();

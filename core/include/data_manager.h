@@ -28,7 +28,7 @@
 #include <glog/logging.h>
 
 #include "common.h"
-#include "dnn_png.h"
+#include "data_png.h"
 
 namespace dnnmark {
 

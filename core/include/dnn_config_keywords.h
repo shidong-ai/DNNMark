@@ -74,7 +74,6 @@ const std::vector<std::string> pool_config_keywords = {
   "w",
   "previous_layer",
   "pool_mode",
-  "num_output",
   "kernel_size",
   "pad",
   "stride",

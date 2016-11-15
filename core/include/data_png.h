@@ -20,8 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef CORE_INCLUDE_DNN_PNG_H_
-#define CORE_INCLUDE_DNN_PNG_H_
+#ifndef CORE_INCLUDE_DATA_PNG_H_
+#define CORE_INCLUDE_DATA_PNG_H_
 
 #include <vector>
 #include <map>
@@ -67,5 +67,5 @@ std::unique_ptr<PseudoNumGenerator> PseudoNumGenerator::instance_ = nullptr;
 
 } // namespace dnnmark
 
-#endif // CORE_INCLUDE_DNN_PNG_H_
+#endif // CORE_INCLUDE_DATA_PNG_H_
 

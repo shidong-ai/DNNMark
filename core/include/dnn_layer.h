@@ -83,7 +83,7 @@ class Layer {
   }
   void setLayerId(int layer_id) { layer_id_ = layer_id; }
   int getLayerId() { return layer_id_; }
-  void setLayerType(LayerType type) { type = type_; }
+  void setLayerType(LayerType type) { type_ = type; }
   LayerType getLayerType() { return type_; }
   virtual void Setup() {
     if (input_dim_.n_ != 0 && input_dim_.c_ != 0 &&
@@ -276,7 +276,120 @@ class ConvolutionLayer : public Layer<T> {
 
 };
 
+template <typename T>
+class PoolingLayer : public Layer<T> {
+ private:
+  PoolingParam pool_param_;
 
+  // Pooling specific descriptor
+  PoolingDesc<T> desc_;
+
+  // Layer-specific output
+  int num_outputs_;
+  DataDim output_dim_;
+  DataTensor<T> top_desc_;
+  std::vector<Data<T> *> tops_;
+  std::vector<int> top_chunk_ids_;
+  std::vector<Data<T> *> top_diffs_;
+  std::vector<int> top_diff_chunk_ids_;
+
+ public:
+  PoolingLayer(Handle *p_handle)
+  : Layer<T>(p_handle),
+    top_desc_(), output_dim_(), pool_param_(), desc_() {
+    Layer<T>::has_learnable_params_ = true;
+    num_outputs_ = Layer<T>::num_inputs_;
+  }
+
+  PoolingParam *getPoolParam() { return &pool_param_; }
+
+  void Setup() {
+    // Set up indispensable stuff here
+    Layer<T>::Setup();
+
+    // Set pooling related descriptors
+    desc_.Set(pool_param_);
+
+    // Set up pooling related data
+    if (Layer<T>::input_dim_.n_ != 0 && Layer<T>::input_dim_.c_ != 0 &&
+        Layer<T>::input_dim_.h_ != 0 && Layer<T>::input_dim_.w_ != 0) {
+      //
+      // Standalone mode
+      //
+
+      // Compute dimension of output data
+      ComputeOutputDim();
+
+      // Set top tensor
+      top_desc_.Set(output_dim_.n_,
+                    output_dim_.c_,
+                    output_dim_.h_,
+                    output_dim_.w_);
+
+      // Prepare top data
+      int top_size = output_dim_.n_ *
+                     output_dim_.c_ *
+                     output_dim_.h_ *
+                     output_dim_.w_;
+      for (int i = 0; i < num_outputs_; i++) {
+        top_chunk_ids_.push_back(
+          Layer<T>::data_manager_->CreateData(top_size));
+        tops_.push_back(
+          Layer<T>::data_manager_->GetData(top_chunk_ids_[i]));
+        top_diff_chunk_ids_.push_back(
+          Layer<T>::data_manager_->CreateData(top_size));
+        top_diffs_.push_back(
+          Layer<T>::data_manager_->GetData(top_diff_chunk_ids_[i]));
+      }
+    }
+  }
+
+  void ComputeOutputDim() {
+    // Courtesy of Caffe
+    output_dim_.n_ = Layer<T>::input_dim_.n_;
+    output_dim_.c_ = Layer<T>::input_dim_.c_;
+    output_dim_.h_ = static_cast<int>(ceil(static_cast<float>(
+      Layer<T>::input_dim_.h_ + 2 * pool_param_.pad_h_ - 
+      pool_param_.kernel_size_h_) / pool_param_.stride_h_)) + 1;
+    output_dim_.w_ = static_cast<int>(ceil(static_cast<float>(
+      Layer<T>::input_dim_.w_ + 2 * pool_param_.pad_w_ - 
+      pool_param_.kernel_size_w_) / pool_param_.stride_w_)) + 1;
+    if (pool_param_.pad_h_ > 0 && pool_param_.pad_w_ > 0) {
+      if ((output_dim_.h_ - 1) * pool_param_.stride_h_ >= 
+          Layer<T>::input_dim_.h_ + pool_param_.pad_h_) {
+        --output_dim_.h_;
+      }
+      if ((output_dim_.w_ - 1) * pool_param_.stride_w_ >= 
+          Layer<T>::input_dim_.w_ + pool_param_.pad_w_) {
+        --output_dim_.w_;
+      }
+    }
+  }
+
+  void ForwardPropagation() {
+    // Fill the data
+    for (int i = 0; i < Layer<T>::num_inputs_; i++) {
+      Layer<T>::bottoms_[i]->Filler();
+    }
+
+    // pooling forward computation
+    cudaProfilerStart();
+    for (int i = 0; i < Layer<T>::num_inputs_; i++) {
+      CUDNN_CALL(cudnnPoolingForward(
+             Layer<T>::p_handle_->getHandle(),
+             desc_.Get(),
+             DataType<T>::one, 
+             Layer<T>::bottom_desc_.Get(), Layer<T>::bottoms_[i]->Get(),
+             DataType<T>::zero,
+             top_desc_.Get(), tops_[i]->Get()));
+    }
+    cudaProfilerStop();
+
+  }
+  void BackwardPropagation() {
+  }
+
+};
 
 } // namespace dnnmark
 

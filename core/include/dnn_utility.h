@@ -100,8 +100,8 @@ class ConvolutionDesc : public Descriptor {
   }
 
   ~ConvolutionDesc() {
-    cudnnDestroyConvolutionDescriptor(conv_desc_);
-    cudnnDestroyFilterDescriptor(filter_desc_);
+    CUDNN_CALL(cudnnDestroyConvolutionDescriptor(conv_desc_));
+    CUDNN_CALL(cudnnDestroyFilterDescriptor(filter_desc_));
   }
 
   void Set(const ConvolutionParam &param, int num_channel) {
@@ -132,6 +132,40 @@ class ConvolutionDesc : public Descriptor {
     return nullptr;
   }
 
+
+};
+
+template <typename T>
+class PoolingDesc : public Descriptor {
+ private:
+  cudnnPoolingDescriptor_t pooling_desc_;
+ public:
+  PoolingDesc()
+  : Descriptor() {
+    CUDNN_CALL(cudnnCreatePoolingDescriptor(&pooling_desc_));
+  }
+
+  ~PoolingDesc() {
+    CUDNN_CALL(cudnnDestroyPoolingDescriptor(pooling_desc_));
+  }
+
+  void Set(const PoolingParam &param) {
+    if (!set_) {
+      CUDNN_CALL(cudnnSetPooling2dDescriptor_v4(pooling_desc_,
+                 param.mode_, CUDNN_PROPAGATE_NAN,
+                 param.kernel_size_h_, param.kernel_size_w_,
+                 param.pad_h_, param.pad_w_,
+                 param.stride_h_, param.stride_w_));
+    }
+
+    set_ = true;
+  }
+
+  cudnnPoolingDescriptor_t Get() {
+    if (set_)
+      return pooling_desc_;
+    return nullptr;
+  }
 
 };
 
