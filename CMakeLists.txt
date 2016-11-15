@@ -130,7 +130,7 @@ if (enable-benchmarking)
   #add_subdirectory(benchmarks/test_bwd_activation)
   add_subdirectory(benchmarks/test_fwd_fc)
   #add_subdirectory(benchmarks/test_bwd_fully_connected)
-  #add_subdirectory(benchmarks/test_fwd_softmax)
+  add_subdirectory(benchmarks/test_fwd_softmax)
   #add_subdirectory(benchmarks/test_bwd_softmax)
 
 endif()

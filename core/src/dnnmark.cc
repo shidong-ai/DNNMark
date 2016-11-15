@@ -44,6 +44,7 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
   LRNParam *lrn_param;
   ActivationParam *activation_param;
   FullyConnectedParam *fc_param;
+  SoftmaxParam *softmax_param;
   CHECK_GT(num_layers_, 0);
 
   switch(layer_type) {
@@ -245,7 +246,34 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
       break;
     } // End of case FC
     case SOFTMAX: {
+      // Obtain the data dimension and parameters variable within layer class
+      input_dim = std::dynamic_pointer_cast<SoftmaxLayer<T>>
+                  (layers_map_[current_layer_id])->getInputDim();
+      softmax_param = std::dynamic_pointer_cast<SoftmaxLayer<T>>
+                 (layers_map_[current_layer_id])->getSoftmaxParam();
 
+      if(isKeywordExist(var, data_config_keywords))
+        break;
+
+      // Process all the keywords in config
+      if(isKeywordExist(var, softmax_config_keywords)) {
+        if (!var.compare("softmax_algo")) {
+          if (!val.compare("fast"))
+            softmax_param->algo_ = CUDNN_SOFTMAX_FAST;
+          else if (!val.compare("accurate"))
+            softmax_param->algo_ = CUDNN_SOFTMAX_ACCURATE;
+          else if (!val.compare("log"))
+            softmax_param->algo_ = CUDNN_SOFTMAX_LOG;
+        }
+        if (!var.compare("softmax_mode")) {
+          if (!val.compare("instance"))
+            softmax_param->mode_ = CUDNN_SOFTMAX_MODE_INSTANCE;
+          else if (!val.compare("channel"))
+            softmax_param->mode_ = CUDNN_SOFTMAX_MODE_CHANNEL;
+        }
+      } else {
+        LOG(FATAL) << var << ": Keywords not exists" << std::endl;
+      }
       break;
     } // End of case SOFTMAX
     default: {
@@ -410,6 +438,9 @@ int DNNMark<T>::ParseSpecifiedConfig(const std::string &config_file,
       else if (layer_type == FC)
         layers_map_.emplace(current_layer_id,
           std::make_shared<FullyConnectedLayer<T>>(&handle_));
+      else if (layer_type == SOFTMAX)
+        layers_map_.emplace(current_layer_id,
+          std::make_shared<SoftmaxLayer<T>>(&handle_));
       layers_map_[current_layer_id]->setLayerId(current_layer_id);
       layers_map_[current_layer_id]->setLayerType(layer_type);
       num_layers_++;
@@ -463,6 +494,10 @@ int DNNMark<T>::Initialize() {
         LOG(INFO) << "DNNMark: Setup parameters of Fully Connected layer";
         std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)->Setup();
       }
+      if (it->second->getLayerType() == SOFTMAX) {
+        LOG(INFO) << "DNNMark: Setup parameters of Softmax layer";
+        std::dynamic_pointer_cast<SoftmaxLayer<T>>(it->second)->Setup();
+      }
     }
   }
   return 0;
@@ -500,6 +535,12 @@ int DNNMark<T>::RunAll() {
         std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)
           ->ForwardPropagation();
         std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)
+          ->BackwardPropagation();
+      }
+      if (it->second->getLayerType() == SOFTMAX) {
+        std::dynamic_pointer_cast<SoftmaxLayer<T>>(it->second)
+          ->ForwardPropagation();
+        std::dynamic_pointer_cast<SoftmaxLayer<T>>(it->second)
           ->BackwardPropagation();
       }
     }
@@ -541,6 +582,12 @@ int DNNMark<T>::Forward() {
           ->ForwardPropagation();
         LOG(INFO) << "DNNMark: Running FullyConnected forward: FINISHED";
       }
+      if (it->second->getLayerType() == SOFTMAX) {
+        LOG(INFO) << "DNNMark: Running Softmax forward: STARTED";
+        std::dynamic_pointer_cast<SoftmaxLayer<T>>(it->second)
+          ->ForwardPropagation();
+        LOG(INFO) << "DNNMark: Running Softmax forward: FINISHED";
+      }
     }
   }
   return 0;
@@ -579,6 +626,12 @@ int DNNMark<T>::Backward() {
         std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)
           ->BackwardPropagation();
         LOG(INFO) << "DNNMark: Running FullyConnected backward: FINISHED";
+      }
+      if (it->second->getLayerType() == SOFTMAX) {
+        LOG(INFO) << "DNNMark: Running Softmax backward: STARTED";
+        std::dynamic_pointer_cast<SoftmaxLayer<T>>(it->second)
+          ->BackwardPropagation();
+        LOG(INFO) << "DNNMark: Running Softmax backward: FINISHED";
       }
     }
   }

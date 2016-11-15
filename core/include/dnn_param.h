@@ -176,6 +176,14 @@ struct FullyConnectedParam {
   : output_num_(4096) {}
 };
 
+struct SoftmaxParam {
+  cudnnSoftmaxAlgorithm_t algo_;
+  cudnnSoftmaxMode_t mode_;
+  SoftmaxParam()
+  : algo_(CUDNN_SOFTMAX_ACCURATE),
+    mode_(CUDNN_SOFTMAX_MODE_CHANNEL) {}
+};
+
 } // namespace dnnmark
 
 #endif // CORE_INCLUDE_DNN_PARAM_H_
