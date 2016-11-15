@@ -34,7 +34,7 @@ namespace dnnmark {
 
 // Layer type
 enum LayerType {
-  CONVOLUTION = 0,
+  CONVOLUTION = 1,
   POOLING,
   ACTIVIATION,
   LRN,
@@ -57,7 +57,7 @@ class Layer {
   DataTensor<T> bottom_desc_;
   DataManager<T> *data_manager_;  
 
-  int num_inputs_;
+  int num_bottoms_;
   // Layer bottom data
   std::vector<Data<T> *> bottoms_;
   std::vector<int> bottom_chunk_ids_;
@@ -68,7 +68,7 @@ class Layer {
   : p_handle_(p_handle),
     layer_id_(0), has_learnable_params_(false),
     input_dim_(), bottom_desc_(),
-    num_inputs_(1) {
+    num_bottoms_(1) {
     data_manager_ = DataManager<T>::GetInstance();
   }
   ~Layer() {
@@ -103,7 +103,7 @@ class Layer {
                         input_dim_.c_ *
                         input_dim_.h_ *
                         input_dim_.w_;
-      for (int i = 0; i < num_inputs_; i++) {
+      for (int i = 0; i < num_bottoms_; i++) {
         bottom_chunk_ids_.push_back(
           data_manager_->CreateData(bottom_size));
         bottoms_.push_back(
@@ -130,7 +130,7 @@ class ConvolutionLayer : public Layer<T> {
   ConvolutionDesc<T> desc_;
 
   // Layer-specific output
-  int num_outputs_;
+  int num_tops_;
   DataDim output_dim_;
   DataTensor<T> top_desc_;
   std::vector<Data<T> *> tops_;
@@ -155,7 +155,7 @@ class ConvolutionLayer : public Layer<T> {
   : Layer<T>(p_handle),
     top_desc_(), output_dim_(), conv_param_(), desc_() {
     Layer<T>::has_learnable_params_ = true;
-    num_outputs_ = Layer<T>::num_inputs_;
+    num_tops_ = Layer<T>::num_bottoms_;
   }
 
   ConvolutionParam *getConvParam() { return &conv_param_; }
@@ -188,7 +188,7 @@ class ConvolutionLayer : public Layer<T> {
                      output_dim_.c_ *
                      output_dim_.h_ *
                      output_dim_.w_;
-      for (int i = 0; i < num_outputs_; i++) {
+      for (int i = 0; i < num_tops_; i++) {
         top_chunk_ids_.push_back(
           Layer<T>::data_manager_->CreateData(top_size));
         tops_.push_back(
@@ -248,13 +248,13 @@ class ConvolutionLayer : public Layer<T> {
   void ForwardPropagation() {
     // Fill the data
     weights_->Filler();
-    for (int i = 0; i < Layer<T>::num_inputs_; i++) {
+    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
       Layer<T>::bottoms_[i]->Filler();
     }
 
     // Convolution forward computation
     cudaProfilerStart();
-    for (int i = 0; i < Layer<T>::num_inputs_; i++) {
+    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
       CUDNN_CALL(cudnnConvolutionForward(
                 Layer<T>::p_handle_->getHandle(),
                 DataType<T>::one,
@@ -285,7 +285,7 @@ class PoolingLayer : public Layer<T> {
   PoolingDesc<T> desc_;
 
   // Layer-specific output
-  int num_outputs_;
+  int num_tops_;
   DataDim output_dim_;
   DataTensor<T> top_desc_;
   std::vector<Data<T> *> tops_;
@@ -298,7 +298,7 @@ class PoolingLayer : public Layer<T> {
   : Layer<T>(p_handle),
     top_desc_(), output_dim_(), pool_param_(), desc_() {
     Layer<T>::has_learnable_params_ = true;
-    num_outputs_ = Layer<T>::num_inputs_;
+    num_tops_ = Layer<T>::num_bottoms_;
   }
 
   PoolingParam *getPoolParam() { return &pool_param_; }
@@ -331,7 +331,7 @@ class PoolingLayer : public Layer<T> {
                      output_dim_.c_ *
                      output_dim_.h_ *
                      output_dim_.w_;
-      for (int i = 0; i < num_outputs_; i++) {
+      for (int i = 0; i < num_tops_; i++) {
         top_chunk_ids_.push_back(
           Layer<T>::data_manager_->CreateData(top_size));
         tops_.push_back(
@@ -368,13 +368,13 @@ class PoolingLayer : public Layer<T> {
 
   void ForwardPropagation() {
     // Fill the data
-    for (int i = 0; i < Layer<T>::num_inputs_; i++) {
+    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
       Layer<T>::bottoms_[i]->Filler();
     }
 
     // pooling forward computation
     cudaProfilerStart();
-    for (int i = 0; i < Layer<T>::num_inputs_; i++) {
+    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
       CUDNN_CALL(cudnnPoolingForward(
              Layer<T>::p_handle_->getHandle(),
              desc_.Get(),
@@ -390,6 +390,107 @@ class PoolingLayer : public Layer<T> {
   }
 
 };
+
+template <typename T>
+class LRNLayer : public Layer<T> {
+ private:
+  LRNParam lrn_param_;
+
+  // LRN specific descriptor
+  LRNDesc<T> desc_;
+
+  // Layer-specific output
+  int num_tops_;
+  DataDim output_dim_;
+  DataTensor<T> top_desc_;
+  std::vector<Data<T> *> tops_;
+  std::vector<int> top_chunk_ids_;
+  std::vector<Data<T> *> top_diffs_;
+  std::vector<int> top_diff_chunk_ids_;
+
+ public:
+  LRNLayer(Handle *p_handle)
+  : Layer<T>(p_handle),
+    top_desc_(), output_dim_(), lrn_param_(), desc_() {
+    num_tops_ = Layer<T>::num_bottoms_;
+  }
+
+  LRNParam *getLRNParam() { return &lrn_param_; }
+
+  void Setup() {
+    // Set up indispensable stuff here
+    Layer<T>::Setup();
+
+    // Set lrning related descriptors
+    desc_.Set(lrn_param_);
+
+    // Set up lrning related data
+    if (Layer<T>::input_dim_.n_ != 0 && Layer<T>::input_dim_.c_ != 0 &&
+        Layer<T>::input_dim_.h_ != 0 && Layer<T>::input_dim_.w_ != 0) {
+      //
+      // Standalone mode
+      //
+
+      // Compute dimension of output data
+      ComputeOutputDim();
+
+      // Set top tensor
+      top_desc_.Set(output_dim_.n_,
+                    output_dim_.c_,
+                    output_dim_.h_,
+                    output_dim_.w_);
+
+      // Prepare top data
+      int top_size = output_dim_.n_ *
+                     output_dim_.c_ *
+                     output_dim_.h_ *
+                     output_dim_.w_;
+      for (int i = 0; i < num_tops_; i++) {
+        top_chunk_ids_.push_back(
+          Layer<T>::data_manager_->CreateData(top_size));
+        tops_.push_back(
+          Layer<T>::data_manager_->GetData(top_chunk_ids_[i]));
+        top_diff_chunk_ids_.push_back(
+          Layer<T>::data_manager_->CreateData(top_size));
+        top_diffs_.push_back(
+          Layer<T>::data_manager_->GetData(top_diff_chunk_ids_[i]));
+      }
+    }
+  }
+
+  void ComputeOutputDim() {
+    output_dim_.n_ = Layer<T>::input_dim_.n_;
+    output_dim_.c_ = Layer<T>::input_dim_.c_;
+    output_dim_.h_ = Layer<T>::input_dim_.h_;
+    output_dim_.w_ = Layer<T>::input_dim_.w_;
+  }
+
+  void ForwardPropagation() {
+    // Fill the data
+    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+      Layer<T>::bottoms_[i]->Filler();
+    }
+
+    // lrning forward computation
+    cudaProfilerStart();
+    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+      CUDNN_CALL(cudnnLRNCrossChannelForward(
+             Layer<T>::p_handle_->getHandle(),
+             desc_.Get(),
+             lrn_param_.mode_,
+             DataType<T>::one, 
+             Layer<T>::bottom_desc_.Get(), Layer<T>::bottoms_[i]->Get(),
+             DataType<T>::zero,
+             top_desc_.Get(), tops_[i]->Get()));
+    }
+    cudaProfilerStop();
+
+  }
+  void BackwardPropagation() {
+  }
+
+};
+
 
 } // namespace dnnmark
 

@@ -270,6 +270,8 @@ int DNNMark<T>::ParseConvolutionConfig(const std::string &config_file) {
     }
   }
 
+  LOG(INFO) << *conv_param;
+
   is.close();
   return 0;
 }
@@ -407,12 +409,122 @@ int DNNMark<T>::ParsePoolingConfig(const std::string &config_file) {
     }
   }
 
+  LOG(INFO) << *pool_param;
+
   is.close();
   return 0;
 }
 
 template <typename T>
 int DNNMark<T>::ParseLRNConfig(const std::string &config_file) {
+  std::ifstream is;
+  is.open(config_file.c_str(), std::ifstream::in);
+  LOG(INFO) << "Search and parse LRN layer configuration";
+
+  // Parse DNNMark config
+  std::string s;
+  int current_layer_id;
+  DataDim *input_dim;
+  LRNParam *lrn_param;
+  bool is_lrn_section = false;
+  while (!is.eof()) {
+    // Obtain the string in one line
+    std::getline(is, s);
+    TrimStr(&s);
+
+    // Check the specific configuration section markers
+    if (isCommentStr(s) || isEmptyStr(s)){
+      continue;
+    } else if (isSpecifiedSection(s, "[LRN]")) {
+      LOG(INFO) << "Add LRN layer";
+      is_lrn_section = true;
+      // Create a layer in the main class
+      current_layer_id = num_layers_;
+      layers_map_.emplace(current_layer_id,
+        std::make_shared<LRNLayer<T>>(&handle_));
+      layers_map_[current_layer_id]->setLayerId(current_layer_id);
+      layers_map_[current_layer_id]->setLayerType(LRN);
+      num_layers_++;
+      continue;
+    } else if (isSection(s) && is_lrn_section) {
+      break;
+    } else if (!is_lrn_section) {
+      continue;
+    }
+
+    // Obtain the acutal variable and value
+    std::string var;
+    std::string val;
+    SplitStr(s, &var, &val);
+    TrimStr(&var);
+    TrimStr(&val);
+
+    // Obtain the data dimension and parameters variable within layer class
+    input_dim = std::dynamic_pointer_cast<LRNLayer<T>>
+                (layers_map_[current_layer_id])->getInputDim();
+    lrn_param = std::dynamic_pointer_cast<LRNLayer<T>>
+                 (layers_map_[current_layer_id])->getLRNParam();
+
+    // Process all the keywords in config
+    if(isSectionKeywordExist(var, lrn_config_keywords)) {
+      if (!var.compare("n")) {
+        input_dim->n_ = atoi(val.c_str());
+        continue;
+      }
+      if (!var.compare("c")) {
+        input_dim->c_ = atoi(val.c_str());
+        continue;
+      }
+      if (!var.compare("h")) {
+        input_dim->h_ = atoi(val.c_str());
+        continue;
+      }
+      if (!var.compare("w")) {
+        input_dim->w_ = atoi(val.c_str());
+        continue;
+      }
+      if (!var.compare("name")) {
+        std::dynamic_pointer_cast<LRNLayer<T>>
+          (layers_map_[current_layer_id])->setLayerName(val.c_str());
+        name_id_map_[val] = current_layer_id;
+        continue;
+      }
+      if (!var.compare("previous_layer_name")) {
+        std::dynamic_pointer_cast<PoolingLayer<T>>
+          (layers_map_[current_layer_id])->setPrevLayerName(val.c_str());
+        continue;
+      }
+      if (!var.compare("lrn_mode")) {
+        if (!val.compare("cross_channel_dim1"))
+          lrn_param->mode_ = CUDNN_LRN_CROSS_CHANNEL_DIM1;
+        continue;
+      }
+      if (!var.compare("local_size")) {
+        lrn_param->local_size_ = atoi(val.c_str());
+        continue;
+      }
+      if (!var.compare("alpha")) {
+        lrn_param->alpha_ = atof(val.c_str());
+        continue;
+      }
+      if (!var.compare("beta")) {
+        lrn_param->beta_ = atof(val.c_str());
+        continue;
+      }
+      if (!var.compare("k")) {
+        lrn_param->k_ = atof(val.c_str());
+        continue;
+      }
+    } else {
+      std::cerr << var << "Keywords not exists" << std::endl;
+      //TODO return error
+    }
+  }
+
+  LOG(INFO) << *lrn_param;
+
+  is.close();
+  return 0;
 }
 
 template <typename T>
@@ -445,6 +557,10 @@ int DNNMark<T>::Initialize() {
         LOG(INFO) << "DNNMark: Setup parameters of Pooling layer";
         std::dynamic_pointer_cast<PoolingLayer<T>>(it->second)->Setup();
       }
+      if (it->second->getLayerType() == LRN) {
+        LOG(INFO) << "DNNMark: Setup parameters of LRN layer";
+        std::dynamic_pointer_cast<LRNLayer<T>>(it->second)->Setup();
+      }
     }
   }
   return 0;
@@ -464,6 +580,12 @@ int DNNMark<T>::RunAll() {
         std::dynamic_pointer_cast<PoolingLayer<T>>(it->second)
           ->ForwardPropagation();
         std::dynamic_pointer_cast<PoolingLayer<T>>(it->second)
+          ->BackwardPropagation();
+      }
+      if (it->second->getLayerType() == LRN) {
+        std::dynamic_pointer_cast<LRNLayer<T>>(it->second)
+          ->ForwardPropagation();
+        std::dynamic_pointer_cast<LRNLayer<T>>(it->second)
           ->BackwardPropagation();
       }
     }
@@ -487,6 +609,12 @@ int DNNMark<T>::Forward() {
           ->ForwardPropagation();
         LOG(INFO) << "DNNMark: Running pooling forward: FINISHED";
       }
+      if (it->second->getLayerType() == LRN) {
+        LOG(INFO) << "DNNMark: Running LRN forward: STARTED";
+        std::dynamic_pointer_cast<LRNLayer<T>>(it->second)
+          ->ForwardPropagation();
+        LOG(INFO) << "DNNMark: Running LRN forward: FINISHED";
+      }
     }
   }
   return 0;
@@ -507,6 +635,12 @@ int DNNMark<T>::Backward() {
         std::dynamic_pointer_cast<PoolingLayer<T>>(it->second)
           ->BackwardPropagation();
         LOG(INFO) << "DNNMark: Running pooling backward: FINISHED";
+      }
+      if (it->second->getLayerType() == LRN) {
+        LOG(INFO) << "DNNMark: Running LRN backward: STARTED";
+        std::dynamic_pointer_cast<LRNLayer<T>>(it->second)
+          ->BackwardPropagation();
+        LOG(INFO) << "DNNMark: Running LRN backward: FINISHED";
       }
     }
   }

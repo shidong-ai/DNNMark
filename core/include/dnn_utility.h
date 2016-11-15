@@ -169,6 +169,39 @@ class PoolingDesc : public Descriptor {
 
 };
 
+template <typename T>
+class LRNDesc : public Descriptor {
+ private:
+  cudnnLRNDescriptor_t lrn_desc_;
+ public:
+  LRNDesc()
+  : Descriptor() {
+    CUDNN_CALL(cudnnCreateLRNDescriptor(&lrn_desc_));
+  }
+
+  ~LRNDesc() {
+    CUDNN_CALL(cudnnDestroyLRNDescriptor(lrn_desc_));
+  }
+
+  void Set(const LRNParam &param) {
+    if (!set_) {
+      CUDNN_CALL(cudnnSetLRNDescriptor(lrn_desc_,
+                 param.local_size_,
+                 param.alpha_, param.beta_,
+                 param.k_));
+    }
+
+    set_ = true;
+  }
+
+  cudnnLRNDescriptor_t Get() {
+    if (set_)
+      return lrn_desc_;
+    return nullptr;
+  }
+
+};
+
 } // namespace dnnmark
 
 #endif // CORE_INCLUDE_DNN_UTILITY_H_
