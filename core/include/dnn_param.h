@@ -170,6 +170,12 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
+struct FullyConnectedParam {
+  int output_num_;
+  FullyConnectedParam()
+  : output_num_(4096) {}
+};
+
 } // namespace dnnmark
 
 #endif // CORE_INCLUDE_DNN_PARAM_H_

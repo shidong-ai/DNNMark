@@ -101,6 +101,11 @@ const std::vector<std::string> activation_config_keywords = {
   "activation_mode"
 };
 
+// FC layer keywords
+const std::vector<std::string> fc_config_keywords = {
+  "num_output"
+};
+
 bool isSection(const std::string &s);
 bool isSpecifiedSection(const std::string &s,
                         const char *section);

@@ -33,14 +33,19 @@ namespace dnnmark {
 class Handle {
  private:
   cudnnHandle_t *handles_;
+  cublasHandle_t *blas_handles_;
   int num_handles_;
+  int num_blas_handles_;
  public:
   Handle();
   Handle(int num);
   ~Handle();
   cudnnHandle_t getHandle();
   cudnnHandle_t getHandle(int index);
-  int num() { return num_handles_; }
+  cublasHandle_t getBlasHandle();
+  cublasHandle_t getBlasHandle(int index);
+  int num_cudnn() { return num_handles_; }
+  int num_blas() { return num_blas_handles_; }
 
 };
 

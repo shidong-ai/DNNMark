@@ -27,7 +27,10 @@ namespace dnnmark {
 Handle::Handle() {
   handles_ = new cudnnHandle_t[1];
   CUDNN_CALL(cudnnCreate(&handles_[0]));
+  blas_handles_ = new cublasHandle_t[1];
+  CUBLAS_CALL(cublasCreate(&blas_handles_[0]));
   num_handles_ = 1;
+  num_blas_handles_ = 1;
 }
 
 Handle::Handle(int num) {
@@ -35,16 +38,26 @@ Handle::Handle(int num) {
   for (int i = 0; i < num; i++)
     CUDNN_CALL(cudnnCreate(&handles_[i]));
   num_handles_ = num;
+
+  blas_handles_ = new cublasHandle_t[num];
+  for (int i = 0; i < num; i++)
+    CUBLAS_CALL(cublasCreate(&blas_handles_[i]));
+  num_blas_handles_ = num;
 }
 
 Handle::~Handle() {
   for (int i = 0; i < num_handles_; i++)
     CUDNN_CALL(cudnnDestroy(handles_[i]));
   delete []handles_;
+  for (int i = 0; i < num_blas_handles_; i++)
+    CUBLAS_CALL(cublasDestroy(blas_handles_[i]));
+  delete []blas_handles_;
 }
 
 cudnnHandle_t Handle::getHandle() { return handles_[0]; }
 cudnnHandle_t Handle::getHandle(int index) { return handles_[index]; }
+cublasHandle_t Handle::getBlasHandle() { return blas_handles_[0]; }
+cublasHandle_t Handle::getBlasHandle(int index) { return blas_handles_[index]; }
 
 Descriptor::Descriptor()
 : set_(false) {}

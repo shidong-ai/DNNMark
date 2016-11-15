@@ -43,6 +43,7 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
   PoolingParam *pool_param;
   LRNParam *lrn_param;
   ActivationParam *activation_param;
+  FullyConnectedParam *fc_param;
   CHECK_GT(num_layers_, 0);
 
   switch(layer_type) {
@@ -224,7 +225,23 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
       break;
     } // End of case ACTIVATION
     case FC: {
+      // Obtain the data dimension and parameters variable within layer class
+      input_dim = std::dynamic_pointer_cast<FullyConnectedLayer<T>>
+                  (layers_map_[current_layer_id])->getInputDim();
+      fc_param = std::dynamic_pointer_cast<FullyConnectedLayer<T>>
+                 (layers_map_[current_layer_id])->getFullyConnectedParam();
 
+      if(isKeywordExist(var, data_config_keywords))
+        break;
+
+      // Process all the keywords in config
+      if(isKeywordExist(var, fc_config_keywords)) {
+        if (!var.compare("num_output")) {
+          fc_param->output_num_ = atoi(val.c_str());
+        }
+      } else {
+        LOG(FATAL) << var << ": Keywords not exists" << std::endl;
+      }
       break;
     } // End of case FC
     case SOFTMAX: {
@@ -390,6 +407,9 @@ int DNNMark<T>::ParseSpecifiedConfig(const std::string &config_file,
       else if (layer_type == ACTIVATION)
         layers_map_.emplace(current_layer_id,
           std::make_shared<ActivationLayer<T>>(&handle_));
+      else if (layer_type == FC)
+        layers_map_.emplace(current_layer_id,
+          std::make_shared<FullyConnectedLayer<T>>(&handle_));
       layers_map_[current_layer_id]->setLayerId(current_layer_id);
       layers_map_[current_layer_id]->setLayerType(layer_type);
       num_layers_++;
@@ -439,6 +459,10 @@ int DNNMark<T>::Initialize() {
         LOG(INFO) << "DNNMark: Setup parameters of Activation layer";
         std::dynamic_pointer_cast<ActivationLayer<T>>(it->second)->Setup();
       }
+      if (it->second->getLayerType() == FC) {
+        LOG(INFO) << "DNNMark: Setup parameters of Fully Connected layer";
+        std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)->Setup();
+      }
     }
   }
   return 0;
@@ -470,6 +494,12 @@ int DNNMark<T>::RunAll() {
         std::dynamic_pointer_cast<ActivationLayer<T>>(it->second)
           ->ForwardPropagation();
         std::dynamic_pointer_cast<ActivationLayer<T>>(it->second)
+          ->BackwardPropagation();
+      }
+      if (it->second->getLayerType() == FC) {
+        std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)
+          ->ForwardPropagation();
+        std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)
           ->BackwardPropagation();
       }
     }
@@ -505,6 +535,12 @@ int DNNMark<T>::Forward() {
           ->ForwardPropagation();
         LOG(INFO) << "DNNMark: Running Activation forward: FINISHED";
       }
+      if (it->second->getLayerType() == FC) {
+        LOG(INFO) << "DNNMark: Running FullyConnected forward: STARTED";
+        std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)
+          ->ForwardPropagation();
+        LOG(INFO) << "DNNMark: Running FullyConnected forward: FINISHED";
+      }
     }
   }
   return 0;
@@ -537,6 +573,12 @@ int DNNMark<T>::Backward() {
         std::dynamic_pointer_cast<ActivationLayer<T>>(it->second)
           ->BackwardPropagation();
         LOG(INFO) << "DNNMark: Running Activation backward: FINISHED";
+      }
+      if (it->second->getLayerType() == FC) {
+        LOG(INFO) << "DNNMark: Running FullyConnected backward: STARTED";
+        std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)
+          ->BackwardPropagation();
+        LOG(INFO) << "DNNMark: Running FullyConnected backward: FINISHED";
       }
     }
   }

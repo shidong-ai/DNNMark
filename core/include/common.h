@@ -23,10 +23,12 @@
 #ifndef CORE_INCLUDE_COMMON_H_
 #define CORE_INCLUDE_COMMON_H_
 
+#include <iostream>
 #include <cuda.h>
 #include <cuda_profiler_api.h>
 #include <curand.h>
 #include <cudnn.h>
+#include <cublas_v2.h>
 
 namespace dnnmark {
 

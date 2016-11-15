@@ -581,6 +581,139 @@ class ActivationLayer : public Layer<T> {
 
 };
 
+template <typename T>
+class FullyConnectedLayer : public Layer<T> {
+ private:
+  FullyConnectedParam fc_param_;
+
+  // Layer-specific output
+  int num_tops_;
+  DataDim output_dim_;
+  DataTensor<T> top_desc_;
+  std::vector<Data<T> *> tops_;
+  std::vector<int> top_chunk_ids_;
+  std::vector<Data<T> *> top_diffs_;
+  std::vector<int> top_diff_chunk_ids_;
+
+  // Weights demension
+  int num_rows_weights_;
+  int num_cols_weights_;
+  T scale_alpha_;
+  T scale_beta_;
+
+  // Layer weights
+  Data<T> *weights_;
+  int weights_chunk_id_;
+  Data<T> *weights_diff_;
+  int weights_diff_chunk_id_;
+
+ public:
+  FullyConnectedLayer(Handle *p_handle)
+  : Layer<T>(p_handle),
+    top_desc_(), output_dim_(), fc_param_() {
+    num_tops_ = Layer<T>::num_bottoms_;
+  }
+
+  FullyConnectedParam *getFullyConnectedParam() { return &fc_param_; }
+
+  void Setup() {
+    // Set up indispensable stuff here
+    Layer<T>::Setup();
+
+    // Set up fcing related data
+    if (Layer<T>::input_dim_.n_ != 0 && Layer<T>::input_dim_.c_ != 0 &&
+        Layer<T>::input_dim_.h_ != 0 && Layer<T>::input_dim_.w_ != 0) {
+      //
+      // Standalone mode
+      //
+
+      // Compute dimension of output data
+      ComputeOutputDim();
+
+      // Set top tensor
+      top_desc_.Set(output_dim_.n_,
+                    output_dim_.c_,
+                    output_dim_.h_,
+                    output_dim_.w_);
+
+      // Prepare top data
+      int top_size = output_dim_.n_ *
+                     output_dim_.c_ *
+                     output_dim_.h_ *
+                     output_dim_.w_;
+      for (int i = 0; i < num_tops_; i++) {
+        top_chunk_ids_.push_back(
+          Layer<T>::data_manager_->CreateData(top_size));
+        tops_.push_back(
+          Layer<T>::data_manager_->GetData(top_chunk_ids_[i]));
+        top_diff_chunk_ids_.push_back(
+          Layer<T>::data_manager_->CreateData(top_size));
+        top_diffs_.push_back(
+          Layer<T>::data_manager_->GetData(top_diff_chunk_ids_[i]));
+      }
+
+      // Only one set of weights is considered
+      num_rows_weights_ = Layer<T>::input_dim_.c_ *
+                             Layer<T>::input_dim_.h_ *
+                             Layer<T>::input_dim_.w_;
+      num_cols_weights_ = fc_param_.output_num_;
+      int weights_size = num_rows_weights_ * num_cols_weights_;
+      weights_chunk_id_ = Layer<T>::data_manager_->CreateData(weights_size);
+      weights_ = Layer<T>::data_manager_->GetData(weights_chunk_id_);
+      weights_diff_chunk_id_ =
+        Layer<T>::data_manager_->CreateData(weights_size);
+      weights_diff_ = Layer<T>::data_manager_->GetData(weights_diff_chunk_id_);
+
+      scale_alpha_ = (T)1.0;
+      scale_beta_ = (T)0.0;
+    }
+  }
+
+  void ComputeOutputDim() {
+    output_dim_.n_ = Layer<T>::input_dim_.n_;
+    output_dim_.c_ = fc_param_.output_num_;
+    output_dim_.h_ = 1;
+    output_dim_.w_ = 1;
+  }
+
+  void ForwardPropagation() {
+    // Fill the data
+    weights_->Filler();
+    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+      Layer<T>::bottoms_[i]->Filler();
+    }
+
+    // Prepare CuBLAS parameters
+    int M = fc_param_.output_num_;
+    int N = Layer<T>::input_dim_.n_;;
+    int K = num_rows_weights_;
+    int lda = K;
+    int ldb = K;
+    int ldc = M;
+
+    // Fully connected forward computation
+    cudaProfilerStart();
+    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+      // Y = T(W) * X                                                               
+      DNNMarkGEMM(Layer<T>::p_handle_->getBlasHandle(),
+                  CUBLAS_OP_T, CUBLAS_OP_N,
+                  M, N, K,
+                  &scale_alpha_,
+                  weights_->Get(), lda,
+                  Layer<T>::bottoms_[i]->Get(), ldb,
+                  &scale_beta_,
+                  tops_[i]->Get(), ldc);
+    }
+    cudaProfilerStop();
+
+  }
+
+  void BackwardPropagation() {
+  }
+
+};
+
+
 } // namespace dnnmark
 
 #endif // CORE_INCLUDE_DNN_LAYER_H_
