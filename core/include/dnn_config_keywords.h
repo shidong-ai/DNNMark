@@ -36,7 +36,7 @@ const std::vector<std::string> section_keywords = {
   "[Pooling]",
   "[LRN]",
   "[Activation]",
-  "[FC]",
+  "[FullyConnected]",
   "[Softmax]"
 };
 

@@ -202,6 +202,40 @@ class LRNDesc : public Descriptor {
 
 };
 
+template <typename T>
+class ActivationDesc : public Descriptor {
+ private:
+  cudnnActivationDescriptor_t activation_desc_;
+ public:
+  ActivationDesc()
+  : Descriptor() {
+    CUDNN_CALL(cudnnCreateActivationDescriptor(&activation_desc_));
+  }
+
+  ~ActivationDesc() {
+    CUDNN_CALL(cudnnDestroyActivationDescriptor(activation_desc_));
+  }
+
+  void Set(const ActivationParam &param) {
+    if (!set_) {
+      CUDNN_CALL(cudnnSetActivationDescriptor(activation_desc_,
+                 param.mode_,
+                 CUDNN_PROPAGATE_NAN,
+                 double(0.0)));
+    }
+
+    set_ = true;
+  }
+
+  cudnnActivationDescriptor_t Get() {
+    if (set_)
+      return activation_desc_;
+    return nullptr;
+  }
+
+};
+
+
 } // namespace dnnmark
 
 #endif // CORE_INCLUDE_DNN_UTILITY_H_

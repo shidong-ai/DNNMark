@@ -100,8 +100,8 @@ template <> class DataType<double> {
 enum LayerType {
   CONVOLUTION = 1,
   POOLING,
-  ACTIVATION,
   LRN,
+  ACTIVATION,
   FC,
   SOFTMAX
 };

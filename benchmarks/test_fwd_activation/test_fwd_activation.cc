@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
   LOG(INFO) << "DNNMark suites: Start...";
   DNNMark<TestType> dnnmark;
   dnnmark.ParseGeneralConfig(FLAGS_config);
-  dnnmark.ParseSpecifiedConfig(FLAGS_config, POOLING);
+  dnnmark.ParseSpecifiedConfig(FLAGS_config, ACTIVATION);
   dnnmark.Initialize();
   dnnmark.Forward();
   LOG(INFO) << "DNNMark suites: Tear down...";

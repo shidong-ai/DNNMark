@@ -42,6 +42,7 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
   ConvolutionParam *conv_param;
   PoolingParam *pool_param;
   LRNParam *lrn_param;
+  ActivationParam *activation_param;
   CHECK_GT(num_layers_, 0);
 
   switch(layer_type) {
@@ -196,7 +197,30 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
       break;
     } // End of case LRN
     case ACTIVATION: {
+      // Obtain the data dimension and parameters variable within layer class
+      input_dim = std::dynamic_pointer_cast<ActivationLayer<T>>
+                  (layers_map_[current_layer_id])->getInputDim();
+      activation_param = std::dynamic_pointer_cast<ActivationLayer<T>>
+                   (layers_map_[current_layer_id])->getActivationParam();
 
+      if(isKeywordExist(var, data_config_keywords))
+        break;
+
+      // Process all the keywords in config
+      if(isKeywordExist(var, activation_config_keywords)) {
+        if (!var.compare("activation_mode")) {
+          if (!val.compare("sigmoid"))
+            activation_param->mode_ = CUDNN_ACTIVATION_SIGMOID;
+          else if (!val.compare("relu"))
+            activation_param->mode_ = CUDNN_ACTIVATION_RELU;
+          else if (!val.compare("tanh"))
+            activation_param->mode_ = CUDNN_ACTIVATION_TANH;
+          else if (!val.compare("relu"))
+            activation_param->mode_ = CUDNN_ACTIVATION_CLIPPED_RELU;
+        }
+      } else {
+        LOG(FATAL) << var << ": Keywords not exists" << std::endl;
+      }
       break;
     } // End of case ACTIVATION
     case FC: {
@@ -289,8 +313,7 @@ int DNNMark<T>::ParseGeneralConfig(const std::string &config_file) {
           std::cerr << "Unknown run mode" << std::endl;
       }
     } else {
-      std::cerr << var << "Keywords not exists" << std::endl;
-      //TODO return error
+      LOG(FATAL) << var << ": Keywords not exists" << std::endl;
     }
   }
 
@@ -364,6 +387,9 @@ int DNNMark<T>::ParseSpecifiedConfig(const std::string &config_file,
       else if (layer_type == LRN)
         layers_map_.emplace(current_layer_id,
           std::make_shared<LRNLayer<T>>(&handle_));
+      else if (layer_type == ACTIVATION)
+        layers_map_.emplace(current_layer_id,
+          std::make_shared<ActivationLayer<T>>(&handle_));
       layers_map_[current_layer_id]->setLayerId(current_layer_id);
       layers_map_[current_layer_id]->setLayerType(layer_type);
       num_layers_++;
@@ -409,6 +435,10 @@ int DNNMark<T>::Initialize() {
         LOG(INFO) << "DNNMark: Setup parameters of LRN layer";
         std::dynamic_pointer_cast<LRNLayer<T>>(it->second)->Setup();
       }
+      if (it->second->getLayerType() == ACTIVATION) {
+        LOG(INFO) << "DNNMark: Setup parameters of Activation layer";
+        std::dynamic_pointer_cast<ActivationLayer<T>>(it->second)->Setup();
+      }
     }
   }
   return 0;
@@ -434,6 +464,12 @@ int DNNMark<T>::RunAll() {
         std::dynamic_pointer_cast<LRNLayer<T>>(it->second)
           ->ForwardPropagation();
         std::dynamic_pointer_cast<LRNLayer<T>>(it->second)
+          ->BackwardPropagation();
+      }
+      if (it->second->getLayerType() == ACTIVATION) {
+        std::dynamic_pointer_cast<ActivationLayer<T>>(it->second)
+          ->ForwardPropagation();
+        std::dynamic_pointer_cast<ActivationLayer<T>>(it->second)
           ->BackwardPropagation();
       }
     }
@@ -463,6 +499,12 @@ int DNNMark<T>::Forward() {
           ->ForwardPropagation();
         LOG(INFO) << "DNNMark: Running LRN forward: FINISHED";
       }
+      if (it->second->getLayerType() == ACTIVATION) {
+        LOG(INFO) << "DNNMark: Running Activation forward: STARTED";
+        std::dynamic_pointer_cast<ActivationLayer<T>>(it->second)
+          ->ForwardPropagation();
+        LOG(INFO) << "DNNMark: Running Activation forward: FINISHED";
+      }
     }
   }
   return 0;
@@ -489,6 +531,12 @@ int DNNMark<T>::Backward() {
         std::dynamic_pointer_cast<LRNLayer<T>>(it->second)
           ->BackwardPropagation();
         LOG(INFO) << "DNNMark: Running LRN backward: FINISHED";
+      }
+      if (it->second->getLayerType() == ACTIVATION) {
+        LOG(INFO) << "DNNMark: Running Activation backward: STARTED";
+        std::dynamic_pointer_cast<ActivationLayer<T>>(it->second)
+          ->BackwardPropagation();
+        LOG(INFO) << "DNNMark: Running Activation backward: FINISHED";
       }
     }
   }

@@ -482,6 +482,104 @@ class LRNLayer : public Layer<T> {
 
 };
 
+template <typename T>
+class ActivationLayer : public Layer<T> {
+ private:
+  ActivationParam activation_param_;
+
+  // Activation specific descriptor
+  ActivationDesc<T> desc_;
+
+  // Layer-specific output
+  int num_tops_;
+  DataDim output_dim_;
+  DataTensor<T> top_desc_;
+  std::vector<Data<T> *> tops_;
+  std::vector<int> top_chunk_ids_;
+  std::vector<Data<T> *> top_diffs_;
+  std::vector<int> top_diff_chunk_ids_;
+
+ public:
+  ActivationLayer(Handle *p_handle)
+  : Layer<T>(p_handle),
+    top_desc_(), output_dim_(), activation_param_(), desc_() {
+    num_tops_ = Layer<T>::num_bottoms_;
+  }
+
+  ActivationParam *getActivationParam() { return &activation_param_; }
+
+  void Setup() {
+    // Set up indispensable stuff here
+    Layer<T>::Setup();
+
+    // Set activationing related descriptors
+    desc_.Set(activation_param_);
+
+    // Set up activationing related data
+    if (Layer<T>::input_dim_.n_ != 0 && Layer<T>::input_dim_.c_ != 0 &&
+        Layer<T>::input_dim_.h_ != 0 && Layer<T>::input_dim_.w_ != 0) {
+      //
+      // Standalone mode
+      //
+
+      // Compute dimension of output data
+      ComputeOutputDim();
+
+      // Set top tensor
+      top_desc_.Set(output_dim_.n_,
+                    output_dim_.c_,
+                    output_dim_.h_,
+                    output_dim_.w_);
+
+      // Prepare top data
+      int top_size = output_dim_.n_ *
+                     output_dim_.c_ *
+                     output_dim_.h_ *
+                     output_dim_.w_;
+      for (int i = 0; i < num_tops_; i++) {
+        top_chunk_ids_.push_back(
+          Layer<T>::data_manager_->CreateData(top_size));
+        tops_.push_back(
+          Layer<T>::data_manager_->GetData(top_chunk_ids_[i]));
+        top_diff_chunk_ids_.push_back(
+          Layer<T>::data_manager_->CreateData(top_size));
+        top_diffs_.push_back(
+          Layer<T>::data_manager_->GetData(top_diff_chunk_ids_[i]));
+      }
+    }
+  }
+
+  void ComputeOutputDim() {
+    output_dim_.n_ = Layer<T>::input_dim_.n_;
+    output_dim_.c_ = Layer<T>::input_dim_.c_;
+    output_dim_.h_ = Layer<T>::input_dim_.h_;
+    output_dim_.w_ = Layer<T>::input_dim_.w_;
+  }
+
+  void ForwardPropagation() {
+    // Fill the data
+    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+      Layer<T>::bottoms_[i]->Filler();
+    }
+
+    // activationing forward computation
+    cudaProfilerStart();
+    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+      CUDNN_CALL(cudnnActivationForward(
+             Layer<T>::p_handle_->getHandle(),
+             desc_.Get(),
+             DataType<T>::one, 
+             Layer<T>::bottom_desc_.Get(), Layer<T>::bottoms_[i]->Get(),
+             DataType<T>::zero,
+             top_desc_.Get(), tops_[i]->Get()));
+    }
+    cudaProfilerStop();
+
+  }
+  void BackwardPropagation() {
+  }
+
+};
 
 } // namespace dnnmark
 

@@ -156,6 +156,20 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
+struct ActivationParam {
+  cudnnActivationMode_t mode_;
+  ActivationParam()
+  : mode_(CUDNN_ACTIVATION_RELU) {}
+};
+
+inline std::ostream &operator<<(std::ostream &os,
+                                const ActivationParam &activation_param) {
+  os << std::endl;
+  os << "[Activation Param] Mode: "
+     << activation_param.mode_ << std::endl;
+  return os;
+}
+
 } // namespace dnnmark
 
 #endif // CORE_INCLUDE_DNN_PARAM_H_
