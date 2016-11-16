@@ -319,6 +319,10 @@ class ConvolutionLayer : public Layer<T> {
       tops_[i]->Filler();
       top_diffs_[i]->Filler();
     }
+    // Fill the bottom data
+    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+      Layer<T>::bottoms_[i]->Filler();
+    }
 
     // Convolution forward computation
     cudaProfilerStart();
@@ -445,7 +449,7 @@ class PoolingLayer : public Layer<T> {
   }
 
   void ForwardPropagation() {
-    // Fill the data
+    // Fill the bottom data
     for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
       Layer<T>::bottoms_[i]->Filler();
     }
@@ -465,6 +469,32 @@ class PoolingLayer : public Layer<T> {
 
   }
   void BackwardPropagation() {
+    // Fill the top and top diff data
+    for (int i = 0; i < num_tops_; i++) {
+      tops_[i]->Filler();
+      top_diffs_[i]->Filler();
+    }
+    // Fill the bottom data
+    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+      Layer<T>::bottoms_[i]->Filler();
+    }
+
+    // pooling backward computation
+    cudaProfilerStart();
+    for (int i = 0; i < num_tops_; i++) {
+      CUDNN_CALL(cudnnPoolingBackward(
+             Layer<T>::p_handle_->getHandle(),
+             desc_.Get(),
+             DataType<T>::one, 
+             top_desc_.Get(), tops_[i]->Get(),
+             top_desc_.Get(), top_diffs_[i]->Get(),
+             Layer<T>::bottom_desc_.Get(),
+             Layer<T>::bottoms_[i]->Get(),
+             DataType<T>::zero,
+             Layer<T>::bottom_desc_.Get(),
+             Layer<T>::bottom_diffs_[i]->Get()));
+    }
+    cudaProfilerStop();
   }
 
 };
@@ -544,12 +574,12 @@ class LRNLayer : public Layer<T> {
   }
 
   void ForwardPropagation() {
-    // Fill the data
+    // Fill the bottom data
     for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
       Layer<T>::bottoms_[i]->Filler();
     }
 
-    // lrning forward computation
+    // lrn forward computation
     cudaProfilerStart();
     for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
       CUDNN_CALL(cudnnLRNCrossChannelForward(
@@ -565,6 +595,33 @@ class LRNLayer : public Layer<T> {
 
   }
   void BackwardPropagation() {
+    // Fill the top and top diff data
+    for (int i = 0; i < num_tops_; i++) {
+      tops_[i]->Filler();
+      top_diffs_[i]->Filler();
+    }
+    // Fill the bottom data
+    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+      Layer<T>::bottoms_[i]->Filler();
+    }
+
+    // lrn backward computation
+    cudaProfilerStart();
+    for (int i = 0; i < num_tops_; i++) {
+      CUDNN_CALL(cudnnLRNCrossChannelBackward(
+             Layer<T>::p_handle_->getHandle(),
+             desc_.Get(),
+             lrn_param_.mode_,
+             DataType<T>::one, 
+             top_desc_.Get(), tops_[i]->Get(),
+             top_desc_.Get(), top_diffs_[i]->Get(),
+             Layer<T>::bottom_desc_.Get(),
+             Layer<T>::bottoms_[i]->Get(),
+             DataType<T>::zero,
+             Layer<T>::bottom_desc_.Get(),
+             Layer<T>::bottom_diffs_[i]->Get()));
+    }
+    cudaProfilerStop();
   }
 
 };
@@ -644,7 +701,7 @@ class ActivationLayer : public Layer<T> {
   }
 
   void ForwardPropagation() {
-    // Fill the data
+    // Fill the bottom data
     for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
       Layer<T>::bottoms_[i]->Filler();
     }
@@ -664,6 +721,30 @@ class ActivationLayer : public Layer<T> {
 
   }
   void BackwardPropagation() {
+    // Fill the top and top diff data
+    for (int i = 0; i < num_tops_; i++) {
+      tops_[i]->Filler();
+      top_diffs_[i]->Filler();
+    }
+    // Fill the bottom data
+    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+      Layer<T>::bottoms_[i]->Filler();
+    }
+
+    // activationing backward computation
+    cudaProfilerStart();
+    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+      CUDNN_CALL(cudnnActivationBackward(
+             Layer<T>::p_handle_->getHandle(),
+             desc_.Get(),
+             DataType<T>::one, 
+             top_desc_.Get(), tops_[i]->Get(),
+             top_desc_.Get(), top_diffs_[i]->Get(),
+             Layer<T>::bottom_desc_.Get(), Layer<T>::bottoms_[i]->Get(),
+             DataType<T>::zero,
+             Layer<T>::bottom_desc_.Get(), Layer<T>::bottom_diffs_[i]->Get()));
+    }
+    cudaProfilerStop();
   }
 
 };
@@ -738,22 +819,25 @@ class FullyConnectedLayer : public Layer<T> {
         top_diffs_.push_back(
           Layer<T>::data_manager_->GetData(top_diff_chunk_ids_[i]));
       }
-
-      // Only one set of weights is considered
-      num_rows_weights_ = Layer<T>::input_dim_.c_ *
-                             Layer<T>::input_dim_.h_ *
-                             Layer<T>::input_dim_.w_;
-      num_cols_weights_ = fc_param_.output_num_;
-      int weights_size = num_rows_weights_ * num_cols_weights_;
-      weights_chunk_id_ = Layer<T>::data_manager_->CreateData(weights_size);
-      weights_ = Layer<T>::data_manager_->GetData(weights_chunk_id_);
-      weights_diff_chunk_id_ =
-        Layer<T>::data_manager_->CreateData(weights_size);
-      weights_diff_ = Layer<T>::data_manager_->GetData(weights_diff_chunk_id_);
-
-      scale_alpha_ = (T)1.0;
-      scale_beta_ = (T)0.0;
     }
+
+    // Only one set of weights is considered
+    num_rows_weights_ = Layer<T>::input_dim_.c_ *
+                           Layer<T>::input_dim_.h_ *
+                           Layer<T>::input_dim_.w_;
+    num_cols_weights_ = fc_param_.output_num_;
+    int weights_size = num_rows_weights_ * num_cols_weights_;
+    weights_chunk_id_ = Layer<T>::data_manager_->CreateData(weights_size);
+    weights_ = Layer<T>::data_manager_->GetData(weights_chunk_id_);
+    weights_diff_chunk_id_ =
+      Layer<T>::data_manager_->CreateData(weights_size);
+    weights_diff_ = Layer<T>::data_manager_->GetData(weights_diff_chunk_id_);
+
+    // Fill the weight data
+    weights_->Filler();
+
+    scale_alpha_ = (T)1.0;
+    scale_beta_ = (T)0.0;
   }
 
   void ComputeOutputDim() {
@@ -764,8 +848,7 @@ class FullyConnectedLayer : public Layer<T> {
   }
 
   void ForwardPropagation() {
-    // Fill the data
-    weights_->Filler();
+    // Fill the bottom data
     for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
       Layer<T>::bottoms_[i]->Filler();
     }
@@ -777,13 +860,15 @@ class FullyConnectedLayer : public Layer<T> {
     int lda = K;
     int ldb = K;
     int ldc = M;
+    bool is_a_transpose = true;
+    bool is_b_transpose = false;
 
     // Fully connected forward computation
     cudaProfilerStart();
     for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
       // Y = T(W) * X                                                               
       DNNMarkGEMM(Layer<T>::p_handle_->getBlasHandle(),
-                  CUBLAS_OP_T, CUBLAS_OP_N,
+                  is_a_transpose, is_b_transpose,
                   M, N, K,
                   &scale_alpha_,
                   weights_->Get(), lda,
@@ -796,6 +881,64 @@ class FullyConnectedLayer : public Layer<T> {
   }
 
   void BackwardPropagation() {
+    // Fill the top and top diff data
+    for (int i = 0; i < num_tops_; i++) {
+      tops_[i]->Filler();
+      tops_[i]->Filler();
+    }
+    // Fill the bottom data
+    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+      Layer<T>::bottoms_[i]->Filler();
+    }
+
+    // Prepare CuBLAS parameters for calculating d(W)
+    int M = num_rows_weights_; 
+    int N = fc_param_.output_num_;
+    int K = Layer<T>::input_dim_.n_;
+    int lda = M;
+    int ldb = N;
+    int ldc = M;
+    bool is_a_transpose = false;
+    bool is_b_transpose = true;
+
+    // Fully connected backward weights computation
+    cudaProfilerStart();
+    for (int i = 0; i < num_tops_; i++) {
+      // d(W) = X * T(d(Y))
+      DNNMarkGEMM(Layer<T>::p_handle_->getBlasHandle(),
+                  is_a_transpose, is_b_transpose,
+                  M, N, K,
+                  &scale_alpha_,
+                  Layer<T>::bottoms_[i]->Get(), lda,
+                  top_diffs_[i]->Get(), ldb,
+                  &scale_beta_,
+                  weights_diff_->Get(), ldc);
+    }
+    cudaProfilerStop();
+
+    M = num_rows_weights_;
+    N = Layer<T>::input_dim_.n_;
+    K = fc_param_.output_num_;
+    lda = M;
+    ldb = K;
+    ldc = M;
+    is_a_transpose = false;
+    is_b_transpose = false;
+
+    // Fully connected backward data computation
+    cudaProfilerStart();
+    for (int i = 0; i < num_tops_; i++) {
+      // d(X) = W * d(Y)
+      DNNMarkGEMM(Layer<T>::p_handle_->getBlasHandle(),
+                  is_a_transpose, is_b_transpose,
+                  M, N, K,
+                  &scale_alpha_,
+                  weights_->Get(), lda,
+                  top_diffs_[i]->Get(), ldb,
+                  &scale_beta_,
+                  Layer<T>::bottom_diffs_[i]->Get(), ldc);
+    }
+    cudaProfilerStop();
   }
 
 };
@@ -870,12 +1013,12 @@ class SoftmaxLayer : public Layer<T> {
   }
 
   void ForwardPropagation() {
-    // Fill the data
+    // Fill the bottom data
     for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
       Layer<T>::bottoms_[i]->Filler();
     }
 
-    // Fully connected forward computation
+    // Softmax forward computation
     cudaProfilerStart();
     for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
       CUDNN_CALL(cudnnSoftmaxForward(
@@ -892,6 +1035,31 @@ class SoftmaxLayer : public Layer<T> {
   }
 
   void BackwardPropagation() {
+    // Fill the top and top diff data
+    for (int i = 0; i < num_tops_; i++) {
+      tops_[i]->Filler();
+      top_diffs_[i]->Filler();
+    }
+    // Fill the bottom data
+    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+      Layer<T>::bottoms_[i]->Filler();
+    }
+
+    // Softmax backward computation
+    cudaProfilerStart();
+    for (int i = 0; i < num_tops_; i++) {
+      CUDNN_CALL(cudnnSoftmaxBackward(
+              Layer<T>::p_handle_->getHandle(),
+              softmax_param_.algo_,
+              softmax_param_.mode_,
+              DataType<T>::one,
+              top_desc_.Get(), tops_[i]->Get(),
+              top_desc_.Get(), top_diffs_[i]->Get(),
+              DataType<T>::zero,
+              Layer<T>::bottom_desc_.Get(),
+              Layer<T>::bottom_diffs_[i]->Get()));
+    }
+    cudaProfilerStop();
   }
 
 };
