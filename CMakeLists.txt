@@ -121,7 +121,7 @@ if (enable-benchmarking)
 
   # Invoke cmake files of each benchmark
   add_subdirectory(benchmarks/test_fwd_conv)
-  #add_subdirectory(benchmarks/test_bwd_conv)
+  add_subdirectory(benchmarks/test_bwd_conv)
   add_subdirectory(benchmarks/test_fwd_pool)
   #add_subdirectory(benchmarks/test_bwd_pool)
   add_subdirectory(benchmarks/test_fwd_lrn)

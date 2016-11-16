@@ -137,10 +137,14 @@ class ConvolutionLayer : public Layer<T> {
 
   // Algorithm specific parameters
   cudnnConvolutionFwdAlgo_t fwd_algo_;
+  cudnnConvolutionBwdFilterAlgo_t bwd_filter_algo_;
+  cudnnConvolutionBwdDataAlgo_t bwd_data_algo_;
   size_t fwd_workspace_size_;
-  size_t bwd_workspace_data_size_;
-  size_t bwd_workspace_filter_size_;
-  void *workspace_;
+  size_t bwd_data_workspace_size_;
+  size_t bwd_filter_workspace_size_;
+  void *fwd_workspace_;
+  void *bwd_data_workspace_;
+  void *bwd_filter_workspace_;
  public:
   ConvolutionLayer(Handle *p_handle)
   : Layer<T>(p_handle),
@@ -190,17 +194,22 @@ class ConvolutionLayer : public Layer<T> {
           Layer<T>::data_manager_->GetData(top_diff_chunk_ids_[i]));
       }
 
-      // Only one set of weights is considered
-      int weights_size = conv_param_.output_num_ *
-                         Layer<T>::input_dim_.c_ *
-                         conv_param_.kernel_size_h_ *
-                         conv_param_.kernel_size_w_;
-      weights_chunk_id_ = Layer<T>::data_manager_->CreateData(weights_size);
-      weights_ = Layer<T>::data_manager_->GetData(weights_chunk_id_);
-      weights_diff_chunk_id_ =
-        Layer<T>::data_manager_->CreateData(weights_size);
-      weights_diff_ = Layer<T>::data_manager_->GetData(weights_diff_chunk_id_);
     }
+
+    // Only one set of weights is considered
+    int weights_size = conv_param_.output_num_ *
+                       Layer<T>::input_dim_.c_ *
+                       conv_param_.kernel_size_h_ *
+                       conv_param_.kernel_size_w_;
+    weights_chunk_id_ = Layer<T>::data_manager_->CreateData(weights_size);
+    weights_ = Layer<T>::data_manager_->GetData(weights_chunk_id_);
+    weights_diff_chunk_id_ =
+      Layer<T>::data_manager_->CreateData(weights_size);
+    weights_diff_ = Layer<T>::data_manager_->GetData(weights_diff_chunk_id_);
+
+    // Fill the weight data
+    weights_->Filler();
+
 
     // Set up convolution forward algorithm related parameters
     CUDNN_CALL(cudnnGetConvolutionForwardAlgorithm(
@@ -221,8 +230,51 @@ class ConvolutionLayer : public Layer<T> {
         top_desc_.Get(),
         fwd_algo_,
         &fwd_workspace_size_));
-    CUDA_CALL(cudaMalloc(&workspace_, fwd_workspace_size_));
 
+    CUDA_CALL(cudaMalloc(&fwd_workspace_, fwd_workspace_size_));
+
+    // Set up convolution backward algorithm related parameters
+    CUDNN_CALL(cudnnGetConvolutionBackwardFilterAlgorithm(
+        Layer<T>::p_handle_->getHandle(),
+        Layer<T>::bottom_desc_.Get(),
+        top_desc_.Get(),
+        desc_.GetConv(),
+        desc_.GetFilter(),
+        conv_param_.conv_bwd_filter_pref_,
+        -1,
+        &bwd_filter_algo_));
+  
+    CUDNN_CALL(cudnnGetConvolutionBackwardFilterWorkspaceSize(
+        Layer<T>::p_handle_->getHandle(),
+        Layer<T>::bottom_desc_.Get(),
+        top_desc_.Get(),
+        desc_.GetConv(),
+        desc_.GetFilter(),
+        bwd_filter_algo_,
+        &bwd_filter_workspace_size_));
+
+    CUDA_CALL(cudaMalloc(&bwd_filter_workspace_, bwd_filter_workspace_size_));
+
+    CUDNN_CALL(cudnnGetConvolutionBackwardDataAlgorithm(
+        Layer<T>::p_handle_->getHandle(),
+        desc_.GetFilter(),
+        top_desc_.Get(),
+        desc_.GetConv(),
+        Layer<T>::bottom_desc_.Get(),
+        conv_param_.conv_bwd_data_pref_,
+        -1,
+        &bwd_data_algo_));
+  
+    CUDNN_CALL(cudnnGetConvolutionBackwardDataWorkspaceSize(
+        Layer<T>::p_handle_->getHandle(),
+        desc_.GetFilter(),
+        top_desc_.Get(),
+        desc_.GetConv(),
+        Layer<T>::bottom_desc_.Get(),
+        bwd_data_algo_,
+        &bwd_data_workspace_size_));
+
+    CUDA_CALL(cudaMalloc(&bwd_data_workspace_, bwd_data_workspace_size_));
   }
 
   void ComputeOutputDim() {
@@ -237,8 +289,7 @@ class ConvolutionLayer : public Layer<T> {
   }
 
   void ForwardPropagation() {
-    // Fill the data
-    weights_->Filler();
+    // Fill the bottom data
     for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
       Layer<T>::bottoms_[i]->Filler();
     }
@@ -252,7 +303,7 @@ class ConvolutionLayer : public Layer<T> {
                 Layer<T>::bottom_desc_.Get(), Layer<T>::bottoms_[i]->Get(),
                 desc_.GetFilter(), weights_->Get(),
                 desc_.GetConv(),
-                fwd_algo_, workspace_, fwd_workspace_size_,
+                fwd_algo_, fwd_workspace_, fwd_workspace_size_,
                 DataType<T>::zero,
                 top_desc_.Get(), tops_[i]->Get()));
     }
@@ -260,9 +311,45 @@ class ConvolutionLayer : public Layer<T> {
 
     // TODO: evaluate the necessity of freeing memory here
     // Free the workspace
-    CUDA_CALL(cudaFree(workspace_));
+    CUDA_CALL(cudaFree(fwd_workspace_));
   }
   void BackwardPropagation() {
+    // Fill the top data and top diff data
+    for (int i = 0; i < num_tops_; i++) {
+      tops_[i]->Filler();
+      top_diffs_[i]->Filler();
+    }
+
+    // Convolution forward computation
+    cudaProfilerStart();
+    for (int i = 0; i < num_tops_; i++) {
+      CUDNN_CALL(cudnnConvolutionBackwardFilter(
+                Layer<T>::p_handle_->getHandle(),
+                DataType<T>::one,
+                Layer<T>::bottom_desc_.Get(), Layer<T>::bottoms_[i]->Get(),
+                top_desc_.Get(), top_diffs_[i]->Get(),
+                desc_.GetConv(),
+                bwd_filter_algo_,
+                bwd_filter_workspace_, bwd_filter_workspace_size_,
+                DataType<T>::zero,
+                desc_.GetFilter(), weights_diff_->Get()));
+      CUDNN_CALL(cudnnConvolutionBackwardData(
+                Layer<T>::p_handle_->getHandle(),
+                DataType<T>::one,
+                desc_.GetFilter(), weights_->Get(),
+                top_desc_.Get(), top_diffs_[i]->Get(),
+                desc_.GetConv(),
+                bwd_data_algo_,
+                bwd_data_workspace_, bwd_data_workspace_size_,
+                DataType<T>::zero,
+                Layer<T>::bottom_desc_.Get(), Layer<T>::bottoms_[i]->Get()));
+    }
+    cudaProfilerStop();
+
+    // TODO: evaluate the necessity of freeing memory here
+    // Free the workspace
+    CUDA_CALL(cudaFree(bwd_data_workspace_));
+    CUDA_CALL(cudaFree(bwd_filter_workspace_));
   }
 
 };
