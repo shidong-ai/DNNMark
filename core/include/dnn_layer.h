@@ -39,6 +39,9 @@ class Layer {
   // Handle
   Handle *p_handle_;
 
+  // Running mode
+  RunMode run_mode_;
+
   bool has_learnable_params_;
   LayerType type_;
   int layer_id_;
@@ -55,8 +58,8 @@ class Layer {
   std::vector<Data<T> *> bottom_diffs_;
   std::vector<int> bottom_diff_chunk_ids_;
  public:
-  Layer(Handle *p_handle)
-  : p_handle_(p_handle),
+  Layer(Handle *p_handle, RunMode run_mode)
+  : p_handle_(p_handle), run_mode_(run_mode),
     layer_id_(0), has_learnable_params_(false),
     input_dim_(), bottom_desc_(),
     num_bottoms_(1) {
@@ -146,8 +149,8 @@ class ConvolutionLayer : public Layer<T> {
   void *bwd_data_workspace_;
   void *bwd_filter_workspace_;
  public:
-  ConvolutionLayer(Handle *p_handle)
-  : Layer<T>(p_handle),
+  ConvolutionLayer(Handle *p_handle, RunMode run_mode)
+  : Layer<T>(p_handle, run_mode),
     top_desc_(), output_dim_(), conv_param_(), desc_() {
     Layer<T>::has_learnable_params_ = true;
     num_tops_ = Layer<T>::num_bottoms_;
@@ -376,8 +379,8 @@ class PoolingLayer : public Layer<T> {
   std::vector<int> top_diff_chunk_ids_;
 
  public:
-  PoolingLayer(Handle *p_handle)
-  : Layer<T>(p_handle),
+  PoolingLayer(Handle *p_handle, RunMode run_mode)
+  : Layer<T>(p_handle, run_mode),
     top_desc_(), output_dim_(), pool_param_(), desc_() {
     Layer<T>::has_learnable_params_ = true;
     num_tops_ = Layer<T>::num_bottoms_;
@@ -517,8 +520,8 @@ class LRNLayer : public Layer<T> {
   std::vector<int> top_diff_chunk_ids_;
 
  public:
-  LRNLayer(Handle *p_handle)
-  : Layer<T>(p_handle),
+  LRNLayer(Handle *p_handle, RunMode run_mode)
+  : Layer<T>(p_handle, run_mode),
     top_desc_(), output_dim_(), lrn_param_(), desc_() {
     num_tops_ = Layer<T>::num_bottoms_;
   }
@@ -644,8 +647,8 @@ class ActivationLayer : public Layer<T> {
   std::vector<int> top_diff_chunk_ids_;
 
  public:
-  ActivationLayer(Handle *p_handle)
-  : Layer<T>(p_handle),
+  ActivationLayer(Handle *p_handle, RunMode run_mode)
+  : Layer<T>(p_handle, run_mode),
     top_desc_(), output_dim_(), activation_param_(), desc_() {
     num_tops_ = Layer<T>::num_bottoms_;
   }
@@ -776,8 +779,8 @@ class FullyConnectedLayer : public Layer<T> {
   int weights_diff_chunk_id_;
 
  public:
-  FullyConnectedLayer(Handle *p_handle)
-  : Layer<T>(p_handle),
+  FullyConnectedLayer(Handle *p_handle, RunMode run_mode)
+  : Layer<T>(p_handle, run_mode),
     top_desc_(), output_dim_(), fc_param_() {
     num_tops_ = Layer<T>::num_bottoms_;
   }
@@ -958,8 +961,8 @@ class SoftmaxLayer : public Layer<T> {
   std::vector<int> top_diff_chunk_ids_;
 
  public:
-  SoftmaxLayer(Handle *p_handle)
-  : Layer<T>(p_handle),
+  SoftmaxLayer(Handle *p_handle, RunMode run_mode)
+  : Layer<T>(p_handle, run_mode),
     top_desc_(), output_dim_(), softmax_param_() {
     num_tops_ = Layer<T>::num_bottoms_;
   }

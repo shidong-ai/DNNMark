@@ -44,16 +44,6 @@
 
 namespace dnnmark {
 
-// Benchmark running mode
-// None: the benchmark haven't been setup
-// Standalone: only one layer will be benchmarked
-// Composed: multiple layers will be benchmarked, maybe a whole network
-enum RunMode {
-  NONE = 0,
-  STANDALONE,
-  COMPOSED
-};
-
 template <typename T>
 class DNNMark {
  private:
@@ -71,6 +61,7 @@ class DNNMark {
                       const std::string &val);
 
  public:
+
   DNNMark();
   int ParseAllConfig(const std::string &config_file);
   int ParseGeneralConfig(const std::string &config_file);
