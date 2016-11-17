@@ -32,7 +32,11 @@ namespace dnnmark {
 
 template <typename T>
 DNNMark<T>::DNNMark()
-: run_mode_(NONE), handle_() {}
+: run_mode_(NONE), handle_(), num_layers_added_(0) {}
+
+template <typename T>
+DNNMark<T>::DNNMark(int num_layers)
+: run_mode_(NONE), handle_(num_layers), num_layers_added_(0) {}
 
 template <typename T>
 void DNNMark<T>::SetLayerParams(LayerType layer_type,
@@ -46,7 +50,7 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
   ActivationParam *activation_param;
   FullyConnectedParam *fc_param;
   SoftmaxParam *softmax_param;
-  CHECK_GT(num_layers_, 0);
+  CHECK_GT(num_layers_added_, 0);
 
   switch(layer_type) {
     case CONVOLUTION: {
@@ -297,7 +301,7 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
     } else if (!var.compare("name")) {
       layers_map_[current_layer_id]->setLayerName(val.c_str());
       name_id_map_[val] = current_layer_id;
-    } else if (!var.compare("previous_layer_name")) {
+    } else if (!var.compare("previous_layer")) {
       layers_map_[current_layer_id]->setPrevLayerName(val.c_str());
     }
   }
@@ -312,6 +316,20 @@ int DNNMark<T>::ParseAllConfig(const std::string &config_file) {
   // Parse Convolution specific config
   ParseSpecifiedConfig(config_file, CONVOLUTION);
 
+  // Parse Pooling specific config
+  ParseSpecifiedConfig(config_file, POOLING);
+
+  // Parse LRN specific config
+  ParseSpecifiedConfig(config_file, LRN);
+
+  // Parse Activation specific config
+  ParseSpecifiedConfig(config_file, ACTIVATION);
+
+  // Parse FullyConnected specific config
+  ParseSpecifiedConfig(config_file, FC);
+
+  // Parse Softmax specific config
+  ParseSpecifiedConfig(config_file, SOFTMAX);
 }
 
 template <typename T>
@@ -423,7 +441,7 @@ int DNNMark<T>::ParseSpecifiedConfig(const std::string &config_file,
                 << " layer";
       is_specified_section = true;
       // Create a layer in the main class
-      current_layer_id = num_layers_;
+      current_layer_id = num_layers_added_;
       if (layer_type == CONVOLUTION)
         layers_map_.emplace(current_layer_id,
           std::make_shared<ConvolutionLayer<T>>(this));
@@ -444,7 +462,7 @@ int DNNMark<T>::ParseSpecifiedConfig(const std::string &config_file,
           std::make_shared<SoftmaxLayer<T>>(this));
       layers_map_[current_layer_id]->setLayerId(current_layer_id);
       layers_map_[current_layer_id]->setLayerType(layer_type);
-      num_layers_++;
+      num_layers_added_++;
       continue;
     } else if (isSection(s) && is_specified_section) {
       break;
@@ -472,33 +490,31 @@ int DNNMark<T>::Initialize() {
   LOG(INFO) << "DNNMark: Initialize...";
   LOG(INFO) << "Running mode: " << run_mode_;
   LOG(INFO) << "Number of Layers: " << layers_map_.size();
-  if (run_mode_ == STANDALONE) {
-    for (auto it = layers_map_.begin(); it != layers_map_.end(); it++) {
-      LOG(INFO) << "Layer type: " << it->second->getLayerType();
-      if (it->second->getLayerType() == CONVOLUTION) {
-        LOG(INFO) << "DNNMark: Setup parameters of Convolution layer";
-        std::dynamic_pointer_cast<ConvolutionLayer<T>>(it->second)->Setup();
-      }
-      if (it->second->getLayerType() == POOLING) {
-        LOG(INFO) << "DNNMark: Setup parameters of Pooling layer";
-        std::dynamic_pointer_cast<PoolingLayer<T>>(it->second)->Setup();
-      }
-      if (it->second->getLayerType() == LRN) {
-        LOG(INFO) << "DNNMark: Setup parameters of LRN layer";
-        std::dynamic_pointer_cast<LRNLayer<T>>(it->second)->Setup();
-      }
-      if (it->second->getLayerType() == ACTIVATION) {
-        LOG(INFO) << "DNNMark: Setup parameters of Activation layer";
-        std::dynamic_pointer_cast<ActivationLayer<T>>(it->second)->Setup();
-      }
-      if (it->second->getLayerType() == FC) {
-        LOG(INFO) << "DNNMark: Setup parameters of Fully Connected layer";
-        std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)->Setup();
-      }
-      if (it->second->getLayerType() == SOFTMAX) {
-        LOG(INFO) << "DNNMark: Setup parameters of Softmax layer";
-        std::dynamic_pointer_cast<SoftmaxLayer<T>>(it->second)->Setup();
-      }
+  for (auto it = layers_map_.begin(); it != layers_map_.end(); it++) {
+    LOG(INFO) << "Layer type: " << it->second->getLayerType();
+    if (it->second->getLayerType() == CONVOLUTION) {
+      LOG(INFO) << "DNNMark: Setup parameters of Convolution layer";
+      std::dynamic_pointer_cast<ConvolutionLayer<T>>(it->second)->Setup();
+    }
+    if (it->second->getLayerType() == POOLING) {
+      LOG(INFO) << "DNNMark: Setup parameters of Pooling layer";
+      std::dynamic_pointer_cast<PoolingLayer<T>>(it->second)->Setup();
+    }
+    if (it->second->getLayerType() == LRN) {
+      LOG(INFO) << "DNNMark: Setup parameters of LRN layer";
+      std::dynamic_pointer_cast<LRNLayer<T>>(it->second)->Setup();
+    }
+    if (it->second->getLayerType() == ACTIVATION) {
+      LOG(INFO) << "DNNMark: Setup parameters of Activation layer";
+      std::dynamic_pointer_cast<ActivationLayer<T>>(it->second)->Setup();
+    }
+    if (it->second->getLayerType() == FC) {
+      LOG(INFO) << "DNNMark: Setup parameters of Fully Connected layer";
+      std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)->Setup();
+    }
+    if (it->second->getLayerType() == SOFTMAX) {
+      LOG(INFO) << "DNNMark: Setup parameters of Softmax layer";
+      std::dynamic_pointer_cast<SoftmaxLayer<T>>(it->second)->Setup();
     }
   }
   return 0;
@@ -506,44 +522,42 @@ int DNNMark<T>::Initialize() {
 
 template <typename T>
 int DNNMark<T>::RunAll() {
-  if (run_mode_ == STANDALONE) {
-    for (auto it = layers_map_.begin(); it != layers_map_.end(); it++) {
-      if (it->second->getLayerType() == CONVOLUTION) {
-        std::dynamic_pointer_cast<ConvolutionLayer<T>>(it->second)
-          ->ForwardPropagation();
-        std::dynamic_pointer_cast<ConvolutionLayer<T>>(it->second)
-          ->BackwardPropagation();
-      }
-      if (it->second->getLayerType() == POOLING) {
-        std::dynamic_pointer_cast<PoolingLayer<T>>(it->second)
-          ->ForwardPropagation();
-        std::dynamic_pointer_cast<PoolingLayer<T>>(it->second)
-          ->BackwardPropagation();
-      }
-      if (it->second->getLayerType() == LRN) {
-        std::dynamic_pointer_cast<LRNLayer<T>>(it->second)
-          ->ForwardPropagation();
-        std::dynamic_pointer_cast<LRNLayer<T>>(it->second)
-          ->BackwardPropagation();
-      }
-      if (it->second->getLayerType() == ACTIVATION) {
-        std::dynamic_pointer_cast<ActivationLayer<T>>(it->second)
-          ->ForwardPropagation();
-        std::dynamic_pointer_cast<ActivationLayer<T>>(it->second)
-          ->BackwardPropagation();
-      }
-      if (it->second->getLayerType() == FC) {
-        std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)
-          ->ForwardPropagation();
-        std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)
-          ->BackwardPropagation();
-      }
-      if (it->second->getLayerType() == SOFTMAX) {
-        std::dynamic_pointer_cast<SoftmaxLayer<T>>(it->second)
-          ->ForwardPropagation();
-        std::dynamic_pointer_cast<SoftmaxLayer<T>>(it->second)
-          ->BackwardPropagation();
-      }
+  for (auto it = layers_map_.begin(); it != layers_map_.end(); it++) {
+    if (it->second->getLayerType() == CONVOLUTION) {
+      std::dynamic_pointer_cast<ConvolutionLayer<T>>(it->second)
+        ->ForwardPropagation();
+      std::dynamic_pointer_cast<ConvolutionLayer<T>>(it->second)
+        ->BackwardPropagation();
+    }
+    if (it->second->getLayerType() == POOLING) {
+      std::dynamic_pointer_cast<PoolingLayer<T>>(it->second)
+        ->ForwardPropagation();
+      std::dynamic_pointer_cast<PoolingLayer<T>>(it->second)
+        ->BackwardPropagation();
+    }
+    if (it->second->getLayerType() == LRN) {
+      std::dynamic_pointer_cast<LRNLayer<T>>(it->second)
+        ->ForwardPropagation();
+      std::dynamic_pointer_cast<LRNLayer<T>>(it->second)
+        ->BackwardPropagation();
+    }
+    if (it->second->getLayerType() == ACTIVATION) {
+      std::dynamic_pointer_cast<ActivationLayer<T>>(it->second)
+        ->ForwardPropagation();
+      std::dynamic_pointer_cast<ActivationLayer<T>>(it->second)
+        ->BackwardPropagation();
+    }
+    if (it->second->getLayerType() == FC) {
+      std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)
+        ->ForwardPropagation();
+      std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)
+        ->BackwardPropagation();
+    }
+    if (it->second->getLayerType() == SOFTMAX) {
+      std::dynamic_pointer_cast<SoftmaxLayer<T>>(it->second)
+        ->ForwardPropagation();
+      std::dynamic_pointer_cast<SoftmaxLayer<T>>(it->second)
+        ->BackwardPropagation();
     }
   }
   return 0;
@@ -551,44 +565,42 @@ int DNNMark<T>::RunAll() {
 
 template <typename T>
 int DNNMark<T>::Forward() {
-  if (run_mode_ == STANDALONE) {
-    for (auto it = layers_map_.begin(); it != layers_map_.end(); it++) {
-      if (it->second->getLayerType() == CONVOLUTION) {
-        LOG(INFO) << "DNNMark: Running convolution forward: STARTED";
-        std::dynamic_pointer_cast<ConvolutionLayer<T>>(it->second)
-          ->ForwardPropagation();
-        LOG(INFO) << "DNNMark: Running convolution forward: FINISHED";
-      }
-      if (it->second->getLayerType() == POOLING) {
-        LOG(INFO) << "DNNMark: Running pooling forward: STARTED";
-        std::dynamic_pointer_cast<PoolingLayer<T>>(it->second)
-          ->ForwardPropagation();
-        LOG(INFO) << "DNNMark: Running pooling forward: FINISHED";
-      }
-      if (it->second->getLayerType() == LRN) {
-        LOG(INFO) << "DNNMark: Running LRN forward: STARTED";
-        std::dynamic_pointer_cast<LRNLayer<T>>(it->second)
-          ->ForwardPropagation();
-        LOG(INFO) << "DNNMark: Running LRN forward: FINISHED";
-      }
-      if (it->second->getLayerType() == ACTIVATION) {
-        LOG(INFO) << "DNNMark: Running Activation forward: STARTED";
-        std::dynamic_pointer_cast<ActivationLayer<T>>(it->second)
-          ->ForwardPropagation();
-        LOG(INFO) << "DNNMark: Running Activation forward: FINISHED";
-      }
-      if (it->second->getLayerType() == FC) {
-        LOG(INFO) << "DNNMark: Running FullyConnected forward: STARTED";
-        std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)
-          ->ForwardPropagation();
-        LOG(INFO) << "DNNMark: Running FullyConnected forward: FINISHED";
-      }
-      if (it->second->getLayerType() == SOFTMAX) {
-        LOG(INFO) << "DNNMark: Running Softmax forward: STARTED";
-        std::dynamic_pointer_cast<SoftmaxLayer<T>>(it->second)
-          ->ForwardPropagation();
-        LOG(INFO) << "DNNMark: Running Softmax forward: FINISHED";
-      }
+  for (auto it = layers_map_.begin(); it != layers_map_.end(); it++) {
+    if (it->second->getLayerType() == CONVOLUTION) {
+      LOG(INFO) << "DNNMark: Running convolution forward: STARTED";
+      std::dynamic_pointer_cast<ConvolutionLayer<T>>(it->second)
+        ->ForwardPropagation();
+      LOG(INFO) << "DNNMark: Running convolution forward: FINISHED";
+    }
+    if (it->second->getLayerType() == POOLING) {
+      LOG(INFO) << "DNNMark: Running pooling forward: STARTED";
+      std::dynamic_pointer_cast<PoolingLayer<T>>(it->second)
+        ->ForwardPropagation();
+      LOG(INFO) << "DNNMark: Running pooling forward: FINISHED";
+    }
+    if (it->second->getLayerType() == LRN) {
+      LOG(INFO) << "DNNMark: Running LRN forward: STARTED";
+      std::dynamic_pointer_cast<LRNLayer<T>>(it->second)
+        ->ForwardPropagation();
+      LOG(INFO) << "DNNMark: Running LRN forward: FINISHED";
+    }
+    if (it->second->getLayerType() == ACTIVATION) {
+      LOG(INFO) << "DNNMark: Running Activation forward: STARTED";
+      std::dynamic_pointer_cast<ActivationLayer<T>>(it->second)
+        ->ForwardPropagation();
+      LOG(INFO) << "DNNMark: Running Activation forward: FINISHED";
+    }
+    if (it->second->getLayerType() == FC) {
+      LOG(INFO) << "DNNMark: Running FullyConnected forward: STARTED";
+      std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)
+        ->ForwardPropagation();
+      LOG(INFO) << "DNNMark: Running FullyConnected forward: FINISHED";
+    }
+    if (it->second->getLayerType() == SOFTMAX) {
+      LOG(INFO) << "DNNMark: Running Softmax forward: STARTED";
+      std::dynamic_pointer_cast<SoftmaxLayer<T>>(it->second)
+        ->ForwardPropagation();
+      LOG(INFO) << "DNNMark: Running Softmax forward: FINISHED";
     }
   }
   return 0;
@@ -596,44 +608,42 @@ int DNNMark<T>::Forward() {
 
 template <typename T>
 int DNNMark<T>::Backward() {
-  if (run_mode_ == STANDALONE) {
-    for (auto it = layers_map_.begin(); it != layers_map_.end(); it++) {
-      if (it->second->getLayerType() == CONVOLUTION) {
-        LOG(INFO) << "DNNMark: Running convolution backward: STARTED";
-        std::dynamic_pointer_cast<ConvolutionLayer<T>>(it->second)
-          ->BackwardPropagation();
-        LOG(INFO) << "DNNMark: Running convolution backward: FINISHED";
-      }
-      if (it->second->getLayerType() == POOLING) {
-        LOG(INFO) << "DNNMark: Running pooling backward: STARTED";
-        std::dynamic_pointer_cast<PoolingLayer<T>>(it->second)
-          ->BackwardPropagation();
-        LOG(INFO) << "DNNMark: Running pooling backward: FINISHED";
-      }
-      if (it->second->getLayerType() == LRN) {
-        LOG(INFO) << "DNNMark: Running LRN backward: STARTED";
-        std::dynamic_pointer_cast<LRNLayer<T>>(it->second)
-          ->BackwardPropagation();
-        LOG(INFO) << "DNNMark: Running LRN backward: FINISHED";
-      }
-      if (it->second->getLayerType() == ACTIVATION) {
-        LOG(INFO) << "DNNMark: Running Activation backward: STARTED";
-        std::dynamic_pointer_cast<ActivationLayer<T>>(it->second)
-          ->BackwardPropagation();
-        LOG(INFO) << "DNNMark: Running Activation backward: FINISHED";
-      }
-      if (it->second->getLayerType() == FC) {
-        LOG(INFO) << "DNNMark: Running FullyConnected backward: STARTED";
-        std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)
-          ->BackwardPropagation();
-        LOG(INFO) << "DNNMark: Running FullyConnected backward: FINISHED";
-      }
-      if (it->second->getLayerType() == SOFTMAX) {
-        LOG(INFO) << "DNNMark: Running Softmax backward: STARTED";
-        std::dynamic_pointer_cast<SoftmaxLayer<T>>(it->second)
-          ->BackwardPropagation();
-        LOG(INFO) << "DNNMark: Running Softmax backward: FINISHED";
-      }
+  for (auto it = layers_map_.begin(); it != layers_map_.end(); it++) {
+    if (it->second->getLayerType() == CONVOLUTION) {
+      LOG(INFO) << "DNNMark: Running convolution backward: STARTED";
+      std::dynamic_pointer_cast<ConvolutionLayer<T>>(it->second)
+        ->BackwardPropagation();
+      LOG(INFO) << "DNNMark: Running convolution backward: FINISHED";
+    }
+    if (it->second->getLayerType() == POOLING) {
+      LOG(INFO) << "DNNMark: Running pooling backward: STARTED";
+      std::dynamic_pointer_cast<PoolingLayer<T>>(it->second)
+        ->BackwardPropagation();
+      LOG(INFO) << "DNNMark: Running pooling backward: FINISHED";
+    }
+    if (it->second->getLayerType() == LRN) {
+      LOG(INFO) << "DNNMark: Running LRN backward: STARTED";
+      std::dynamic_pointer_cast<LRNLayer<T>>(it->second)
+        ->BackwardPropagation();
+      LOG(INFO) << "DNNMark: Running LRN backward: FINISHED";
+    }
+    if (it->second->getLayerType() == ACTIVATION) {
+      LOG(INFO) << "DNNMark: Running Activation backward: STARTED";
+      std::dynamic_pointer_cast<ActivationLayer<T>>(it->second)
+        ->BackwardPropagation();
+      LOG(INFO) << "DNNMark: Running Activation backward: FINISHED";
+    }
+    if (it->second->getLayerType() == FC) {
+      LOG(INFO) << "DNNMark: Running FullyConnected backward: STARTED";
+      std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)
+        ->BackwardPropagation();
+      LOG(INFO) << "DNNMark: Running FullyConnected backward: FINISHED";
+    }
+    if (it->second->getLayerType() == SOFTMAX) {
+      LOG(INFO) << "DNNMark: Running Softmax backward: STARTED";
+      std::dynamic_pointer_cast<SoftmaxLayer<T>>(it->second)
+        ->BackwardPropagation();
+      LOG(INFO) << "DNNMark: Running Softmax backward: FINISHED";
     }
   }
   return 0;

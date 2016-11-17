@@ -148,6 +148,11 @@ class Layer {
         input_dim_.c_ = previous_layer->getTopDimC();
         input_dim_.h_ = previous_layer->getTopDimH();
         input_dim_.w_ = previous_layer->getTopDimW();
+        // Set bottom tensor
+        bottom_desc_.Set(input_dim_.n_,
+                         input_dim_.c_,
+                         input_dim_.h_,
+                         input_dim_.w_);
         for (int i = 0; i < num_bottoms_; i++) {
           bottom_chunk_ids_.push_back(
             previous_layer->getTopChunkID(i));
@@ -257,9 +262,10 @@ class ConvolutionLayer : public Layer<T> {
     // Fill the weight data
     weights_->Filler();
 
-
     // Set up convolution forward algorithm related parameters
     CUDNN_CALL(cudnnGetConvolutionForwardAlgorithm(
+        Layer<T>::p_dnnmark_->getRunMode() == COMPOSED ?
+        Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(Layer<T>::layer_id_):
         Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(),
         Layer<T>::bottom_desc_.Get(),
         desc_.GetFilter(),
@@ -270,6 +276,8 @@ class ConvolutionLayer : public Layer<T> {
         &fwd_algo_));
   
     CUDNN_CALL(cudnnGetConvolutionForwardWorkspaceSize(
+        Layer<T>::p_dnnmark_->getRunMode() == COMPOSED ?
+        Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(Layer<T>::layer_id_):
         Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(),
         Layer<T>::bottom_desc_.Get(),
         desc_.GetFilter(),
@@ -282,6 +290,8 @@ class ConvolutionLayer : public Layer<T> {
 
     // Set up convolution backward algorithm related parameters
     CUDNN_CALL(cudnnGetConvolutionBackwardFilterAlgorithm(
+        Layer<T>::p_dnnmark_->getRunMode() == COMPOSED ?
+        Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(Layer<T>::layer_id_):
         Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(),
         Layer<T>::bottom_desc_.Get(),
         Layer<T>::top_desc_.Get(),
@@ -292,6 +302,8 @@ class ConvolutionLayer : public Layer<T> {
         &bwd_filter_algo_));
   
     CUDNN_CALL(cudnnGetConvolutionBackwardFilterWorkspaceSize(
+        Layer<T>::p_dnnmark_->getRunMode() == COMPOSED ?
+        Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(Layer<T>::layer_id_):
         Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(),
         Layer<T>::bottom_desc_.Get(),
         Layer<T>::top_desc_.Get(),
@@ -303,6 +315,8 @@ class ConvolutionLayer : public Layer<T> {
     CUDA_CALL(cudaMalloc(&bwd_filter_workspace_, bwd_filter_workspace_size_));
 
     CUDNN_CALL(cudnnGetConvolutionBackwardDataAlgorithm(
+        Layer<T>::p_dnnmark_->getRunMode() == COMPOSED ?
+        Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(Layer<T>::layer_id_):
         Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(),
         desc_.GetFilter(),
         Layer<T>::top_desc_.Get(),
@@ -313,6 +327,8 @@ class ConvolutionLayer : public Layer<T> {
         &bwd_data_algo_));
   
     CUDNN_CALL(cudnnGetConvolutionBackwardDataWorkspaceSize(
+        Layer<T>::p_dnnmark_->getRunMode() == COMPOSED ?
+        Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(Layer<T>::layer_id_):
         Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(),
         desc_.GetFilter(),
         Layer<T>::top_desc_.Get(),
@@ -333,18 +349,23 @@ class ConvolutionLayer : public Layer<T> {
     Layer<T>::output_dim_.w_ = (Layer<T>::input_dim_.w_ +
       2 * conv_param_.pad_w_ - conv_param_.kernel_size_w_) /
       conv_param_.stride_v_ + 1;
+    LOG(INFO) << Layer<T>::output_dim_;
   }
 
   void ForwardPropagation() {
     // Fill the bottom data
-    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
-      Layer<T>::bottoms_[i]->Filler();
+    if (Layer<T>::p_dnnmark_->getRunMode() == STANDALONE ||
+        !Layer<T>::previous_layer_name_.compare("null")) {
+      for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+        Layer<T>::bottoms_[i]->Filler();
+      }
     }
-
     // Convolution forward computation
     cudaProfilerStart();
     for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
       CUDNN_CALL(cudnnConvolutionForward(
+                Layer<T>::p_dnnmark_->getRunMode() == COMPOSED ?
+                Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(Layer<T>::layer_id_):
                 Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(),
                 DataType<T>::one,
                 Layer<T>::bottom_desc_.Get(), Layer<T>::bottoms_[i]->Get(),
@@ -361,20 +382,25 @@ class ConvolutionLayer : public Layer<T> {
     CUDA_CALL(cudaFree(fwd_workspace_));
   }
   void BackwardPropagation() {
-    // Fill the top data and top diff data
-    for (int i = 0; i < Layer<T>::num_tops_; i++) {
-      Layer<T>::tops_[i]->Filler();
-      Layer<T>::top_diffs_[i]->Filler();
-    }
-    // Fill the bottom data
-    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
-      Layer<T>::bottoms_[i]->Filler();
+    if (Layer<T>::p_dnnmark_->getRunMode() == STANDALONE ||
+        !Layer<T>::previous_layer_name_.compare("null")) {
+      // Fill the top data and top diff data
+      for (int i = 0; i < Layer<T>::num_tops_; i++) {
+        Layer<T>::tops_[i]->Filler();
+        Layer<T>::top_diffs_[i]->Filler();
+      }
+      // Fill the bottom data
+      for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+        Layer<T>::bottoms_[i]->Filler();
+      }
     }
 
     // Convolution forward computation
     cudaProfilerStart();
     for (int i = 0; i < Layer<T>::num_tops_; i++) {
       CUDNN_CALL(cudnnConvolutionBackwardFilter(
+                Layer<T>::p_dnnmark_->getRunMode() == COMPOSED ?
+                Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(Layer<T>::layer_id_):
                 Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(),
                 DataType<T>::one,
                 Layer<T>::bottom_desc_.Get(), Layer<T>::bottoms_[i]->Get(),
@@ -385,6 +411,8 @@ class ConvolutionLayer : public Layer<T> {
                 DataType<T>::zero,
                 desc_.GetFilter(), weights_diff_->Get()));
       CUDNN_CALL(cudnnConvolutionBackwardData(
+                Layer<T>::p_dnnmark_->getRunMode() == COMPOSED ?
+                Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(Layer<T>::layer_id_):
                 Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(),
                 DataType<T>::one,
                 desc_.GetFilter(), weights_->Get(),
@@ -485,15 +513,20 @@ class PoolingLayer : public Layer<T> {
   }
 
   void ForwardPropagation() {
-    // Fill the bottom data
-    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
-      Layer<T>::bottoms_[i]->Filler();
+    if (Layer<T>::p_dnnmark_->getRunMode() == STANDALONE ||
+        !Layer<T>::previous_layer_name_.compare("null")) {
+      // Fill the bottom data
+      for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+        Layer<T>::bottoms_[i]->Filler();
+      }
     }
 
     // pooling forward computation
     cudaProfilerStart();
     for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
       CUDNN_CALL(cudnnPoolingForward(
+             Layer<T>::p_dnnmark_->getRunMode() == COMPOSED ?
+             Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(Layer<T>::layer_id_):
              Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(),
              desc_.Get(),
              DataType<T>::one, 
@@ -505,20 +538,26 @@ class PoolingLayer : public Layer<T> {
 
   }
   void BackwardPropagation() {
-    // Fill the top and top diff data
-    for (int i = 0; i < Layer<T>::num_tops_; i++) {
-      Layer<T>::tops_[i]->Filler();
-      Layer<T>::top_diffs_[i]->Filler();
-    }
-    // Fill the bottom data
-    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
-      Layer<T>::bottoms_[i]->Filler();
+    if (Layer<T>::p_dnnmark_->getRunMode() == STANDALONE ||
+        !Layer<T>::previous_layer_name_.compare("null")) {
+
+      // Fill the top and top diff data
+      for (int i = 0; i < Layer<T>::num_tops_; i++) {
+        Layer<T>::tops_[i]->Filler();
+        Layer<T>::top_diffs_[i]->Filler();
+      }
+      // Fill the bottom data
+      for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+        Layer<T>::bottoms_[i]->Filler();
+      }
     }
 
     // pooling backward computation
     cudaProfilerStart();
     for (int i = 0; i < Layer<T>::num_tops_; i++) {
       CUDNN_CALL(cudnnPoolingBackward(
+             Layer<T>::p_dnnmark_->getRunMode() == COMPOSED ?
+             Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(Layer<T>::layer_id_):
              Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(),
              desc_.Get(),
              DataType<T>::one, 
@@ -600,15 +639,20 @@ class LRNLayer : public Layer<T> {
   }
 
   void ForwardPropagation() {
-    // Fill the bottom data
-    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
-      Layer<T>::bottoms_[i]->Filler();
+    if (Layer<T>::p_dnnmark_->getRunMode() == STANDALONE ||
+        !Layer<T>::previous_layer_name_.compare("null")) {
+      // Fill the bottom data
+      for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+        Layer<T>::bottoms_[i]->Filler();
+      }
     }
 
     // lrn forward computation
     cudaProfilerStart();
     for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
       CUDNN_CALL(cudnnLRNCrossChannelForward(
+             Layer<T>::p_dnnmark_->getRunMode() == COMPOSED ?
+             Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(Layer<T>::layer_id_):
              Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(),
              desc_.Get(),
              lrn_param_.mode_,
@@ -621,20 +665,25 @@ class LRNLayer : public Layer<T> {
 
   }
   void BackwardPropagation() {
-    // Fill the top and top diff data
-    for (int i = 0; i < Layer<T>::num_tops_; i++) {
-      Layer<T>::tops_[i]->Filler();
-      Layer<T>::top_diffs_[i]->Filler();
-    }
-    // Fill the bottom data
-    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
-      Layer<T>::bottoms_[i]->Filler();
+    if (Layer<T>::p_dnnmark_->getRunMode() == STANDALONE ||
+        !Layer<T>::previous_layer_name_.compare("null")) {
+      // Fill the top and top diff data
+      for (int i = 0; i < Layer<T>::num_tops_; i++) {
+        Layer<T>::tops_[i]->Filler();
+        Layer<T>::top_diffs_[i]->Filler();
+      }
+      // Fill the bottom data
+      for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+        Layer<T>::bottoms_[i]->Filler();
+      }
     }
 
     // lrn backward computation
     cudaProfilerStart();
     for (int i = 0; i < Layer<T>::num_tops_; i++) {
       CUDNN_CALL(cudnnLRNCrossChannelBackward(
+             Layer<T>::p_dnnmark_->getRunMode() == COMPOSED ?
+             Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(Layer<T>::layer_id_):
              Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(),
              desc_.Get(),
              lrn_param_.mode_,
@@ -717,15 +766,20 @@ class ActivationLayer : public Layer<T> {
   }
 
   void ForwardPropagation() {
-    // Fill the bottom data
-    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
-      Layer<T>::bottoms_[i]->Filler();
+    if (Layer<T>::p_dnnmark_->getRunMode() == STANDALONE ||
+        !Layer<T>::previous_layer_name_.compare("null")) {
+      // Fill the bottom data
+      for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+        Layer<T>::bottoms_[i]->Filler();
+      }
     }
 
     // activationing forward computation
     cudaProfilerStart();
     for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
       CUDNN_CALL(cudnnActivationForward(
+             Layer<T>::p_dnnmark_->getRunMode() == COMPOSED ?
+             Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(Layer<T>::layer_id_):
              Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(),
              desc_.Get(),
              DataType<T>::one, 
@@ -737,20 +791,25 @@ class ActivationLayer : public Layer<T> {
 
   }
   void BackwardPropagation() {
-    // Fill the top and top diff data
-    for (int i = 0; i < Layer<T>::num_tops_; i++) {
-      Layer<T>::tops_[i]->Filler();
-      Layer<T>::top_diffs_[i]->Filler();
-    }
-    // Fill the bottom data
-    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
-      Layer<T>::bottoms_[i]->Filler();
+    if (Layer<T>::p_dnnmark_->getRunMode() == STANDALONE ||
+        !Layer<T>::previous_layer_name_.compare("null")) {
+      // Fill the top and top diff data
+      for (int i = 0; i < Layer<T>::num_tops_; i++) {
+        Layer<T>::tops_[i]->Filler();
+        Layer<T>::top_diffs_[i]->Filler();
+      }
+      // Fill the bottom data
+      for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+        Layer<T>::bottoms_[i]->Filler();
+      }
     }
 
     // activationing backward computation
     cudaProfilerStart();
     for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
       CUDNN_CALL(cudnnActivationBackward(
+             Layer<T>::p_dnnmark_->getRunMode() == COMPOSED ?
+             Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(Layer<T>::layer_id_):
              Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(),
              desc_.Get(),
              DataType<T>::one, 
@@ -855,9 +914,12 @@ class FullyConnectedLayer : public Layer<T> {
   }
 
   void ForwardPropagation() {
-    // Fill the bottom data
-    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
-      Layer<T>::bottoms_[i]->Filler();
+    if (Layer<T>::p_dnnmark_->getRunMode() == STANDALONE ||
+        !Layer<T>::previous_layer_name_.compare("null")) {
+      // Fill the bottom data
+      for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+        Layer<T>::bottoms_[i]->Filler();
+      }
     }
 
     // Prepare CuBLAS parameters
@@ -888,14 +950,17 @@ class FullyConnectedLayer : public Layer<T> {
   }
 
   void BackwardPropagation() {
-    // Fill the top and top diff data
-    for (int i = 0; i < Layer<T>::num_tops_; i++) {
-      Layer<T>::tops_[i]->Filler();
-      Layer<T>::tops_[i]->Filler();
-    }
-    // Fill the bottom data
-    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
-      Layer<T>::bottoms_[i]->Filler();
+    if (Layer<T>::p_dnnmark_->getRunMode() == STANDALONE ||
+        !Layer<T>::previous_layer_name_.compare("null")) {
+      // Fill the top and top diff data
+      for (int i = 0; i < Layer<T>::num_tops_; i++) {
+        Layer<T>::tops_[i]->Filler();
+        Layer<T>::tops_[i]->Filler();
+      }
+      // Fill the bottom data
+      for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+        Layer<T>::bottoms_[i]->Filler();
+      }
     }
 
     // Prepare CuBLAS parameters for calculating d(W)
@@ -1010,15 +1075,20 @@ class SoftmaxLayer : public Layer<T> {
   }
 
   void ForwardPropagation() {
-    // Fill the bottom data
-    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
-      Layer<T>::bottoms_[i]->Filler();
+    if (Layer<T>::p_dnnmark_->getRunMode() == STANDALONE ||
+        !Layer<T>::previous_layer_name_.compare("null")) {
+      // Fill the bottom data
+      for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+        Layer<T>::bottoms_[i]->Filler();
+      }
     }
 
     // Softmax forward computation
     cudaProfilerStart();
     for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
       CUDNN_CALL(cudnnSoftmaxForward(
+              Layer<T>::p_dnnmark_->getRunMode() == COMPOSED ?
+              Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(Layer<T>::layer_id_):
               Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(),
               softmax_param_.algo_,
               softmax_param_.mode_,
@@ -1032,20 +1102,25 @@ class SoftmaxLayer : public Layer<T> {
   }
 
   void BackwardPropagation() {
-    // Fill the top and top diff data
-    for (int i = 0; i < Layer<T>::num_tops_; i++) {
-      Layer<T>::tops_[i]->Filler();
-      Layer<T>::top_diffs_[i]->Filler();
-    }
-    // Fill the bottom data
-    for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
-      Layer<T>::bottoms_[i]->Filler();
+    if (Layer<T>::p_dnnmark_->getRunMode() == STANDALONE ||
+        !Layer<T>::previous_layer_name_.compare("null")) {
+      // Fill the top and top diff data
+      for (int i = 0; i < Layer<T>::num_tops_; i++) {
+        Layer<T>::tops_[i]->Filler();
+        Layer<T>::top_diffs_[i]->Filler();
+      }
+      // Fill the bottom data
+      for (int i = 0; i < Layer<T>::num_bottoms_; i++) {
+        Layer<T>::bottoms_[i]->Filler();
+      }
     }
 
     // Softmax backward computation
     cudaProfilerStart();
     for (int i = 0; i < Layer<T>::num_tops_; i++) {
       CUDNN_CALL(cudnnSoftmaxBackward(
+              Layer<T>::p_dnnmark_->getRunMode() == COMPOSED ?
+              Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(Layer<T>::layer_id_):
               Layer<T>::p_dnnmark_->GetHandle()->GetCudnn(),
               softmax_param_.algo_,
               softmax_param_.mode_,

@@ -52,7 +52,7 @@ class DNNMark {
   // The map is ordered, so we don't need other container to store the layers
   std::map<int, std::shared_ptr<Layer<T>>> layers_map_;
   std::map<std::string, int> name_id_map_;
-  int num_layers_;
+  int num_layers_added_;
 
   // Private functions
   void SetLayerParams(LayerType layer_type,
@@ -63,6 +63,7 @@ class DNNMark {
  public:
 
   DNNMark();
+  DNNMark(int num_layers);
   int ParseAllConfig(const std::string &config_file);
   int ParseGeneralConfig(const std::string &config_file);
   int ParseSpecifiedConfig(const std::string &config_file,
