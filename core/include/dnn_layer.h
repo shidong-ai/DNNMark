@@ -349,7 +349,6 @@ class ConvolutionLayer : public Layer<T> {
     Layer<T>::output_dim_.w_ = (Layer<T>::input_dim_.w_ +
       2 * conv_param_.pad_w_ - conv_param_.kernel_size_w_) /
       conv_param_.stride_v_ + 1;
-    LOG(INFO) << Layer<T>::output_dim_;
   }
 
   void ForwardPropagation() {
