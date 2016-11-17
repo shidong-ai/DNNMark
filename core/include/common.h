@@ -98,6 +98,16 @@ template <> class DataType<double> {
   static const void *one, *zero;
 };
 
+// Benchmark running mode
+// None: the benchmark haven't been setup
+// Standalone: only one layer will be benchmarked
+// Composed: multiple layers will be benchmarked, maybe a whole network
+enum RunMode {
+  NONE = 0,
+  STANDALONE,
+  COMPOSED
+};
+
 // Layer type
 enum LayerType {
   CONVOLUTION = 1,
