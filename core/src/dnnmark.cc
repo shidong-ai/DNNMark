@@ -426,22 +426,22 @@ int DNNMark<T>::ParseSpecifiedConfig(const std::string &config_file,
       current_layer_id = num_layers_;
       if (layer_type == CONVOLUTION)
         layers_map_.emplace(current_layer_id,
-          std::make_shared<ConvolutionLayer<T>>(&handle_, run_mode_));
+          std::make_shared<ConvolutionLayer<T>>(this));
       else if (layer_type == POOLING)
         layers_map_.emplace(current_layer_id,
-          std::make_shared<PoolingLayer<T>>(&handle_, run_mode_));
+          std::make_shared<PoolingLayer<T>>(this));
       else if (layer_type == LRN)
         layers_map_.emplace(current_layer_id,
-          std::make_shared<LRNLayer<T>>(&handle_, run_mode_));
+          std::make_shared<LRNLayer<T>>(this));
       else if (layer_type == ACTIVATION)
         layers_map_.emplace(current_layer_id,
-          std::make_shared<ActivationLayer<T>>(&handle_, run_mode_));
+          std::make_shared<ActivationLayer<T>>(this));
       else if (layer_type == FC)
         layers_map_.emplace(current_layer_id,
-          std::make_shared<FullyConnectedLayer<T>>(&handle_, run_mode_));
+          std::make_shared<FullyConnectedLayer<T>>(this));
       else if (layer_type == SOFTMAX)
         layers_map_.emplace(current_layer_id,
-          std::make_shared<SoftmaxLayer<T>>(&handle_, run_mode_));
+          std::make_shared<SoftmaxLayer<T>>(this));
       layers_map_[current_layer_id]->setLayerId(current_layer_id);
       layers_map_[current_layer_id]->setLayerType(layer_type);
       num_layers_++;
