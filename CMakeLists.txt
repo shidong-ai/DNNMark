@@ -30,9 +30,9 @@ if(CUDA_FOUND)
   # COMPILE_RESULT_VAR is TRUE when compile succeeds
   # RUN_RESULT_VAR is zero when a GPU is found
   if(COMPILE_RESULT_VAR AND NOT RUN_RESULT_VAR)
-      set(CUDA_HAVE_GPU TRUE CACHE BOOL "Whether CUDA-capable GPU is present")
+      set(CUDA_HAVE_GPU TRUE)
   else()
-      set(CUDA_HAVE_GPU FALSE CACHE BOOL "Whether CUDA-capable GPU is present")
+      set(CUDA_HAVE_GPU FALSE)
   endif()
 endif()
 
