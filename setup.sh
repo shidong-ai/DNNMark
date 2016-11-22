@@ -1,7 +1,7 @@
 #! /bin/sh
 
 BUILD_DIR=build
-CUDNN_PATH=/home/shidong/cudnn
+CUDNN_PATH=${HOME}/cudnn
 if [ ! -d ${BUILD_DIR} ]; then
   mkdir ${BUILD_DIR}
 fi
