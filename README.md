@@ -1,5 +1,5 @@
 # DNNMark
-Configurable benchmark suite of Deep Neura Networks
+Configurable benchmark suite of Deep Neural Networks
 
 DNNMark is a highly configurable, extensible, and flexible Deep Neural Network benchmark framework. In this benchmark suite, each of DNN primitive workloads can be easily invoked separately, without any sacrifice on configurability. One can specify any type of scenarios for benchmarking on an algorithm-specific level. Second, the actual measurement can be done during the execution of any specific kernel. Our framework allows us to ignore the setup stages and focus on only the training steps. Unlike other deep learning frameworks, attaching a real database
 for training purposes is not mandatory anymore. This capability will greatly aid the computer architecture community, which is
@@ -10,7 +10,7 @@ Depending on the specific configuration, deep neural networks can involve combin
 ## Configurability
 This frame work provides configurability in both general and algorithm specific parameters. Users can do this through a plain-text configuration file. Several examples are provided inside config_example directory.
 ## Extensibility
-New DNN models/scenarios can be built for benchmarking through 
+New DNN models/scenarios can be easily built for benchmarking through configuration files
 ## Convenience
 Designing benchmarks takes little effort thanks to its centralized library
 ## Diversity
@@ -19,9 +19,8 @@ DNNMark contains commonly-used DNN primitives and also provides an easy approach
 # Features
 
 1. Configurable
-2. Provide detailed GPU metrics
-3. Separatable DNN primitives benchmarking
-4. Building either standalone or composed benchmarks through plain-text configuration files
+2. Provide insights of GPU execution behavior using detailed GPU metrics/events
+3. Separatable or combined DNN primitives benchmarking
 
 # Supported DNN primitives:
 
