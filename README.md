@@ -49,3 +49,16 @@ After you download and unzip the DNNMark, you should go to its root directory an
 
 ## Usage
 To run the benchmarks that have been built, go to the directory `build` and you will see a directory `benchmarks`. Go inside and select the benchmark you want to run. Run command `./[name of benchmark] -config [path to config file] -debuginfo [1 or 0]` to execute the benchmark
+
+# For Contributors
+1. Fork the repository to your own remote repository.
+2. Git clone the repository: `git clone git@github.com/your_account_name/DNNMark.git`
+3. Add this project as an upstream to your local repository by `git remote add upstream https://github.com/doody1986/DNNMark.git`. You can use `git remote -v` to view the upstream.
+4. Create your own local feature branch: `git checkout -b your-own-feature-branch develop`
+3. Make your own feature branch visible by pushing it to your own remote repository (DO NOT PUSH IT TO THE DEVELOP BRANCH): `git push --set-upstream origin your-own-feature-branch`
+4. Develop your own feature branch in your local repository: `git add`, `git commit`, etc..
+5. After your own branch is completed, make sure to merge the latest change from upstream develop branch to your own origin develop branch: 1) `git checkout develop` 2) `git pull upstream develop` 3) `git push origin develop`
+6. Since that you have the latest change in your own origin develop branch from upstream one, now you can update your own feature branch on the your own remote repository by: 1) `git checkout your-own-feature-branch` 2) `git pull origin develop` 3) `git push origin your-own-feature-branch`
+7. Make a pull request from your own feature branch on your own remote repository on github to the develop branch of this repository.
+8. After the pull request is merged, you can delete your own feature branch by 1) `git push origin --delete your-own-feature-branch` to delete the remote branch and 2) `git branch -d your-own-feature-branch` to delete your local branch.
+9. More instructions on using fork can be found [here](https://help.github.com/articles/fork-a-repo/).
