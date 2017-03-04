@@ -184,6 +184,32 @@ struct SoftmaxParam {
     mode_(CUDNN_SOFTMAX_MODE_CHANNEL) {}
 };
 
+struct BatchNormParam {
+  cudnnBatchNormMode_t mode_;
+  bool save_intermediates_;
+  double exp_avg_factor_;
+  double epsilon_;
+  BatchNormParam()
+  : mode_(CUDNN_BATCHNORM_PER_ACTIVATION),	//TODO: Verify selection of default values, especially exp_avg_factor_.
+    save_intermediates_(true)
+    exp_avg_factor_(1);
+    epsilon_(CUDNN_BN_MIN_EPSILON) {}
+};
+
+inline std::ostream &operator<<(std::ostream &os,
+		const BatchNormParam &bn_param) {
+  os << std::endl;
+  os << "[BatchNorm Param] Mode: "
+     << bn_param.mode_ << std::endl;
+  os << "[BatchNorm Param] Save Intermediates: "
+     << bn_param.save_intermediates_ << std::endl;
+  os << "[BatchNorm Param] Exponential Average Factor: "
+     << bn_param.exp_avg_factor_ << std::endl;
+  os << "[BatchNorm Param] Epsilon: "
+     << bn_param.epsilon_ << std::endl;
+  return os;
+}
+
 } // namespace dnnmark
 
 #endif // CORE_INCLUDE_DNN_PARAM_H_

@@ -37,7 +37,8 @@ const std::vector<std::string> section_keywords = {
   "[LRN]",
   "[Activation]",
   "[FullyConnected]",
-  "[Softmax]"
+  "[Softmax]",
+  "[BatchNorm]"
 };
 
 // DNNMark keywords
@@ -111,6 +112,14 @@ const std::vector<std::string> softmax_config_keywords = {
   "softmax_algo",
   "softmax_mode"
 };
+
+// BN layer keywords
+const std::vector<std::string> bn_config_keywords = {
+  "batchnorm_mode",
+  "save_intermediates",
+  "exp_avg_factor",
+  "epsilon"
+}
 
 bool isSection(const std::string &s);
 bool isSpecifiedSection(const std::string &s,
