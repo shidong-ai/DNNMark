@@ -37,7 +37,7 @@ DNNMark contains commonly-used DNN primitives and also provides an easy approach
 ## OS, Library, and Software Prerequisite
 OS: Ubuntu
 
-CUDA related library: CUDA tool kit v8.0; CuDNN v8.0
+CUDA related library: CUDA tool kit v8.0; CuDNN v5.0
 
 Other Software: CMake; g++
 
