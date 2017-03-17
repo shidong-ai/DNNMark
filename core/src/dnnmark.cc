@@ -564,7 +564,7 @@ int DNNMark<T>::Initialize() {
     }
     if (it->second->getLayerType() == BN) {
       LOG(INFO) << "DNNMark: Setup parameters of Batch Normalization layer";
-      std::dynamic_pointer_cast<BatchNormLayer<t>>(it->second)->Setup();
+      std::dynamic_pointer_cast<BatchNormLayer<T>>(it->second)->Setup();
     }
   }
   return 0;

@@ -119,7 +119,7 @@ const std::vector<std::string> bn_config_keywords = {
   "save_intermediates",
   "exp_avg_factor",
   "epsilon"
-}
+};
 
 bool isSection(const std::string &s);
 bool isSpecifiedSection(const std::string &s,

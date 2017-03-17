@@ -191,8 +191,8 @@ struct BatchNormParam {
   double epsilon_;
   BatchNormParam()
   : mode_(CUDNN_BATCHNORM_PER_ACTIVATION),	//TODO: Verify selection of default values, especially exp_avg_factor_.
-    save_intermediates_(true)
-    exp_avg_factor_(1);
+    save_intermediates_(true),
+    exp_avg_factor_(1),
     epsilon_(CUDNN_BN_MIN_EPSILON) {}
 };
 

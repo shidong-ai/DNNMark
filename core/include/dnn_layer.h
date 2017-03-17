@@ -1295,15 +1295,31 @@ class BatchNormLayer : public Layer<T> {
  private:
   BatchNormParam bn_param_;
   DataTensor<T> bn_specifics_desc_;
-  int bn_specifics_size;
-  std::vector<Data<T> *> bn_scale_;
+  int bn_specifics_size_;
+  /*std::vector<Data<T> *> bn_scale_;
   std::vector<Data<T> *> bn_scale_diffs_;
   std::vector<Data<T> *> bn_bias_;
   std::vector<Data<T> *> bn_bias_diffs_;
   std::vector<Data<T> *> bn_running_mean_;
   std::vector<Data<T> *> bn_running_inv_variance_;
   std::vector<Data<T> *> bn_saved_mean_;
-  std::vector<Data<T> *> bn_saved_inv_variance_;
+  std::vector<Data<T> *> bn_saved_inv_variance_;*/
+  Data<T> *bn_scale_;
+  int bn_scale_chunk_id_;
+  Data<T> *bn_scale_diffs_;
+  int bn_scale_diffs_chunk_id_;
+  Data<T> *bn_bias_;
+  int bn_bias_chunk_id_;
+  Data<T> *bn_bias_diffs_;
+  int bn_bias_diffs_chunk_id_;
+  Data<T> *bn_running_mean_;
+  int bn_running_mean_chunk_id_;
+  Data<T> *bn_running_inv_variance_;
+  int bn_running_inv_variance_chunk_id_;
+  Data<T> *bn_saved_mean_;
+  int bn_saved_mean_chunk_id_;
+  Data<T> *bn_saved_inv_variance_;
+  int bn_saved_inv_variance_chunk_id_;
 
  public:
   BatchNormLayer(DNNMark<T> *p_dnnmark)
@@ -1323,23 +1339,49 @@ class BatchNormLayer : public Layer<T> {
 	         << "This value is defined as " << CUDNN_BN_MIN_EPSILON << " in cudnn.h.\n";
     }
     if(bn_param_.mode_ == CUDNN_BATCHNORM_PER_ACTIVATION) {
-      bn_specifics_desc_.Set(1, input_dim_.c, input_dim_.h, input_dim_.w);
-      bn_specifics_size = input_dim_.c * input_dim_.h * input_dim_.w;
+      bn_specifics_desc_.Set(1, input_dim_.c_, input_dim_.h_, input_dim_.w_);
+      bn_specifics_size_ = input_dim_.c_ * input_dim_.h_ * input_dim_.w_;
     }
     else {
-      bn_specifics_desc_.Set(1, input_dim_.c, 1, 1);
-      bn_specifics_size = input_dim_.c;
+      bn_specifics_desc_.Set(1, input_dim_.c_, 1, 1);
+      bn_specifics_size_ = input_dim_.c_;
     }
     
-    //TODO: Initialize bn_scale_, bn_scale_diffs_, bn_bias_, bn_bias_diffs_, bn_running_mean_, and bn_running_inv_variance_
+    //Initialize bn_scale_, bn_scale_diffs_, bn_bias_, bn_bias_diffs_, bn_running_mean_, and bn_running_inv_variance_
+    bn_scale_chunk_id_ = data_manager_->CreateData(bn_specifics_size_);
+    bn_scale_ = data_manager_->GetData(bn_scale_chunk_id_);
+    bn_scale_diffs_chunk_id_ = data_manager_->CreateData(bn_specifics_size_);
+    bn_scale_diffs_ = data_manager_->GetData(bn_scale_diffs_chunk_id_);
+    bn_bias_chunk_id_ = data_manager_->CreateData(bn_specifics_size_);
+    bn_bias_ = data_manager_->GetData(bn_bias_chunk_id_);
+    bn_bias_diffs_chunk_id_ = data_manager_->CreateData(bn_specifics_size_);
+    bn_bias_diffs_ = data_manager_->GetData(bn_bias_diffs_chunk_id_);
+    bn_running_mean_chunk_id_ = data_manager_->CreateData(bn_specifics_size_);
+    bn_running_mean_ = data_manager_->GetData(bn_running_mean_chunk_id_);
+    bn_running_inv_variance_chunk_id_ = data_manager_->CreateData(bn_specifics_size_);
+    bn_running_inv_variance_ = data_manager_->GetData(bn_running_inv_variance_chunk_id_);
+
+    bn_scale_->Filler();
+    bn_bias_->Filler();
+    bn_running_mean_->Filler();
+    bn_running_inv_variance_->Filler();
+
     //All of these tensors use the bn_specifics_ tensor descriptor
-    if(bn_param_.save_intermediates) {
+    if(bn_param_.save_intermediates_) {
       //TODO: Initialize bn_saved_mean_ and bn_saved_inv_variance_, also using bn_specifics_ tensor descriptor
+      bn_saved_mean_chunk_id_ = data_manager_->CreateData(bn_specifics_size_);
+      bn_saved_mean_ = data_manager_->GetData(bn_saved_mean_chunk_id_);
+      bn_saved_inv_variance_chunk_id_ = data_manager_->CreateData(bn_specifics_size_);
+      bn_saved_inv_variance_ = data_manager_->GetData(bn_saved_inv_variance_chunk_id_);
+
+      bn_saved_mean_->Filler();
+      bn_saved_inv_variance_->Filler();
     }
     else {
       bn_saved_mean_ = nullptr;
       bn_saved_inv_variance_ = nullptr;
     }
+
     if (input_dim_.n_ != 0 && input_dim_.c_ != 0 &&
         input_dim_.h_ != 0 && input_dim_.w_ != 0) {
       //
@@ -1411,7 +1453,7 @@ class BatchNormLayer : public Layer<T> {
 	      bn_param_.epsilon_,
 	      bn_saved_mean_,
 	      bn_saved_inv_variance_
-              );
+              ));
     }
     cudaProfilerStop();
 
@@ -1453,7 +1495,7 @@ class BatchNormLayer : public Layer<T> {
 	      bn_param_.epsilon_,
 	      bn_saved_mean_,
 	      bn_saved_inv_variance_
-	      );
+	      ));
     }
     cudaProfilerStop();
   }
