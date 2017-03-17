@@ -132,6 +132,8 @@ if (enable-benchmarking)
   add_subdirectory(benchmarks/test_bwd_fc)
   add_subdirectory(benchmarks/test_fwd_softmax)
   add_subdirectory(benchmarks/test_bwd_softmax)
+  add_subdirectory(benchmarks/test_fwd_bn)
+  add_subdirectory(benchmarks/test_bwd_bn)
 
   # Invoke cmake file of composed model benchmark
   add_subdirectory(benchmarks/test_composed_model)
