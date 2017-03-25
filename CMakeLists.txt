@@ -120,18 +120,8 @@ if (enable-benchmarking)
   find_library(GFLAGS_LIBRARY gflags)
 
   # Invoke cmake files of each benchmark
-  add_subdirectory(benchmarks/test_fwd_conv)
-  add_subdirectory(benchmarks/test_bwd_conv)
-  add_subdirectory(benchmarks/test_fwd_pool)
-  add_subdirectory(benchmarks/test_bwd_pool)
-  add_subdirectory(benchmarks/test_fwd_lrn)
-  add_subdirectory(benchmarks/test_bwd_lrn)
-  add_subdirectory(benchmarks/test_fwd_activation)
-  add_subdirectory(benchmarks/test_bwd_activation)
-  add_subdirectory(benchmarks/test_fwd_fc)
-  add_subdirectory(benchmarks/test_bwd_fc)
-  add_subdirectory(benchmarks/test_fwd_softmax)
-  add_subdirectory(benchmarks/test_bwd_softmax)
+  set(BENCHMARKS benchmarks)
+  add_subdirectory(${BENCHMARKS})
 
   # Invoke cmake file of composed model benchmark
   add_subdirectory(benchmarks/test_composed_model)
