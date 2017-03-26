@@ -1296,14 +1296,6 @@ class BatchNormLayer : public Layer<T> {
   BatchNormParam bn_param_;
   DataTensor<T> bn_specifics_desc_;
   int bn_specifics_size_;
-  /*std::vector<Data<T> *> bn_scale_;
-  std::vector<Data<T> *> bn_scale_diffs_;
-  std::vector<Data<T> *> bn_bias_;
-  std::vector<Data<T> *> bn_bias_diffs_;
-  std::vector<Data<T> *> bn_running_mean_;
-  std::vector<Data<T> *> bn_running_inv_variance_;
-  std::vector<Data<T> *> bn_saved_mean_;
-  std::vector<Data<T> *> bn_saved_inv_variance_;*/
   Data<T> *bn_scale_;
   int bn_scale_chunk_id_;
   Data<T> *bn_scale_diffs_;
@@ -1336,7 +1328,7 @@ class BatchNormLayer : public Layer<T> {
     // Set up batch normalization related data
     if(bn_param_.epsilon_ < CUDNN_BN_MIN_EPSILON) {
       LOG(FATAL) << "The value of epsilon cannot be less than CUDNN_BN_MIN_EPSILON.\n"
-	         << "This value is defined as " << CUDNN_BN_MIN_EPSILON << " in cudnn.h.\n";
+                 << "This value is defined as " << CUDNN_BN_MIN_EPSILON << " in cudnn.h.\n";
     }
     if(bn_param_.mode_ == CUDNN_BATCHNORM_PER_ACTIVATION) {
       bn_specifics_desc_.Set(1, input_dim_.c_, input_dim_.h_, input_dim_.w_);
@@ -1368,7 +1360,6 @@ class BatchNormLayer : public Layer<T> {
 
     //All of these tensors use the bn_specifics_ tensor descriptor
     if(bn_param_.save_intermediates_) {
-      //TODO: Initialize bn_saved_mean_ and bn_saved_inv_variance_, also using bn_specifics_ tensor descriptor
       bn_saved_mean_chunk_id_ = data_manager_->CreateData(bn_specifics_size_);
       bn_saved_mean_ = data_manager_->GetData(bn_saved_mean_chunk_id_);
       bn_saved_inv_variance_chunk_id_ = data_manager_->CreateData(bn_specifics_size_);
@@ -1432,7 +1423,7 @@ class BatchNormLayer : public Layer<T> {
       }
     }
 
-    // Softmax forward computation
+    // Batch normalization forward computation
     cudaProfilerStart();
     for (int i = 0; i < num_bottoms_; i++) {
       CUDNN_CALL(cudnnBatchNormalizationForwardTraining(
@@ -1445,14 +1436,14 @@ class BatchNormLayer : public Layer<T> {
               bottom_desc_.Get(), bottoms_[i]->Get(),
               top_desc_.Get(), tops_[i]->Get(),
               bn_specifics_desc_.Get(),
-	      bn_scale_,
-	      bn_bias_,
-	      bn_param_.exp_avg_factor_,
-	      bn_running_mean_,
-	      bn_running_inv_variance_,
-	      bn_param_.epsilon_,
-	      bn_saved_mean_,
-	      bn_saved_inv_variance_
+              bn_scale_->Get(),
+              bn_bias_->Get(),
+              bn_param_.exp_avg_factor_,
+              bn_running_mean_->Get(),
+              bn_running_inv_variance_->Get(),
+              bn_param_.epsilon_,
+              bn_saved_mean_->Get(),
+              bn_saved_inv_variance_->Get()
               ));
     }
     cudaProfilerStop();
@@ -1480,22 +1471,22 @@ class BatchNormLayer : public Layer<T> {
               p_dnnmark_->getRunMode() == COMPOSED ?
               p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
               p_dnnmark_->GetHandle()->GetCudnn(),
-	      bn_param_.mode_,
-	      DataType<T>::one,
-	      DataType<T>::zero,
-	      DataType<T>::one,
-	      DataType<T>::zero,
-	      bottom_desc_.Get(), bottoms_[i]->Get(),
-	      top_desc_.Get(), top_diffs_[i]->Get(),
-	      bottom_desc_.Get(), bottom_diffs_[i]->Get(),
-	      bn_specifics_desc_.Get(),
-	      bn_scale_,
-	      bn_scale_diffs_,
-	      bn_bias_diffs_,
-	      bn_param_.epsilon_,
-	      bn_saved_mean_,
-	      bn_saved_inv_variance_
-	      ));
+              bn_param_.mode_,
+              DataType<T>::one,
+              DataType<T>::zero,
+              DataType<T>::one,
+              DataType<T>::zero,
+              bottom_desc_.Get(), bottoms_[i]->Get(),
+              top_desc_.Get(), top_diffs_[i]->Get(),
+              bottom_desc_.Get(), bottom_diffs_[i]->Get(),
+              bn_specifics_desc_.Get(),
+              bn_scale_->Get(),
+              bn_scale_diffs_->Get(),
+              bn_bias_diffs_->Get(),
+              bn_param_.epsilon_,
+              bn_saved_mean_->Get(),
+              bn_saved_inv_variance_->Get()
+              ));
     }
     cudaProfilerStop();
   }

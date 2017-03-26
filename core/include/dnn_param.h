@@ -190,14 +190,14 @@ struct BatchNormParam {
   double exp_avg_factor_;
   double epsilon_;
   BatchNormParam()
-  : mode_(CUDNN_BATCHNORM_PER_ACTIVATION),	//TODO: Verify selection of default values, especially exp_avg_factor_.
+  : mode_(CUDNN_BATCHNORM_PER_ACTIVATION),
     save_intermediates_(true),
     exp_avg_factor_(1),
     epsilon_(CUDNN_BN_MIN_EPSILON) {}
 };
 
 inline std::ostream &operator<<(std::ostream &os,
-		const BatchNormParam &bn_param) {
+                                const BatchNormParam &bn_param) {
   os << std::endl;
   os << "[BatchNorm Param] Mode: "
      << bn_param.mode_ << std::endl;
