@@ -39,7 +39,7 @@ OS: Ubuntu
 
 CUDA related library: CUDA tool kit v8.0; CuDNN v5.0
 
-Other Software: CMake; g++
+Other Software: CMake; g++; gflags; glog
 
 ## Build
 After you download and unzip the DNNMark, you should go to its root directory and edit `setup.sh` to set up path to cuDNN. And then run `./setup.sh`. This will create a build directory and run cmake automatically. To build the code, go to build directory `build` and run `make`
