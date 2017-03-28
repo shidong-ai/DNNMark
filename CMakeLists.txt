@@ -38,7 +38,7 @@ endif()
 
 option (double-test "Make data type double" OFF)
 
-# Buld NICE library only with CUDA
+# Build NICE library only with CUDA
 if (CUDA_FOUND)
 
   # Print messge to indicate whether GPU device exists
@@ -74,6 +74,10 @@ if (CUDA_FOUND)
   # Set path of DNNMark include files
   set(DNNMARK_INCLUDES ${CMAKE_SOURCE_DIR}/core/include)
   include_directories(${DNNMARK_INCLUDES}) 
+  
+  # Set path of DNNMark layer files
+  set(DNNMARK_LAYERS ${DNNMARK_INCLUDES}/layers)
+  include_directories(${DNNMARK_LAYERS}) 
   
   # Set source files
   file(GLOB_RECURSE DNNMARK_SOURCES RELATIVE ${CMAKE_SOURCE_DIR} core/src/*.cc)

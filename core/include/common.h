@@ -115,7 +115,9 @@ enum LayerType {
   LRN,
   ACTIVATION,
   FC,
-  SOFTMAX
+  SOFTMAX,
+  BN,
+  BYPASS
 };
 
 } // namespace dnnmark
