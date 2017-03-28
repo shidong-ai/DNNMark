@@ -127,8 +127,5 @@ if (enable-benchmarking)
   set(BENCHMARKS benchmarks)
   add_subdirectory(${BENCHMARKS})
 
-  # Invoke cmake file of composed model benchmark
-  add_subdirectory(benchmarks/test_composed_model)
-
 endif()
 
