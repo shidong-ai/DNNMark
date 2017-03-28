@@ -51,6 +51,7 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
   FullyConnectedParam *fc_param;
   SoftmaxParam *softmax_param;
   BatchNormParam *bn_param;
+  BypassParam *bypass_param;
   CHECK_GT(num_layers_added_, 0);
 
   switch(layer_type) {
@@ -317,6 +318,22 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
       }
       break;
     } // End of case BN
+    case BYPASS: {
+      // Obtain the data dimension and parameters variable within layer class
+      input_dim = std::dynamic_pointer_cast<BypassLayer<T>>
+                  (layers_map_[current_layer_id])->getInputDim();
+      bypass_param = std::dynamic_pointer_cast<BypassLayer<T>>
+                 (layers_map_[current_layer_id])->getBypassParam();
+
+      if(isKeywordExist(var, data_config_keywords))
+        break;
+
+      // Process all the keywords in config
+      if(!isKeywordExist(var, bypass_config_keywords)) {
+        LOG(FATAL) << var << ": Keywords not exists" << std::endl;
+      }
+      break;
+    }
     default: {
       LOG(WARNING) << "NOT supported layer";
       break;
@@ -369,6 +386,9 @@ int DNNMark<T>::ParseAllConfig(const std::string &config_file) {
 
   // Parse BatchNorm specific config
   ParseSpecifiedConfig(config_file, BN);
+
+  // Parse Bypass specific config
+  ParseSpecifiedConfig(config_file, BYPASS);
 }
 
 template <typename T>
@@ -464,6 +484,10 @@ int DNNMark<T>::ParseSpecifiedConfig(const std::string &config_file,
       section.assign("[BatchNorm]");
       break;
     }
+    case BYPASS: {
+      section.assign("[Bypass]");
+      break;
+    }
     default: {
       break;
     }
@@ -506,6 +530,9 @@ int DNNMark<T>::ParseSpecifiedConfig(const std::string &config_file,
       else if (layer_type == BN)
         layers_map_.emplace(current_layer_id,
           std::make_shared<BatchNormLayer<T>>(this));
+      else if (layer_type == BYPASS)
+	layers_map_.emplace(current_layer_id,
+	  std::make_shared<BypassLayer<T>>(this));
       layers_map_[current_layer_id]->setLayerId(current_layer_id);
       layers_map_[current_layer_id]->setLayerType(layer_type);
       num_layers_added_++;
@@ -566,6 +593,10 @@ int DNNMark<T>::Initialize() {
       LOG(INFO) << "DNNMark: Setup parameters of Batch Normalization layer";
       std::dynamic_pointer_cast<BatchNormLayer<T>>(it->second)->Setup();
     }
+    if (it->second->getLayerType() == BYPASS) {
+      LOG(INFO) << "DNNMark: Setup parameters of Bypass layer";
+      std::dynamic_pointer_cast<BypassLayer<T>>(it->second)->Setup();
+    }
   }
   return 0;
 }
@@ -613,6 +644,12 @@ int DNNMark<T>::RunAll() {
       std::dynamic_pointer_cast<BatchNormLayer<T>>(it->second)
         ->ForwardPropagation();
       std::dynamic_pointer_cast<BatchNormLayer<T>>(it->second)
+        ->BackwardPropagation();
+    }
+    if (it->second->getLayerType() == BYPASS) {
+      std::dynamic_pointer_cast<BypassLayer<T>>(it->second)
+        ->ForwardPropagation();
+      std::dynamic_pointer_cast<BypassLayer<T>>(it->second)
         ->BackwardPropagation();
     }
   }
@@ -664,6 +701,12 @@ int DNNMark<T>::Forward() {
         ->ForwardPropagation();
       LOG(INFO) << "DNNMark: Running BatchNormalization forward: FINISHED";
     }
+    if (it->second->getLayerType() == BYPASS) {
+      LOG(INFO) << "DNNMark: Running Bypass forward: STARTED";
+      std::dynamic_pointer_cast<BypassLayer<T>>(it->second)
+        ->ForwardPropagation();
+      LOG(INFO) << "DNNMark: Running Bypass forward: FINISHED";
+    }
   }
   return 0;
 }
@@ -712,6 +755,12 @@ int DNNMark<T>::Backward() {
       std::dynamic_pointer_cast<BatchNormLayer<T>>(it->second)
         ->BackwardPropagation();
       LOG(INFO) << "DNNMark: Running BatchNormalization backward: FINISHED";
+    }
+    if (it->second->getLayerType() == BYPASS) {
+      LOG(INFO) << "DNNMark: Running Bypass backward: STARTED";
+      std::dynamic_pointer_cast<BypassLayer<T>>(it->second)
+        ->BackwardPropagation();
+      LOG(INFO) << "DNNMark: Running Bypass backward: FINISHED";
     }
   }
   return 0;

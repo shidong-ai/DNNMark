@@ -210,6 +210,17 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
+struct BypassParam {
+	BypassParam() {}
+};
+
+inline std::ostream &operator<<(std::ostream &os,
+                                const BypassParam &bypass_param) {
+  os << std::endl;
+  os << "[Bypass Param]" << std::endl;
+  return os;
+}
+
 } // namespace dnnmark
 
 #endif // CORE_INCLUDE_DNN_PARAM_H_

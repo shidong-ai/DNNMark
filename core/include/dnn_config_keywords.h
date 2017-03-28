@@ -38,7 +38,8 @@ const std::vector<std::string> section_keywords = {
   "[Activation]",
   "[FullyConnected]",
   "[Softmax]",
-  "[BatchNorm]"
+  "[BatchNorm]",
+  "[Bypass]"
 };
 
 // DNNMark keywords
@@ -119,6 +120,10 @@ const std::vector<std::string> bn_config_keywords = {
   "save_intermediates",
   "exp_avg_factor",
   "epsilon"
+};
+
+// BYPASS layer keywords
+const std::vector<std::string> bypass_config_keywords = {
 };
 
 bool isSection(const std::string &s);
