@@ -16,7 +16,7 @@ file(GLOB_RECURSE BENCHMARK_SRC_FILE RELATIVE
 message(STATUS ${BENCHMARK_NAME} ": Benchmark source files: " ${BENCHMARK_SRC_FILE})
 
 # Add benchmark executable
-add_executable(${BENCHMARK_NAME} ${BENCHMARK_SRC_FILE})
+add_executable(${BENCHMARK_NAME} ${COMMON_SRC} ${BENCHMARK_SRC_FILE})
 
 # Add dependencies of current benchmark
 add_dependencies(${BENCHMARK_NAME} ${PROJECT_NAME})

@@ -30,9 +30,9 @@ if(CUDA_FOUND)
   # COMPILE_RESULT_VAR is TRUE when compile succeeds
   # RUN_RESULT_VAR is zero when a GPU is found
   if(COMPILE_RESULT_VAR AND NOT RUN_RESULT_VAR)
-      set(CUDA_HAVE_GPU TRUE CACHE BOOL "Whether CUDA-capable GPU is present")
+      set(CUDA_HAVE_GPU TRUE)
   else()
-      set(CUDA_HAVE_GPU FALSE CACHE BOOL "Whether CUDA-capable GPU is present")
+      set(CUDA_HAVE_GPU FALSE)
   endif()
 endif()
 
@@ -120,18 +120,8 @@ if (enable-benchmarking)
   find_library(GFLAGS_LIBRARY gflags)
 
   # Invoke cmake files of each benchmark
-  add_subdirectory(benchmarks/test_fwd_conv)
-  add_subdirectory(benchmarks/test_bwd_conv)
-  add_subdirectory(benchmarks/test_fwd_pool)
-  add_subdirectory(benchmarks/test_bwd_pool)
-  add_subdirectory(benchmarks/test_fwd_lrn)
-  add_subdirectory(benchmarks/test_bwd_lrn)
-  add_subdirectory(benchmarks/test_fwd_activation)
-  add_subdirectory(benchmarks/test_bwd_activation)
-  add_subdirectory(benchmarks/test_fwd_fc)
-  add_subdirectory(benchmarks/test_bwd_fc)
-  add_subdirectory(benchmarks/test_fwd_softmax)
-  add_subdirectory(benchmarks/test_bwd_softmax)
+  set(BENCHMARKS benchmarks)
+  add_subdirectory(${BENCHMARKS})
 
 endif()
 

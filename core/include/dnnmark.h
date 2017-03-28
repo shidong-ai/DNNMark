@@ -49,10 +49,10 @@ class DNNMark {
  private:
   RunMode run_mode_;
   Handle handle_;
+  // The map is ordered, so we don't need other container to store the layers
   std::map<int, std::shared_ptr<Layer<T>>> layers_map_;
   std::map<std::string, int> name_id_map_;
-  std::list<std::shared_ptr<Layer<T>>> composed_model_;
-  int num_layers_;
+  int num_layers_added_;
 
   // Private functions
   void SetLayerParams(LayerType layer_type,
@@ -63,6 +63,7 @@ class DNNMark {
  public:
 
   DNNMark();
+  DNNMark(int num_layers);
   int ParseAllConfig(const std::string &config_file);
   int ParseGeneralConfig(const std::string &config_file);
   int ParseSpecifiedConfig(const std::string &config_file,
@@ -71,6 +72,16 @@ class DNNMark {
   int RunAll();
   int Forward();
   int Backward();
+
+  Handle *GetHandle() { return &handle_; }
+  Layer<T> *GetLayerByID(int layer_id) { return layers_map_[layer_id].get(); }
+  Layer<T> *GetLayerByName(const std::string &name) {
+    return layers_map_[name_id_map_[name]].get();
+  }
+  bool isLayerExist(const std::string &name) {
+    return name_id_map_.find(name) != name_id_map_.end();
+  }
+  RunMode getRunMode() { return run_mode_; }
 
 };
 
