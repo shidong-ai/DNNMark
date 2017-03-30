@@ -20,12 +20,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef LAYERS_INCLUDE_CONV_LAYER_H_ 
-#define LAYERS_INCLUDE_CONV_LAYER_H_
+#ifndef CORE_INCLUDE_LAYERS_CONV_LAYER_H_ 
+#define CORE_INCLUDE_LAYERS_CONV_LAYER_H_
+
+#include "dnn_layer.h"
+
+namespace dnnmark {
 
 template <typename T>
 class ConvolutionLayer : public Layer<T> {
-
   // using declaration for calling member from base class
   using Layer<T>::p_dnnmark_;
   using Layer<T>::layer_id_;
@@ -304,4 +307,6 @@ class ConvolutionLayer : public Layer<T> {
 
 };
 
-#endif // LAYERS_INCLUDE_CONV_LAYER_H_
+} // namespace dnnmark
+
+#endif // CORE_INCLUDE_LAYERS_CONV_LAYER_H_

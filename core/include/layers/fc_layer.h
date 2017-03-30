@@ -20,8 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef LAYERS_INCLUDE_FC_LAYER_H_ 
-#define LAYERS_INCLUDE_FC_LAYER_H_
+#ifndef CORE_INCLUDE_LAYERS_FC_LAYER_H_ 
+#define CORE_INCLUDE_LAYERS_FC_LAYER_H_
+
+#include "dnn_layer.h"
+
+namespace dnnmark {
 
 template <typename T>
 class FullyConnectedLayer : public Layer<T> {
@@ -236,4 +240,6 @@ class FullyConnectedLayer : public Layer<T> {
 
 };
 
-#endif // LAYERS_INCLUDE_FC_LAYER_H_
+} // namespace dnnmark
+
+#endif // CORE_INCLUDE_LAYERS_FC_LAYER_H_

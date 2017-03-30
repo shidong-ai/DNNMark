@@ -174,15 +174,6 @@ class Layer {
 
 };
 
-#include "conv_layer.h"
-#include "pool_layer.h"
-#include "lrn_layer.h"
-#include "activation_layer.h"
-#include "fc_layer.h"
-#include "softmax_layer.h"
-#include "bn_layer.h"
-#include "bypass_layer.h"
-
 } // namespace dnnmark
 
 #endif // CORE_INCLUDE_DNN_LAYER_H_
