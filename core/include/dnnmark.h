@@ -41,6 +41,14 @@
 #include "data_manager.h"
 #include "dnn_layer.h"
 
+#include "activation_layer.h"
+#include "bn_layer.h"
+#include "bypass_layer.h"
+#include "conv_layer.h"
+#include "fc_layer.h"
+#include "lrn_layer.h"
+#include "pool_layer.h"
+#include "softmax_layer.h"
 
 namespace dnnmark {
 
