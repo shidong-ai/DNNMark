@@ -32,11 +32,13 @@ namespace dnnmark {
 
 template <typename T>
 DNNMark<T>::DNNMark()
-: run_mode_(NONE), handle_(), num_layers_added_(0) {}
+: run_mode_(NONE), io_enabled_(false),
+  handle_(), num_layers_added_(0) {}
 
 template <typename T>
 DNNMark<T>::DNNMark(int num_layers)
-: run_mode_(NONE), handle_(num_layers), num_layers_added_(0) {}
+: run_mode_(NONE), io_enabled_(false),
+  handle_(num_layers), num_layers_added_(0) {}
 
 template <typename T>
 void DNNMark<T>::SetLayerParams(LayerType layer_type,

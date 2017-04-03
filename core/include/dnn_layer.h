@@ -30,6 +30,7 @@
 #include "dnn_param.h"
 #include "dnn_utility.h"
 #include "data_manager.h"
+#include "io.h"
 
 namespace dnnmark {
 
@@ -171,6 +172,19 @@ class Layer {
 
   virtual void ForwardPropagation() {}
   virtual void BackwardPropagation() {}
+
+  void GenerateDataFile(Data<T> *data,
+                        DataDim dim, DataName data_name) {
+    if (p_dnnmark_->isIOEnabled()) {
+      std::string output_file_name = GenFileName(dim.n_, dim.c_,
+                                                 dim.h_, dim.w_,
+                                                 data_name, TXT);
+      LOG(INFO) << "Output data to file: " << output_file_name;
+      ToFile(data->GetCpuData(), output_file_name, dim, TXT);
+    } else {
+      LOG(INFO) << "The I/O functionality is not enabled";
+    }
+  }
 
 };
 

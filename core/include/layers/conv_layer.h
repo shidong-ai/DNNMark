@@ -234,6 +234,11 @@ class ConvolutionLayer : public Layer<T> {
         bottoms_[i]->Filler();
       }
     }
+
+    // Generate Data file
+    for (int i = 0; i < num_bottoms_; i++)
+      Layer<T>::GenerateDataFile(bottoms_[i], input_dim_, BOTTOM);
+
     // Convolution forward computation
     cudaProfilerStart();
     for (int i = 0; i < num_bottoms_; i++) {

@@ -41,7 +41,7 @@ class Data {
   T *cpu_ptr_;
  public:
   Data(int size)
-  : size_(size) {
+  : size_(size), cpu_ptr_(nullptr) {
     LOG(INFO) << "Create Data chunk of size " << size_;
     CUDA_CALL(cudaMalloc(&gpu_ptr_, size * sizeof(T)));
   }
@@ -49,6 +49,7 @@ class Data {
     LOG(INFO) << "Free Data chunk of size " << size_;
     CUDA_CALL(cudaFree(gpu_ptr_));
     if (cpu_ptr_ != nullptr) {
+      LOG(INFO) << "Free CPU Data of size " << size_ << " as well";
       delete []cpu_ptr_;
     }
   }

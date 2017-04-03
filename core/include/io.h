@@ -31,31 +31,45 @@
 
 namespace dnnmark {
 
-enum Direction {
-  INPUT = 0,
-  OUTPUT
-}
+enum DataName {
+  BOTTOM = 0,
+  TOP,
+  BOTTOM_DIFF,
+  TOP_DIFF,
+  WEIGHT
+};
 
 enum Extension {
   TXT = 0,
   CSV
-}
+};
 
 std::string GenFileName(int n,
                         int c,
                         int h,
                         int w,
-                        Direction direction,
+                        DataName data_name,
                         Extension ext) {
   std::string common_file_name = "n" + std::to_string(n) + "_c" +
     std::to_string(c) + "_h" + std::to_string(h) + "_w" + std::to_string(w);
-  if (ext == TXT) {
+  if (ext == TXT)
     common_file_name += ".txt";
-  } else if (ext == CSV) {
+  else if (ext == CSV)
     common_file_name += ".csv";
-  }
-  return direction == INPUT ? "input_" + common_file_name :
-                      "output_" + common_file_name;
+
+  std::string prefix;
+  if (data_name == BOTTOM)
+    prefix = "bottom_";
+  else if (data_name == TOP)
+    prefix = "top_";
+  else if (data_name == BOTTOM_DIFF)
+    prefix = "bottom_diff_";
+  else if (data_name == TOP_DIFF)
+    prefix = "top_diff_";
+  else if (data_name == WEIGHT)
+    prefix = "weight_";
+
+  return prefix + common_file_name;
 }
 
 template <typename T>
@@ -63,14 +77,14 @@ void ToFile(const T *data,
             const std::string &output_file,
             DataDim dim, Extension ext) {
   std::ofstream output(output_file, std::ofstream::out);
-  int num_rows = dim.c_ * dim_.h * dim_.w;
+  int num_rows = dim.c_ * dim.h_ * dim.w_;
   int num_cols = dim.n_;
   std::string delimiter = ext == CSV ? "," : " ";
   if (output) {
     for (int i = 0; i < num_rows; i++) {
       for (int j = 0; j < num_cols; j++) {
         // All column major
-        output << data[i * num_rows + j];
+        output << data[i + j * num_rows];
         if (j == num_cols - 1)
           output << std::endl;
         else
@@ -78,7 +92,7 @@ void ToFile(const T *data,
       }
     }
   } else {
-    LOG(FATAL) << "Cannot open file " + output_file_path + ", exiting...";
+    LOG(FATAL) << "Cannot open file " + output_file + ", exiting...";
   }
   output.close();
 }

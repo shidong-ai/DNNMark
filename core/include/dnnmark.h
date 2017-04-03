@@ -91,6 +91,7 @@ class DNNMark {
     return name_id_map_.find(name) != name_id_map_.end();
   }
   RunMode getRunMode() { return run_mode_; }
+  bool isIOEnabled() { return io_enabled_; }
 
 };
 
