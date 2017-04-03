@@ -48,6 +48,7 @@ std::string GenFileName(int n,
                         int c,
                         int h,
                         int w,
+                        LayerType layer_type,
                         DataName data_name,
                         Extension ext) {
   std::string common_file_name = "n" + std::to_string(n) + "_c" +
@@ -69,7 +70,9 @@ std::string GenFileName(int n,
   else if (data_name == WEIGHT)
     prefix = "weight_";
 
-  return prefix + common_file_name;
+  std::string layer_name = layer_type_map[layer_type] + "_"; 
+
+  return layer_name + prefix + common_file_name;
 }
 
 template <typename T>

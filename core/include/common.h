@@ -24,6 +24,7 @@
 #define CORE_INCLUDE_COMMON_H_
 
 #include <iostream>
+#include <map>
 #include <cuda.h>
 #include <cuda_profiler_api.h>
 #include <curand.h>
@@ -118,6 +119,18 @@ enum LayerType {
   SOFTMAX,
   BN,
   BYPASS
+};
+
+// Layer type map
+static std::map<LayerType, std::string> layer_type_map = {
+  {CONVOLUTION, "convolution"},
+  {POOLING, "pooling"},
+  {LRN, "lrn"},
+  {ACTIVATION, "activation"},
+  {FC, "fc"},
+  {SOFTMAX, "softmax"},
+  {BN, "bn"},
+  {BYPASS, "bypass"}
 };
 
 } // namespace dnnmark

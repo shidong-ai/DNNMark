@@ -178,6 +178,7 @@ class Layer {
     if (p_dnnmark_->isIOEnabled()) {
       std::string output_file_name = GenFileName(dim.n_, dim.c_,
                                                  dim.h_, dim.w_,
+                                                 type_,
                                                  data_name, TXT);
       LOG(INFO) << "Output data to file: " << output_file_name;
       ToFile(data->GetCpuData(), output_file_name, dim, TXT);
