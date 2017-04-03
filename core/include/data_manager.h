@@ -38,6 +38,7 @@ class Data {
   PseudoNumGenerator *png_;
   int size_;
   T *gpu_ptr_;
+  T *cpu_ptr_;
  public:
   Data(int size)
   : size_(size) {
@@ -47,13 +48,25 @@ class Data {
   ~Data() {
     LOG(INFO) << "Free Data chunk of size " << size_;
     CUDA_CALL(cudaFree(gpu_ptr_));
-    cudaFree(gpu_ptr_);
+    if (cpu_ptr_ != nullptr) {
+      delete []cpu_ptr_;
+    }
   }
   void Filler() {
     png_ = PseudoNumGenerator::GetInstance();
     png_->GenerateUniformData(gpu_ptr_, size_);
   }
   T *Get() { return gpu_ptr_; }
+  T *GetCpuData() {
+    if (gpu_ptr_ == nullptr || size_ == 0) {
+      LOG(FATAL) << "No GPU data has been allocated";
+    }
+    cpu_ptr_ = new T[size_];
+    CUDA_CALL(cudaMemcpy(cpu_ptr_, gpu_ptr_,
+                         size_ * sizeof(T), cudaMemcpyDeviceToHost));
+    CUDA_CALL(cudaDeviceSynchronize());
+    return cpu_ptr_;
+  }
 };
 
 

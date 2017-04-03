@@ -42,7 +42,8 @@ const std::vector<std::string> section_keywords = {
 
 // DNNMark keywords
 const std::vector<std::string> dnnmark_config_keywords = {
-  "run_mode"
+  "run_mode",
+  "io_enabled"
 };
 
 // Data config keywords

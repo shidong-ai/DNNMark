@@ -376,6 +376,14 @@ int DNNMark<T>::ParseGeneralConfig(const std::string &config_file) {
         else
           std::cerr << "Unknown run mode" << std::endl;
       }
+      if (!var.compare("io_enabled")) {
+        if (!val.compare("true"))
+          io_enabled_ = true;
+        else if(!val.compare("false"))
+          io_enabled_ = false;
+        else
+          std::cerr << "Flag io_enabled is set incorrectly" << std::endl;
+      }
     } else {
       LOG(FATAL) << var << ": Keywords not exists" << std::endl;
     }

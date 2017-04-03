@@ -49,6 +49,7 @@ class DNNMark {
  private:
   RunMode run_mode_;
   Handle handle_;
+  bool io_enabled_;
   // The map is ordered, so we don't need other container to store the layers
   std::map<int, std::shared_ptr<Layer<T>>> layers_map_;
   std::map<std::string, int> name_id_map_;

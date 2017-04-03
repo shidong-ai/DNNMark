@@ -24,9 +24,64 @@
 #define CORE_INCLUDE_IO_H_
 
 #include <iostream>
+#include <fstream>
+#include <string>
+
+#include "dnnmark.h"
 
 namespace dnnmark {
 
+enum Direction {
+  INPUT = 0,
+  OUTPUT
+}
+
+enum Extension {
+  TXT = 0,
+  CSV
+}
+
+std::string GenFileName(int n,
+                        int c,
+                        int h,
+                        int w,
+                        Direction direction,
+                        Extension ext) {
+  std::string common_file_name = "n" + std::to_string(n) + "_c" +
+    std::to_string(c) + "_h" + std::to_string(h) + "_w" + std::to_string(w);
+  if (ext == TXT) {
+    common_file_name += ".txt";
+  } else if (ext == CSV) {
+    common_file_name += ".csv";
+  }
+  return direction == INPUT ? "input_" + common_file_name :
+                      "output_" + common_file_name;
+}
+
+template <typename T>
+void ToFile(const T *data,
+            const std::string &output_file,
+            DataDim dim, Extension ext) {
+  std::ofstream output(output_file, std::ofstream::out);
+  int num_rows = dim.c_ * dim_.h * dim_.w;
+  int num_cols = dim.n_;
+  std::string delimiter = ext == CSV ? "," : " ";
+  if (output) {
+    for (int i = 0; i < num_rows; i++) {
+      for (int j = 0; j < num_cols; j++) {
+        // All column major
+        output << data[i * num_rows + j];
+        if (j == num_cols - 1)
+          output << std::endl;
+        else
+          output << delimiter;
+      }
+    }
+  } else {
+    LOG(FATAL) << "Cannot open file " + output_file_path + ", exiting...";
+  }
+  output.close();
+}
 
 } // namespace dnnmark
 
