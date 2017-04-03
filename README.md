@@ -30,6 +30,7 @@ DNNMark contains commonly-used DNN primitives and also provides an easy approach
 4. Activation forward and backward
 5. Fully Connected forward and backward
 6. Softmax forward and backward
+7. Batch Normalization forward and backward
 
 # Build and Usage
 

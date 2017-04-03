@@ -240,7 +240,6 @@ class ActivationDesc : public Descriptor {
 
 };
 
-
 } // namespace dnnmark
 
 #endif // CORE_INCLUDE_DNN_UTILITY_H_
