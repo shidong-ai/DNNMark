@@ -235,9 +235,15 @@ class ConvolutionLayer : public Layer<T> {
       }
     }
 
-    // Generate Data file
+    // Generate Input Data file
     for (int i = 0; i < num_bottoms_; i++)
       Layer<T>::GenerateDataFile(bottoms_[i], input_dim_, BOTTOM);
+    DataDim weight_dim;
+    weight_dim.n_ = conv_param_.output_num_;
+    weight_dim.c_ = input_dim_.c_;
+    weight_dim.h_ = conv_param_.kernel_size_h_;
+    weight_dim.w_ = conv_param_.kernel_size_w_;
+    Layer<T>::GenerateDataFile(weights_, weight_dim, WEIGHT);
 
     // Convolution forward computation
     cudaProfilerStart();
@@ -255,6 +261,10 @@ class ConvolutionLayer : public Layer<T> {
                 top_desc_.Get(), tops_[i]->Get()));
     }
     cudaProfilerStop();
+
+    // Generate Input Data file
+    for (int i = 0; i < num_tops_; i++)
+      Layer<T>::GenerateDataFile(tops_[i], output_dim_, TOP);
 
     // TODO: evaluate the necessity of freeing memory here
     // Free the workspace
