@@ -237,7 +237,7 @@ class ConvolutionLayer : public Layer<T> {
 
     // Generate Input Data file
     for (int i = 0; i < num_bottoms_; i++)
-      Layer<T>::GenerateDataFile(bottoms_[i], input_dim_, BOTTOM);
+      Layer<T>::GenerateDataFile(bottoms_[i], input_dim_, BOTTOM, i);
     DataDim weight_dim;
     weight_dim.n_ = conv_param_.output_num_;
     weight_dim.c_ = input_dim_.c_;
@@ -262,9 +262,9 @@ class ConvolutionLayer : public Layer<T> {
     }
     cudaProfilerStop();
 
-    // Generate Input Data file
+    // Generate output Data file
     for (int i = 0; i < num_tops_; i++)
-      Layer<T>::GenerateDataFile(tops_[i], output_dim_, TOP);
+      Layer<T>::GenerateDataFile(tops_[i], output_dim_, TOP, i);
 
     // TODO: evaluate the necessity of freeing memory here
     // Free the workspace
@@ -283,6 +283,18 @@ class ConvolutionLayer : public Layer<T> {
         bottoms_[i]->Filler();
       }
     }
+
+    // Generate Input Data file
+    for (int i = 0; i < num_tops_; i++) {
+      Layer<T>::GenerateDataFile(tops_[i], output_dim_, TOP, i);
+      Layer<T>::GenerateDataFile(top_diffs_[i], output_dim_, TOP_DIFF, i);
+    }
+    DataDim weight_dim;
+    weight_dim.n_ = conv_param_.output_num_;
+    weight_dim.c_ = input_dim_.c_;
+    weight_dim.h_ = conv_param_.kernel_size_h_;
+    weight_dim.w_ = conv_param_.kernel_size_w_;
+    Layer<T>::GenerateDataFile(weights_, weight_dim, WEIGHT);
 
     // Convolution forward computation
     cudaProfilerStart();
@@ -310,9 +322,14 @@ class ConvolutionLayer : public Layer<T> {
                 bwd_data_algo_,
                 bwd_data_workspace_, bwd_data_workspace_size_,
                 DataType<T>::zero,
-                bottom_desc_.Get(), bottoms_[i]->Get()));
+                bottom_desc_.Get(), bottom_diffs_[i]->Get()));
     }
     cudaProfilerStop();
+
+    // Generate output Data file
+    Layer<T>::GenerateDataFile(weights_diff_, weight_dim, WEIGHT_DIFF);
+    for (int i = 0; i < num_bottoms_; i++)
+      Layer<T>::GenerateDataFile(bottom_diffs_[i], input_dim_, BOTTOM_DIFF, i);
 
     // TODO: evaluate the necessity of freeing memory here
     // Free the workspace

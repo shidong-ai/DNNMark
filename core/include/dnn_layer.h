@@ -173,13 +173,13 @@ class Layer {
   virtual void ForwardPropagation() {}
   virtual void BackwardPropagation() {}
 
-  void GenerateDataFile(Data<T> *data,
-                        DataDim dim, DataName data_name) {
+  void GenerateDataFile(Data<T> *data, DataDim dim,
+                        DataName data_name, int id = -1) {
     if (p_dnnmark_->isIOEnabled()) {
       std::string output_file_name = GenFileName(dim.n_, dim.c_,
                                                  dim.h_, dim.w_,
                                                  type_,
-                                                 data_name, TXT);
+                                                 data_name, id);
       LOG(INFO) << "Output data to file: " << output_file_name;
       ToFile(data->GetCpuData(), output_file_name, dim, TXT);
     } else {

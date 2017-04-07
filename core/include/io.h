@@ -36,7 +36,8 @@ enum DataName {
   TOP,
   BOTTOM_DIFF,
   TOP_DIFF,
-  WEIGHT
+  WEIGHT,
+  WEIGHT_DIFF
 };
 
 enum Extension {
@@ -50,7 +51,8 @@ std::string GenFileName(int n,
                         int w,
                         LayerType layer_type,
                         DataName data_name,
-                        Extension ext) {
+                        int id,
+                        Extension ext = TXT) {
   std::string common_file_name = "n" + std::to_string(n) + "_c" +
     std::to_string(c) + "_h" + std::to_string(h) + "_w" + std::to_string(w);
   if (ext == TXT)
@@ -59,16 +61,23 @@ std::string GenFileName(int n,
     common_file_name += ".csv";
 
   std::string prefix;
+  std::string id_str;
+  if (id > -1)
+    id_str = std::to_string(id) + "_";
+  else
+    id_str = "";
   if (data_name == BOTTOM)
-    prefix = "bottom_";
+    prefix = "bottom_" + id_str;
   else if (data_name == TOP)
-    prefix = "top_";
+    prefix = "top_" + id_str;
   else if (data_name == BOTTOM_DIFF)
-    prefix = "bottom_diff_";
+    prefix = "bottom_diff_" + id_str;
   else if (data_name == TOP_DIFF)
-    prefix = "top_diff_";
+    prefix = "top_diff_" + id_str;
   else if (data_name == WEIGHT)
-    prefix = "weight_";
+    prefix = "weight_" + id_str;
+  else if (data_name == WEIGHT_DIFF)
+    prefix = "weight_diff" + id_str;
 
   std::string layer_name = layer_type_map[layer_type] + "_"; 
 
