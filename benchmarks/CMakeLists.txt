@@ -13,6 +13,8 @@ set(SUBDIRECTORIES
   test_bwd_softmax
   test_fwd_bn
   test_bwd_bn
+  test_fwd_dropout
+  test_bwd_dropout
   test_fwd_bypass
   test_bwd_bypass
   test_composed_model

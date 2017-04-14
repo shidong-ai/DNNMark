@@ -210,6 +210,24 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
+struct DropoutParam {
+  float dropout_p_;
+  unsigned long long random_seed_;
+  DropoutParam()
+  : dropout_p_(.5),
+    random_seed_(0) {}
+};
+
+inline std::ostream &operator<<(std::ostream &os,
+                                const DropoutParam &dropout_param) {
+  os << std::endl;
+  os << "[Dropout Param] Dropout Probability: "
+     << dropout_param.dropout_p_ << std::endl;
+  os << "[Dropout Param] Random Seed: "
+     << dropout_param.random_seed_ << std::endl;
+  return os;
+}
+
 struct BypassParam {
 	BypassParam() {}
 };

@@ -117,6 +117,7 @@ enum LayerType {
   FC,
   SOFTMAX,
   BN,
+  DROPOUT,
   BYPASS
 };
 

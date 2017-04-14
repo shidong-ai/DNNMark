@@ -45,6 +45,7 @@
 #include "bn_layer.h"
 #include "bypass_layer.h"
 #include "conv_layer.h"
+#include "dropout_layer.h"
 #include "fc_layer.h"
 #include "lrn_layer.h"
 #include "pool_layer.h"
