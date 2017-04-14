@@ -739,6 +739,12 @@ int DNNMark<T>::Forward() {
         ->ForwardPropagation();
       LOG(INFO) << "DNNMark: Running Softmax forward: FINISHED";
     }
+    if (it->second->getLayerType() == BN) {
+      LOG(INFO) << "DNNMark: Running BatchNormalization forward: STARTED";
+      std::dynamic_pointer_cast<BatchNormLayer<T>>(it->second)
+        ->ForwardPropagation();
+      LOG(INFO) << "DNNMark: Running BatchNormalization forward: FINISHED";
+    }
     if (it->second->getLayerType() == DROPOUT) {
       LOG(INFO) << "DNNMark: Running Dropout forward: STARTED";
       std::dynamic_pointer_cast<DropoutLayer<T>>(it->second)
