@@ -39,6 +39,7 @@ const std::vector<std::string> section_keywords = {
   "[FullyConnected]",
   "[Softmax]",
   "[BatchNorm]",
+  "[Dropout]",
   "[Bypass]"
 };
 
@@ -120,6 +121,12 @@ const std::vector<std::string> bn_config_keywords = {
   "save_intermediates",
   "exp_avg_factor",
   "epsilon"
+};
+
+// DROPOUT layer keywords
+const std::vector<std::string> dropout_config_keywords = {
+  "dropout_probability",
+  "random_seed"
 };
 
 // BYPASS layer keywords

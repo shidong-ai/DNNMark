@@ -51,6 +51,7 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
   FullyConnectedParam *fc_param;
   SoftmaxParam *softmax_param;
   BatchNormParam *bn_param;
+  DropoutParam *dropout_param;
   BypassParam *bypass_param;
   CHECK_GT(num_layers_added_, 0);
 
@@ -318,6 +319,29 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
       }
       break;
     } // End of case BN
+    case DROPOUT: {
+      // Obtain the data dimension and parameters variable within layer class
+      input_dim = std::dynamic_pointer_cast<DropoutLayer<T>>
+                  (layers_map_[current_layer_id])->getInputDim();
+      dropout_param = std::dynamic_pointer_cast<DropoutLayer<T>>
+                 (layers_map_[current_layer_id])->getDropoutParam();
+
+      if(isKeywordExist(var, data_config_keywords))
+        break;
+
+      // Process all the keywords in config
+      if(isKeywordExist(var, dropout_config_keywords)) {
+        if(!var.compare("dropout_probability")) {
+          dropout_param->dropout_p_ = atof(val.c_str());
+        }
+        if(!var.compare("random_seed")) {
+          dropout_param->random_seed_ = atoi(val.c_str());
+        }
+      } else {
+        LOG(FATAL) << var << ": Keywords not exists" << std::endl;
+      }
+      break;
+    } // End of case DROPOUT
     case BYPASS: {
       // Obtain the data dimension and parameters variable within layer class
       input_dim = std::dynamic_pointer_cast<BypassLayer<T>>
@@ -333,7 +357,7 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
         LOG(FATAL) << var << ": Keywords not exists" << std::endl;
       }
       break;
-    }
+    } // End of case BYPASS
     default: {
       LOG(WARNING) << "NOT supported layer";
       break;
@@ -386,6 +410,9 @@ int DNNMark<T>::ParseAllConfig(const std::string &config_file) {
 
   // Parse BatchNorm specific config
   ParseSpecifiedConfig(config_file, BN);
+
+  // Parse Dropout specific config
+  ParseSpecifiedConfig(config_file, DROPOUT);
 
   // Parse Bypass specific config
   ParseSpecifiedConfig(config_file, BYPASS);
@@ -484,6 +511,10 @@ int DNNMark<T>::ParseSpecifiedConfig(const std::string &config_file,
       section.assign("[BatchNorm]");
       break;
     }
+    case DROPOUT: {
+      section.assign("[Dropout]");
+      break;
+    }
     case BYPASS: {
       section.assign("[Bypass]");
       break;
@@ -530,6 +561,9 @@ int DNNMark<T>::ParseSpecifiedConfig(const std::string &config_file,
       else if (layer_type == BN)
         layers_map_.emplace(current_layer_id,
           std::make_shared<BatchNormLayer<T>>(this));
+      else if (layer_type == DROPOUT)
+        layers_map_.emplace(current_layer_id,
+          std::make_shared<DropoutLayer<T>>(this));
       else if (layer_type == BYPASS)
 	layers_map_.emplace(current_layer_id,
 	  std::make_shared<BypassLayer<T>>(this));
@@ -593,6 +627,10 @@ int DNNMark<T>::Initialize() {
       LOG(INFO) << "DNNMark: Setup parameters of Batch Normalization layer";
       std::dynamic_pointer_cast<BatchNormLayer<T>>(it->second)->Setup();
     }
+    if (it->second->getLayerType() == DROPOUT) {
+      LOG(INFO) << "DNNMark: Setup parameters of Dropout layer";
+      std::dynamic_pointer_cast<DropoutLayer<T>>(it->second)->Setup();
+    }
     if (it->second->getLayerType() == BYPASS) {
       LOG(INFO) << "DNNMark: Setup parameters of Bypass layer";
       std::dynamic_pointer_cast<BypassLayer<T>>(it->second)->Setup();
@@ -644,6 +682,12 @@ int DNNMark<T>::RunAll() {
       std::dynamic_pointer_cast<BatchNormLayer<T>>(it->second)
         ->ForwardPropagation();
       std::dynamic_pointer_cast<BatchNormLayer<T>>(it->second)
+        ->BackwardPropagation();
+    }
+    if (it->second->getLayerType() == DROPOUT) {
+      std::dynamic_pointer_cast<DropoutLayer<T>>(it->second)
+        ->ForwardPropagation();
+      std::dynamic_pointer_cast<DropoutLayer<T>>(it->second)
         ->BackwardPropagation();
     }
     if (it->second->getLayerType() == BYPASS) {
@@ -701,6 +745,12 @@ int DNNMark<T>::Forward() {
         ->ForwardPropagation();
       LOG(INFO) << "DNNMark: Running BatchNormalization forward: FINISHED";
     }
+    if (it->second->getLayerType() == DROPOUT) {
+      LOG(INFO) << "DNNMark: Running Dropout forward: STARTED";
+      std::dynamic_pointer_cast<DropoutLayer<T>>(it->second)
+        ->ForwardPropagation();
+      LOG(INFO) << "DNNMark: Running Dropout forward: FINISHED";
+    }
     if (it->second->getLayerType() == BYPASS) {
       LOG(INFO) << "DNNMark: Running Bypass forward: STARTED";
       std::dynamic_pointer_cast<BypassLayer<T>>(it->second)
@@ -755,6 +805,12 @@ int DNNMark<T>::Backward() {
       std::dynamic_pointer_cast<BatchNormLayer<T>>(it->second)
         ->BackwardPropagation();
       LOG(INFO) << "DNNMark: Running BatchNormalization backward: FINISHED";
+    }
+    if (it->second->getLayerType() == DROPOUT) {
+      LOG(INFO) << "DNNMark: Running Dropout backward: STARTED";
+      std::dynamic_pointer_cast<DropoutLayer<T>>(it->second)
+        ->BackwardPropagation();
+      LOG(INFO) << "DNNMark: Running Dropout backward: FINISHED";
     }
     if (it->second->getLayerType() == BYPASS) {
       LOG(INFO) << "DNNMark: Running Bypass backward: STARTED";
