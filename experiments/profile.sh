@@ -27,15 +27,15 @@ do
     bm_name=${bm}_${batch_size}
     echo ${bm_name} ':'
     echo 'Exporting profile file'
-    ${PROFILER} --export-profile ${bm_name}.prof ${EXE} -config ${config}
+    ${PROFILER} --profile-from-start off --export-profile ${RESULT_DIR}${bm_name}.prof ${EXE} -config ${config}
     echo 'Generating gpu trace file'
-    ${PROFILER} --csv --print-gpu-trace ${EXE} -config ${config} 2>&1 | tee ${RESULT_DIR}${bm_name}_gpu_trace.csv
+    ${PROFILER} --profile-from-start off --csv --print-gpu-trace ${EXE} -config ${config} 2>&1 | tee ${RESULT_DIR}${bm_name}_gpu_trace.csv
     echo 'Generating api trace file'
-    ${PROFILER} --csv --print-api-trace ${EXE} -config ${config} 2>&1 | tee ${RESULT_DIR}${bm_name}_api_trace.csv
+    ${PROFILER} --profile-from-start off --csv --print-api-trace ${EXE} -config ${config} 2>&1 | tee ${RESULT_DIR}${bm_name}_api_trace.csv
     echo 'Generating events file'
-    ${PROFILER} --csv --events all ${EXE} -config ${config} 2>&1 | tee ${RESULT_DIR}${bm_name}_events.csv
+    ${PROFILER} --profile-from-start off --csv --events all ${EXE} -config ${config} 2>&1 | tee ${RESULT_DIR}${bm_name}_events.csv
     echo 'Generating metrics file'
-    ${PROFILER} --csv --metrics all ${EXE} -config ${config} 2>&1 | tee ${RESULT_DIR}${bm_name}_metrics.csv
+    ${PROFILER} --profile-from-start off --csv --metrics all ${EXE} -config ${config} 2>&1 | tee ${RESULT_DIR}${bm_name}_metrics.csv
   done
   cd ..
 done
