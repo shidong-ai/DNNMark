@@ -5,6 +5,9 @@ WORK_DIR="$(pwd)"
 CONFIG_DIR=${WORK_DIR}/config/
 BENCHMARK_DIR=${WORK_DIR}/../build/benchmarks/
 RESULT_DIR=${WORK_DIR}/results/
+if [ ! -d "${RESULT_DIR}" ]; then
+  mkdir ${RESULT_DIR}
+fi
 
 BENCHMARK_LIST=( test_fwd_conv test_fwd_pool test_fwd_lrn test_fwd_activation\
                  test_fwd_fc test_fwd_softmax test_bwd_conv test_bwd_pool\
