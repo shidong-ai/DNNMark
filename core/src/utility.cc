@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <glog/logging.h>
 #include "utility.h"
 
 namespace dnnmark {
@@ -44,7 +45,8 @@ void SplitStr(const std::string &s, std::string *var, std::string *val,
   // Obtain the position of equal sign
   std::size_t pos = s.find_first_of(delimiter);
 
-  // TODO: Add an error detetion here
+  // Error detetion here
+  LOG_IF(FATAL, pos == std::string::npos) << "Illegal configuration!!!";
 
   // Obtain the substring of variable and value
   *var = s.substr(0, pos);

@@ -104,6 +104,12 @@ class Layer {
   virtual void Setup() {
     if (input_dim_.n_ != 0 && input_dim_.c_ != 0 &&
         input_dim_.h_ != 0 && input_dim_.w_ != 0) {
+      // Debug info
+      LOG(INFO) << "Bottom dimension: "
+                << "N: " << input_dim_.n_ << " "
+                << "C: " << input_dim_.c_ << " "
+                << "H: " << input_dim_.h_ << " "
+                << "W: " << input_dim_.w_;
       //
       // Standalone mode or the first layer in composed mode
       //
@@ -148,6 +154,14 @@ class Layer {
         input_dim_.c_ = previous_layer->getTopDimC();
         input_dim_.h_ = previous_layer->getTopDimH();
         input_dim_.w_ = previous_layer->getTopDimW();
+
+        // Debug info
+        LOG(INFO) << "Bottom dimension: "
+                  << "N: " << input_dim_.n_ << " "
+                  << "C: " << input_dim_.c_ << " "
+                  << "H: " << input_dim_.h_ << " "
+                  << "W: " << input_dim_.w_;
+
         // Set bottom tensor
         bottom_desc_.Set(input_dim_.n_,
                          input_dim_.c_,
