@@ -30,8 +30,10 @@
 namespace dnnmark {
 
 // Configuration section keywords
-const std::vector<std::string> section_keywords = {
-  "[DNNMark]",
+const std::vector<std::string> general_section_keywords = {
+  "[DNNMark]"
+};
+const std::vector<std::string> layer_section_keywords = {
   "[Convolution]",
   "[Pooling]",
   "[LRN]",
@@ -134,10 +136,10 @@ const std::vector<std::string> bypass_config_keywords = {
 };
 
 bool isSection(const std::string &s);
-bool isSpecifiedSection(const std::string &s,
-                        const char *section);
+bool isGeneralSection(const std::string &s);
+bool isLayerSection(const std::string &s);
 bool isKeywordExist(const std::string &s,
-                           const std::vector<std::string> &config_keywords);
+                    const std::vector<std::string> &config_keywords);
 
 } // namespace dnnmark
 

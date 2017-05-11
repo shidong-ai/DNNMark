@@ -390,32 +390,8 @@ int DNNMark<T>::ParseAllConfig(const std::string &config_file) {
   // Parse DNNMark specific config
   ParseGeneralConfig(config_file);
 
-  // Parse Convolution specific config
-  ParseSpecifiedConfig(config_file, CONVOLUTION);
-
-  // Parse Pooling specific config
-  ParseSpecifiedConfig(config_file, POOLING);
-
-  // Parse LRN specific config
-  ParseSpecifiedConfig(config_file, LRN);
-
-  // Parse Activation specific config
-  ParseSpecifiedConfig(config_file, ACTIVATION);
-
-  // Parse FullyConnected specific config
-  ParseSpecifiedConfig(config_file, FC);
-
-  // Parse Softmax specific config
-  ParseSpecifiedConfig(config_file, SOFTMAX);
-
-  // Parse BatchNorm specific config
-  ParseSpecifiedConfig(config_file, BN);
-
-  // Parse Dropout specific config
-  ParseSpecifiedConfig(config_file, DROPOUT);
-
-  // Parse Bypass specific config
-  ParseSpecifiedConfig(config_file, BYPASS);
+  // Parse Layers config
+  ParseLayerConfig(config_file);
 }
 
 template <typename T>
@@ -428,42 +404,42 @@ int DNNMark<T>::ParseGeneralConfig(const std::string &config_file) {
 
   // Parse DNNMark config
   std::string s;
-  bool is_dnnmark_section = false;
+  bool is_general_section = false;
   while (!is.eof()) {
     // Obtain the string in one line
     std::getline(is, s);
     TrimStr(&s);
 
     // Check the specific configuration section markers
-    if (isSpecifiedSection(s, "[DNNMark]") ||
-        isCommentStr(s) || isEmptyStr(s)) {
-      is_dnnmark_section = true;
+    if (isCommentStr(s) || isEmptyStr(s)) {
       continue;
-    } else if (isSection(s) && is_dnnmark_section) {
+    } else if (isGeneralSection(s)) {
+      is_general_section = true;
+      continue;
+    } else if (isLayerSection(s)) {
+      is_general_section = false;
       break;
-    } else if (!is_dnnmark_section) {
-      continue;
-    }
+    } else if (is_general_section) {
+      // Obtain the acutal variable and value
+      std::string var;
+      std::string val;
+      SplitStr(s, &var, &val);
 
-    // Obtain the acutal variable and value
-    std::string var;
-    std::string val;
-    SplitStr(s, &var, &val);
-
-    // Process all the keywords in config
-    if(isKeywordExist(var, dnnmark_config_keywords)) {
-      if (!var.compare("run_mode")) {
-        if (!val.compare("none"))
-          run_mode_ = NONE;
-        else if(!val.compare("standalone"))
-          run_mode_ = STANDALONE;
-        else if(!val.compare("composed"))
-          run_mode_ = COMPOSED;
-        else
-          std::cerr << "Unknown run mode" << std::endl;
+      // Process all the keywords in config
+      if(isKeywordExist(var, dnnmark_config_keywords)) {
+        if (!var.compare("run_mode")) {
+          if (!val.compare("none"))
+            run_mode_ = NONE;
+          else if(!val.compare("standalone"))
+            run_mode_ = STANDALONE;
+          else if(!val.compare("composed"))
+            run_mode_ = COMPOSED;
+          else
+            std::cerr << "Unknown run mode" << std::endl;
+        }
+      } else {
+        LOG(FATAL) << var << ": Keywords not exists" << std::endl;
       }
-    } else {
-      LOG(FATAL) << var << ": Keywords not exists" << std::endl;
     }
   }
 
@@ -472,59 +448,17 @@ int DNNMark<T>::ParseGeneralConfig(const std::string &config_file) {
 }
 
 template <typename T>
-int DNNMark<T>::ParseSpecifiedConfig(const std::string &config_file,
-                                     LayerType layer_type) {
+int DNNMark<T>::ParseLayerConfig(const std::string &config_file) {
   std::ifstream is;
   is.open(config_file.c_str(), std::ifstream::in);
 
   // Parse DNNMark config
   std::string s;
   int current_layer_id;
-  bool is_specified_section = false;
-  std::string section;
-  switch(layer_type) {
-    case CONVOLUTION: {
-      section.assign("[Convolution]");
-      break;
-    }
-    case POOLING: {
-      section.assign("[Pooling]");
-      break;
-    }
-    case LRN: {
-      section.assign("[LRN]");
-      break;
-    }
-    case ACTIVATION: {
-      section.assign("[Activation]");
-      break;
-    }
-    case FC: {
-      section.assign("[FullyConnected]");
-      break;
-    }
-    case SOFTMAX: {
-      section.assign("[Softmax]");
-      break;
-    }
-    case BN: {
-      section.assign("[BatchNorm]");
-      break;
-    }
-    case DROPOUT: {
-      section.assign("[Dropout]");
-      break;
-    }
-    case BYPASS: {
-      section.assign("[Bypass]");
-      break;
-    }
-    default: {
-      break;
-    }
-  }
-  LOG(INFO) << "Search and parse layer "
-            << section << " configuration";
+  LayerType layer_type;
+  bool is_layer_section = false;
+
+  LOG(INFO) << "Search and parse layer configuration";
   while (!is.eof()) {
     // Obtain the string in one line
     std::getline(is, s);
@@ -533,11 +467,14 @@ int DNNMark<T>::ParseSpecifiedConfig(const std::string &config_file,
     // Check the specific configuration section markers
     if (isCommentStr(s) || isEmptyStr(s)){
       continue;
-    } else if (isSpecifiedSection(s, section.c_str())) {
+    } else if (isGeneralSection(s)) {
+      is_layer_section = false;
+    } else if (isLayerSection(s)) {
+      is_layer_section = true;
+      layer_type = layer_type_map.at(s);
       LOG(INFO) << "Add "
-                << section
+                << s
                 << " layer";
-      is_specified_section = true;
       // Create a layer in the main class
       current_layer_id = num_layers_added_;
       if (layer_type == CONVOLUTION)
@@ -565,27 +502,23 @@ int DNNMark<T>::ParseSpecifiedConfig(const std::string &config_file,
         layers_map_.emplace(current_layer_id,
           std::make_shared<DropoutLayer<T>>(this));
       else if (layer_type == BYPASS)
-	layers_map_.emplace(current_layer_id,
-	  std::make_shared<BypassLayer<T>>(this));
+	      layers_map_.emplace(current_layer_id,
+	        std::make_shared<BypassLayer<T>>(this));
       layers_map_[current_layer_id]->setLayerId(current_layer_id);
       layers_map_[current_layer_id]->setLayerType(layer_type);
       num_layers_added_++;
       continue;
-    } else if (isSection(s) && is_specified_section) {
-      break;
-    } else if (!is_specified_section) {
-      continue;
+    } else if (is_layer_section) {
+      // Obtain the acutal variable and value
+      std::string var;
+      std::string val;
+      SplitStr(s, &var, &val);
+
+      // Obtain the data dimension and parameters variable within layer class
+      SetLayerParams(layer_type,
+                     current_layer_id,
+                     var, val);
     }
-
-    // Obtain the acutal variable and value
-    std::string var;
-    std::string val;
-    SplitStr(s, &var, &val);
-
-    // Obtain the data dimension and parameters variable within layer class
-    SetLayerParams(layer_type,
-                   current_layer_id,
-                   var, val);
   }
 
   is.close();
@@ -763,7 +696,7 @@ int DNNMark<T>::Forward() {
 
 template <typename T>
 int DNNMark<T>::Backward() {
-  for (auto it = layers_map_.begin(); it != layers_map_.end(); it++) {
+  for (auto it = layers_map_.rbegin(); it != layers_map_.rend(); it++) {
     if (it->second->getLayerType() == CONVOLUTION) {
       LOG(INFO) << "DNNMark: Running convolution backward: STARTED";
       std::dynamic_pointer_cast<ConvolutionLayer<T>>(it->second)

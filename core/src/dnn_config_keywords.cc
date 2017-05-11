@@ -25,13 +25,24 @@
 namespace dnnmark {
 
 bool isSection(const std::string &s) {
-  return std::find(section_keywords.begin(),
-                   section_keywords.end(), s)
-         != section_keywords.end();
+  return (std::find(general_section_keywords.begin(),
+                    general_section_keywords.end(), s)
+         != general_section_keywords.end()) &&
+         (std::find(layer_section_keywords.begin(),
+                    layer_section_keywords.end(), s)
+         != layer_section_keywords.end());
 }
 
-bool isSpecifiedSection(const std::string &s, const char *section) {
-  return s.compare(section) == 0;
+bool isGeneralSection(const std::string &s) {
+  return std::find(general_section_keywords.begin(),
+                   general_section_keywords.end(), s)
+         != general_section_keywords.end();
+}
+
+bool isLayerSection(const std::string &s) {
+  return std::find(layer_section_keywords.begin(),
+                   layer_section_keywords.end(), s)
+         != layer_section_keywords.end();
 }
 
 bool isKeywordExist(const std::string &s,
