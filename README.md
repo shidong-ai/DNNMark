@@ -44,7 +44,7 @@ Other Software: CMake v3.5.1; g++ v5.4.0
 
 Google libraries: gflags (sudo apt-get install libgflags-dev); glog(sudo apt-get install libgoogle-glog-dev)
 
-There is one known problem regarding glogs. Sometimes, the compile process complains that ‘gflags’ has not been declared. This could be related to the gflag version used. So the solution could be either downloading a latest one or changing the namespace name from 'gflags' to 'google'
+There is one known problem regarding gflags. Sometimes, the compile process complains that ‘gflags’ has not been declared. This could be related to the gflag version used. So the solution could be either downloading a latest one or changing the namespace name from 'gflags' to 'google'
 
 ## Build
 After you download and unzip the DNNMark, you should go to its root directory and edit `setup.sh` to set up path to cuDNN. And then run `./setup.sh`. This will create a build directory and run cmake automatically. To build the code, go to build directory `build` and run `make`
