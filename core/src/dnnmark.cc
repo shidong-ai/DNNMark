@@ -50,6 +50,9 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
   ActivationParam *activation_param;
   FullyConnectedParam *fc_param;
   SoftmaxParam *softmax_param;
+  BatchNormParam *bn_param;
+  DropoutParam *dropout_param;
+  BypassParam *bypass_param;
   CHECK_GT(num_layers_added_, 0);
 
   switch(layer_type) {
@@ -281,6 +284,80 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
       }
       break;
     } // End of case SOFTMAX
+    case BN: {
+      // Obtain the data dimension and parameters variable within layer class
+      input_dim = std::dynamic_pointer_cast<BatchNormLayer<T>>
+                  (layers_map_[current_layer_id])->getInputDim();
+      bn_param = std::dynamic_pointer_cast<BatchNormLayer<T>>
+                 (layers_map_[current_layer_id])->getBatchNormParam();
+
+      if(isKeywordExist(var, data_config_keywords))
+        break;
+
+      // Process all the keywords in config
+      if(isKeywordExist(var, bn_config_keywords)) {
+        if(!var.compare("batchnorm_mode")) {
+          if(!val.compare("per_activation"))
+            bn_param->mode_ = CUDNN_BATCHNORM_PER_ACTIVATION;
+          else if (!val.compare("spatial"))
+            bn_param->mode_ = CUDNN_BATCHNORM_SPATIAL;
+        }
+        if(!var.compare("save_intermediates")) {
+          if(!val.compare("true"))
+            bn_param->save_intermediates_ = true;
+          else if (!val.compare("false"))
+            bn_param->save_intermediates_ = false;
+        }
+        if(!var.compare("exp_avg_factor")) {
+          bn_param->exp_avg_factor_ = atof(val.c_str());
+        }
+        if(!var.compare("epsilon")) {
+          bn_param->epsilon_ = atof(val.c_str());
+        }
+      } else {
+        LOG(FATAL) << var << ": Keywords not exists" << std::endl;
+      }
+      break;
+    } // End of case BN
+    case DROPOUT: {
+      // Obtain the data dimension and parameters variable within layer class
+      input_dim = std::dynamic_pointer_cast<DropoutLayer<T>>
+                  (layers_map_[current_layer_id])->getInputDim();
+      dropout_param = std::dynamic_pointer_cast<DropoutLayer<T>>
+                 (layers_map_[current_layer_id])->getDropoutParam();
+
+      if(isKeywordExist(var, data_config_keywords))
+        break;
+
+      // Process all the keywords in config
+      if(isKeywordExist(var, dropout_config_keywords)) {
+        if(!var.compare("dropout_probability")) {
+          dropout_param->dropout_p_ = atof(val.c_str());
+        }
+        if(!var.compare("random_seed")) {
+          dropout_param->random_seed_ = atoi(val.c_str());
+        }
+      } else {
+        LOG(FATAL) << var << ": Keywords not exists" << std::endl;
+      }
+      break;
+    } // End of case DROPOUT
+    case BYPASS: {
+      // Obtain the data dimension and parameters variable within layer class
+      input_dim = std::dynamic_pointer_cast<BypassLayer<T>>
+                  (layers_map_[current_layer_id])->getInputDim();
+      bypass_param = std::dynamic_pointer_cast<BypassLayer<T>>
+                 (layers_map_[current_layer_id])->getBypassParam();
+
+      if(isKeywordExist(var, data_config_keywords))
+        break;
+
+      // Process all the keywords in config
+      if(!isKeywordExist(var, bypass_config_keywords)) {
+        LOG(FATAL) << var << ": Keywords not exists" << std::endl;
+      }
+      break;
+    } // End of case BYPASS
     default: {
       LOG(WARNING) << "NOT supported layer";
       break;
@@ -313,23 +390,8 @@ int DNNMark<T>::ParseAllConfig(const std::string &config_file) {
   // Parse DNNMark specific config
   ParseGeneralConfig(config_file);
 
-  // Parse Convolution specific config
-  ParseSpecifiedConfig(config_file, CONVOLUTION);
-
-  // Parse Pooling specific config
-  ParseSpecifiedConfig(config_file, POOLING);
-
-  // Parse LRN specific config
-  ParseSpecifiedConfig(config_file, LRN);
-
-  // Parse Activation specific config
-  ParseSpecifiedConfig(config_file, ACTIVATION);
-
-  // Parse FullyConnected specific config
-  ParseSpecifiedConfig(config_file, FC);
-
-  // Parse Softmax specific config
-  ParseSpecifiedConfig(config_file, SOFTMAX);
+  // Parse Layers config
+  ParseLayerConfig(config_file);
 }
 
 template <typename T>
@@ -342,42 +404,42 @@ int DNNMark<T>::ParseGeneralConfig(const std::string &config_file) {
 
   // Parse DNNMark config
   std::string s;
-  bool is_dnnmark_section = false;
+  bool is_general_section = false;
   while (!is.eof()) {
     // Obtain the string in one line
     std::getline(is, s);
     TrimStr(&s);
 
     // Check the specific configuration section markers
-    if (isSpecifiedSection(s, "[DNNMark]") ||
-        isCommentStr(s) || isEmptyStr(s)) {
-      is_dnnmark_section = true;
+    if (isCommentStr(s) || isEmptyStr(s)) {
       continue;
-    } else if (isSection(s) && is_dnnmark_section) {
+    } else if (isGeneralSection(s)) {
+      is_general_section = true;
+      continue;
+    } else if (isLayerSection(s)) {
+      is_general_section = false;
       break;
-    } else if (!is_dnnmark_section) {
-      continue;
-    }
+    } else if (is_general_section) {
+      // Obtain the acutal variable and value
+      std::string var;
+      std::string val;
+      SplitStr(s, &var, &val);
 
-    // Obtain the acutal variable and value
-    std::string var;
-    std::string val;
-    SplitStr(s, &var, &val);
-
-    // Process all the keywords in config
-    if(isKeywordExist(var, dnnmark_config_keywords)) {
-      if (!var.compare("run_mode")) {
-        if (!val.compare("none"))
-          run_mode_ = NONE;
-        else if(!val.compare("standalone"))
-          run_mode_ = STANDALONE;
-        else if(!val.compare("composed"))
-          run_mode_ = COMPOSED;
-        else
-          std::cerr << "Unknown run mode" << std::endl;
+      // Process all the keywords in config
+      if(isKeywordExist(var, dnnmark_config_keywords)) {
+        if (!var.compare("run_mode")) {
+          if (!val.compare("none"))
+            run_mode_ = NONE;
+          else if(!val.compare("standalone"))
+            run_mode_ = STANDALONE;
+          else if(!val.compare("composed"))
+            run_mode_ = COMPOSED;
+          else
+            std::cerr << "Unknown run mode" << std::endl;
+        }
+      } else {
+        LOG(FATAL) << var << ": Keywords not exists" << std::endl;
       }
-    } else {
-      LOG(FATAL) << var << ": Keywords not exists" << std::endl;
     }
   }
 
@@ -386,47 +448,17 @@ int DNNMark<T>::ParseGeneralConfig(const std::string &config_file) {
 }
 
 template <typename T>
-int DNNMark<T>::ParseSpecifiedConfig(const std::string &config_file,
-                                     LayerType layer_type) {
+int DNNMark<T>::ParseLayerConfig(const std::string &config_file) {
   std::ifstream is;
   is.open(config_file.c_str(), std::ifstream::in);
 
   // Parse DNNMark config
   std::string s;
   int current_layer_id;
-  bool is_specified_section = false;
-  std::string section;
-  switch(layer_type) {
-    case CONVOLUTION: {
-      section.assign("[Convolution]");
-      break;
-    }
-    case POOLING: {
-      section.assign("[Pooling]");
-      break;
-    }
-    case LRN: {
-      section.assign("[LRN]");
-      break;
-    }
-    case ACTIVATION: {
-      section.assign("[Activation]");
-      break;
-    }
-    case FC: {
-      section.assign("[FullyConnected]");
-      break;
-    }
-    case SOFTMAX: {
-      section.assign("[Softmax]");
-      break;
-    }
-    default: {
-      break;
-    }
-  }
-  LOG(INFO) << "Search and parse layer "
-            << section << " configuration";
+  LayerType layer_type;
+  bool is_layer_section = false;
+
+  LOG(INFO) << "Search and parse layer configuration";
   while (!is.eof()) {
     // Obtain the string in one line
     std::getline(is, s);
@@ -435,11 +467,14 @@ int DNNMark<T>::ParseSpecifiedConfig(const std::string &config_file,
     // Check the specific configuration section markers
     if (isCommentStr(s) || isEmptyStr(s)){
       continue;
-    } else if (isSpecifiedSection(s, section.c_str())) {
+    } else if (isGeneralSection(s)) {
+      is_layer_section = false;
+    } else if (isLayerSection(s)) {
+      is_layer_section = true;
+      layer_type = layer_type_map.at(s);
       LOG(INFO) << "Add "
-                << section
+                << s
                 << " layer";
-      is_specified_section = true;
       // Create a layer in the main class
       current_layer_id = num_layers_added_;
       if (layer_type == CONVOLUTION)
@@ -460,25 +495,30 @@ int DNNMark<T>::ParseSpecifiedConfig(const std::string &config_file,
       else if (layer_type == SOFTMAX)
         layers_map_.emplace(current_layer_id,
           std::make_shared<SoftmaxLayer<T>>(this));
+      else if (layer_type == BN)
+        layers_map_.emplace(current_layer_id,
+          std::make_shared<BatchNormLayer<T>>(this));
+      else if (layer_type == DROPOUT)
+        layers_map_.emplace(current_layer_id,
+          std::make_shared<DropoutLayer<T>>(this));
+      else if (layer_type == BYPASS)
+	      layers_map_.emplace(current_layer_id,
+	        std::make_shared<BypassLayer<T>>(this));
       layers_map_[current_layer_id]->setLayerId(current_layer_id);
       layers_map_[current_layer_id]->setLayerType(layer_type);
       num_layers_added_++;
       continue;
-    } else if (isSection(s) && is_specified_section) {
-      break;
-    } else if (!is_specified_section) {
-      continue;
+    } else if (is_layer_section) {
+      // Obtain the acutal variable and value
+      std::string var;
+      std::string val;
+      SplitStr(s, &var, &val);
+
+      // Obtain the data dimension and parameters variable within layer class
+      SetLayerParams(layer_type,
+                     current_layer_id,
+                     var, val);
     }
-
-    // Obtain the acutal variable and value
-    std::string var;
-    std::string val;
-    SplitStr(s, &var, &val);
-
-    // Obtain the data dimension and parameters variable within layer class
-    SetLayerParams(layer_type,
-                   current_layer_id,
-                   var, val);
   }
 
   is.close();
@@ -515,6 +555,18 @@ int DNNMark<T>::Initialize() {
     if (it->second->getLayerType() == SOFTMAX) {
       LOG(INFO) << "DNNMark: Setup parameters of Softmax layer";
       std::dynamic_pointer_cast<SoftmaxLayer<T>>(it->second)->Setup();
+    }
+    if (it->second->getLayerType() == BN) {
+      LOG(INFO) << "DNNMark: Setup parameters of Batch Normalization layer";
+      std::dynamic_pointer_cast<BatchNormLayer<T>>(it->second)->Setup();
+    }
+    if (it->second->getLayerType() == DROPOUT) {
+      LOG(INFO) << "DNNMark: Setup parameters of Dropout layer";
+      std::dynamic_pointer_cast<DropoutLayer<T>>(it->second)->Setup();
+    }
+    if (it->second->getLayerType() == BYPASS) {
+      LOG(INFO) << "DNNMark: Setup parameters of Bypass layer";
+      std::dynamic_pointer_cast<BypassLayer<T>>(it->second)->Setup();
     }
   }
   return 0;
@@ -557,6 +609,24 @@ int DNNMark<T>::RunAll() {
       std::dynamic_pointer_cast<SoftmaxLayer<T>>(it->second)
         ->ForwardPropagation();
       std::dynamic_pointer_cast<SoftmaxLayer<T>>(it->second)
+        ->BackwardPropagation();
+    }
+    if (it->second->getLayerType() == BN) {
+      std::dynamic_pointer_cast<BatchNormLayer<T>>(it->second)
+        ->ForwardPropagation();
+      std::dynamic_pointer_cast<BatchNormLayer<T>>(it->second)
+        ->BackwardPropagation();
+    }
+    if (it->second->getLayerType() == DROPOUT) {
+      std::dynamic_pointer_cast<DropoutLayer<T>>(it->second)
+        ->ForwardPropagation();
+      std::dynamic_pointer_cast<DropoutLayer<T>>(it->second)
+        ->BackwardPropagation();
+    }
+    if (it->second->getLayerType() == BYPASS) {
+      std::dynamic_pointer_cast<BypassLayer<T>>(it->second)
+        ->ForwardPropagation();
+      std::dynamic_pointer_cast<BypassLayer<T>>(it->second)
         ->BackwardPropagation();
     }
   }
@@ -602,13 +672,31 @@ int DNNMark<T>::Forward() {
         ->ForwardPropagation();
       LOG(INFO) << "DNNMark: Running Softmax forward: FINISHED";
     }
+    if (it->second->getLayerType() == BN) {
+      LOG(INFO) << "DNNMark: Running BatchNormalization forward: STARTED";
+      std::dynamic_pointer_cast<BatchNormLayer<T>>(it->second)
+        ->ForwardPropagation();
+      LOG(INFO) << "DNNMark: Running BatchNormalization forward: FINISHED";
+    }
+    if (it->second->getLayerType() == DROPOUT) {
+      LOG(INFO) << "DNNMark: Running Dropout forward: STARTED";
+      std::dynamic_pointer_cast<DropoutLayer<T>>(it->second)
+        ->ForwardPropagation();
+      LOG(INFO) << "DNNMark: Running Dropout forward: FINISHED";
+    }
+    if (it->second->getLayerType() == BYPASS) {
+      LOG(INFO) << "DNNMark: Running Bypass forward: STARTED";
+      std::dynamic_pointer_cast<BypassLayer<T>>(it->second)
+        ->ForwardPropagation();
+      LOG(INFO) << "DNNMark: Running Bypass forward: FINISHED";
+    }
   }
   return 0;
 }
 
 template <typename T>
 int DNNMark<T>::Backward() {
-  for (auto it = layers_map_.begin(); it != layers_map_.end(); it++) {
+  for (auto it = layers_map_.rbegin(); it != layers_map_.rend(); it++) {
     if (it->second->getLayerType() == CONVOLUTION) {
       LOG(INFO) << "DNNMark: Running convolution backward: STARTED";
       std::dynamic_pointer_cast<ConvolutionLayer<T>>(it->second)
@@ -644,6 +732,24 @@ int DNNMark<T>::Backward() {
       std::dynamic_pointer_cast<SoftmaxLayer<T>>(it->second)
         ->BackwardPropagation();
       LOG(INFO) << "DNNMark: Running Softmax backward: FINISHED";
+    }
+    if (it->second->getLayerType() == BN) {
+      LOG(INFO) << "DNNMark: Running BatchNormalization backward: STARTED";
+      std::dynamic_pointer_cast<BatchNormLayer<T>>(it->second)
+        ->BackwardPropagation();
+      LOG(INFO) << "DNNMark: Running BatchNormalization backward: FINISHED";
+    }
+    if (it->second->getLayerType() == DROPOUT) {
+      LOG(INFO) << "DNNMark: Running Dropout backward: STARTED";
+      std::dynamic_pointer_cast<DropoutLayer<T>>(it->second)
+        ->BackwardPropagation();
+      LOG(INFO) << "DNNMark: Running Dropout backward: FINISHED";
+    }
+    if (it->second->getLayerType() == BYPASS) {
+      LOG(INFO) << "DNNMark: Running Bypass backward: STARTED";
+      std::dynamic_pointer_cast<BypassLayer<T>>(it->second)
+        ->BackwardPropagation();
+      LOG(INFO) << "DNNMark: Running Bypass backward: FINISHED";
     }
   }
   return 0;

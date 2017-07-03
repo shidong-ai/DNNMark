@@ -41,8 +41,29 @@
 #include "data_manager.h"
 #include "dnn_layer.h"
 
+#include "activation_layer.h"
+#include "bn_layer.h"
+#include "bypass_layer.h"
+#include "conv_layer.h"
+#include "dropout_layer.h"
+#include "fc_layer.h"
+#include "lrn_layer.h"
+#include "pool_layer.h"
+#include "softmax_layer.h"
 
 namespace dnnmark {
+
+const std::map<std::string, LayerType> layer_type_map = {
+{layer_section_keywords[0], CONVOLUTION},
+{layer_section_keywords[1], POOLING},
+{layer_section_keywords[2], LRN},
+{layer_section_keywords[3], ACTIVATION},
+{layer_section_keywords[4], FC},
+{layer_section_keywords[5], SOFTMAX},
+{layer_section_keywords[6], BN},
+{layer_section_keywords[7], DROPOUT},
+{layer_section_keywords[8], BYPASS}
+};
 
 template <typename T>
 class DNNMark {
@@ -66,8 +87,7 @@ class DNNMark {
   DNNMark(int num_layers);
   int ParseAllConfig(const std::string &config_file);
   int ParseGeneralConfig(const std::string &config_file);
-  int ParseSpecifiedConfig(const std::string &config_file,
-                           LayerType layer_type);
+  int ParseLayerConfig(const std::string &config_file);
   int Initialize();
   int RunAll();
   int Forward();

@@ -30,14 +30,19 @@
 namespace dnnmark {
 
 // Configuration section keywords
-const std::vector<std::string> section_keywords = {
-  "[DNNMark]",
+const std::vector<std::string> general_section_keywords = {
+  "[DNNMark]"
+};
+const std::vector<std::string> layer_section_keywords = {
   "[Convolution]",
   "[Pooling]",
   "[LRN]",
   "[Activation]",
   "[FullyConnected]",
-  "[Softmax]"
+  "[Softmax]",
+  "[BatchNorm]",
+  "[Dropout]",
+  "[Bypass]"
 };
 
 // DNNMark keywords
@@ -112,11 +117,29 @@ const std::vector<std::string> softmax_config_keywords = {
   "softmax_mode"
 };
 
+// BN layer keywords
+const std::vector<std::string> bn_config_keywords = {
+  "batchnorm_mode",
+  "save_intermediates",
+  "exp_avg_factor",
+  "epsilon"
+};
+
+// DROPOUT layer keywords
+const std::vector<std::string> dropout_config_keywords = {
+  "dropout_probability",
+  "random_seed"
+};
+
+// BYPASS layer keywords
+const std::vector<std::string> bypass_config_keywords = {
+};
+
 bool isSection(const std::string &s);
-bool isSpecifiedSection(const std::string &s,
-                        const char *section);
+bool isGeneralSection(const std::string &s);
+bool isLayerSection(const std::string &s);
 bool isKeywordExist(const std::string &s,
-                           const std::vector<std::string> &config_keywords);
+                    const std::vector<std::string> &config_keywords);
 
 } // namespace dnnmark
 

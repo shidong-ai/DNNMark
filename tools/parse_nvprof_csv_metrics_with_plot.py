@@ -35,6 +35,7 @@ for filename in filename_list:
   # Obtain csv object
   log_file = csv.reader(open(filename, "rb"))
 
+  # The file name has to be something like *_metrics.csv
   simplified_filename = filename[0:-12]
   if simplified_filename not in filename_kernel_dict:
     filename_kernel_dict[simplified_filename] = []
@@ -323,186 +324,79 @@ plt.savefig(prefix + '.pdf', format='pdf', bbox_inches='tight')
 
 
 # Collect data and generate plot for stall reason of Forward
-prefix = "stall_reason_fwd"
-fwd_stall_inst_fetch = []
-fwd_stall_exec_dependency = []
-fwd_stall_texture = []
-fwd_stall_sync = []
-fwd_stall_other = []
-fwd_stall_memory_dependency = []
-fwd_stall_pipe_busy = []
-fwd_stall_constant_memory_dependency = []
-fwd_stall_memory_throttle = []
-fwd_stall_not_selected = []
+prefix = "stall_reason_"
+fwd_stall_reason_rate = collections.OrderedDict()
+bwd_stall_reason_rate = collections.OrderedDict()
 for i in range(0, benchmark_num):
-  fwd_kernel = filename_kernel_dict[fwd_benchmark_list[i]]
-  fwd_stall_inst_fetch.append(metric_dict[fwd_kernel[-1]]["stall_inst_fetch"])
-  fwd_stall_exec_dependency.append(metric_dict[fwd_kernel[-1]]["stall_exec_dependency"])
-  fwd_stall_texture.append(metric_dict[fwd_kernel[-1]]["stall_texture"])
-  fwd_stall_sync.append(metric_dict[fwd_kernel[-1]]["stall_sync"])
-  fwd_stall_other.append(metric_dict[fwd_kernel[-1]]["stall_other"])
-  fwd_stall_memory_dependency.append(metric_dict[fwd_kernel[-1]]["stall_memory_dependency"])
-  fwd_stall_pipe_busy.append(metric_dict[fwd_kernel[-1]]["stall_pipe_busy"])
-  fwd_stall_constant_memory_dependency.append(metric_dict[fwd_kernel[-1]]["stall_constant_memory_dependency"])
-  fwd_stall_memory_throttle.append(metric_dict[fwd_kernel[-1]]["stall_memory_throttle"])
-  fwd_stall_not_selected.append(metric_dict[fwd_kernel[-1]]["stall_not_selected"])
+  benchmark_name = fwd_benchmark_list[i]
+  if benchmark_name not in fwd_stall_reason_rate:
+    fwd_stall_reason_rate[benchmark_name] = collections.OrderedDict()
+  fwd_kernel = filename_kernel_dict[benchmark_name]
+  fwd_stall_reason_rate[benchmark_name]["stall_inst_fetch"] = metric_dict[fwd_kernel[-1]]["stall_inst_fetch"]
+  fwd_stall_reason_rate[benchmark_name]["stall_exec_dependency"] = metric_dict[fwd_kernel[-1]]["stall_exec_dependency"]
+  fwd_stall_reason_rate[benchmark_name]["stall_texture"] = metric_dict[fwd_kernel[-1]]["stall_texture"]
+  fwd_stall_reason_rate[benchmark_name]["stall_sync"] = metric_dict[fwd_kernel[-1]]["stall_sync"]
+  fwd_stall_reason_rate[benchmark_name]["stall_other"] = metric_dict[fwd_kernel[-1]]["stall_other"]
+  fwd_stall_reason_rate[benchmark_name]["stall_memory_dependency"] = metric_dict[fwd_kernel[-1]]["stall_memory_dependency"]
+  fwd_stall_reason_rate[benchmark_name]["stall_pipe_busy"] = metric_dict[fwd_kernel[-1]]["stall_pipe_busy"]
+  fwd_stall_reason_rate[benchmark_name]["stall_constant_memory_dependency"] = metric_dict[fwd_kernel[-1]]["stall_constant_memory_dependency"]
+  fwd_stall_reason_rate[benchmark_name]["stall_memory_throttle"] = metric_dict[fwd_kernel[-1]]["stall_memory_throttle"]
+  fwd_stall_reason_rate[benchmark_name]["stall_not_selected"] = metric_dict[fwd_kernel[-1]]["stall_not_selected"]
+  benchmark_name = bwd_benchmark_list[i]
+  if benchmark_name not in bwd_stall_reason_rate:
+    bwd_stall_reason_rate[benchmark_name] = collections.OrderedDict()
+  bwd_kernel = filename_kernel_dict[benchmark_name]
+  bwd_stall_reason_rate[benchmark_name]["stall_inst_fetch"] = metric_dict[bwd_kernel[-1]]["stall_inst_fetch"]
+  bwd_stall_reason_rate[benchmark_name]["stall_exec_dependency"] = metric_dict[bwd_kernel[-1]]["stall_exec_dependency"]
+  bwd_stall_reason_rate[benchmark_name]["stall_texture"] = metric_dict[bwd_kernel[-1]]["stall_texture"]
+  bwd_stall_reason_rate[benchmark_name]["stall_sync"] = metric_dict[bwd_kernel[-1]]["stall_sync"]
+  bwd_stall_reason_rate[benchmark_name]["stall_other"] = metric_dict[bwd_kernel[-1]]["stall_other"]
+  bwd_stall_reason_rate[benchmark_name]["stall_memory_dependency"] = metric_dict[bwd_kernel[-1]]["stall_memory_dependency"]
+  bwd_stall_reason_rate[benchmark_name]["stall_pipe_busy"] = metric_dict[bwd_kernel[-1]]["stall_pipe_busy"]
+  bwd_stall_reason_rate[benchmark_name]["stall_constant_memory_dependency"] = metric_dict[bwd_kernel[-1]]["stall_constant_memory_dependency"]
+  bwd_stall_reason_rate[benchmark_name]["stall_memory_throttle"] = metric_dict[bwd_kernel[-1]]["stall_memory_throttle"]
+  bwd_stall_reason_rate[benchmark_name]["stall_not_selected"] = metric_dict[bwd_kernel[-1]]["stall_not_selected"]
 
-plt.figure(2)
-rects1 = plt.bar(index, fwd_stall_inst_fetch, bar_width,
-                 alpha=opacity,
-                 color='b',
-                 label='stall_inst_fetch')
-rects2 = plt.bar(index, fwd_stall_exec_dependency, bar_width,
-                 alpha=opacity,
-                 color='r',
-                 bottom=fwd_stall_inst_fetch,
-                 label='stall_exec_dependency')
-rects3 = plt.bar(index, fwd_stall_texture, bar_width,
-                 alpha=opacity,
-                 color='g',
-                 bottom=fwd_stall_exec_dependency,
-                 label='stall_texture')
-rects4 = plt.bar(index, fwd_stall_sync, bar_width,
-                 alpha=opacity,
-                 color='c',
-                 bottom=fwd_stall_texture,
-                 label='stall_sync')
-rects5 = plt.bar(index, fwd_stall_other, bar_width,
-                 alpha=opacity,
-                 color='m',
-                 bottom=fwd_stall_sync,
-                 label='stall_other')
-rects6 = plt.bar(index, fwd_stall_memory_dependency, bar_width,
-                 alpha=opacity,
-                 color='y',
-                 bottom=fwd_stall_other,
-                 label='stall_memory_dependency')
-rects7 = plt.bar(index, fwd_stall_pipe_busy, bar_width,
-                 alpha=opacity,
-                 color='k',
-                 hatch='/',
-                 bottom=fwd_stall_memory_dependency,
-                 label='stall_pipe_busy')
-rects8 = plt.bar(index, fwd_stall_constant_memory_dependency, bar_width,
-                 alpha=opacity,
-                 color='0.25',
-                 hatch='//',
-                 bottom=fwd_stall_pipe_busy,
-                 label='stall_constant_memory_dependency')
-rects9 = plt.bar(index, fwd_stall_memory_throttle, bar_width,
-                 alpha=opacity,
-                 color='0.5',
-                 hatch='-',
-                 bottom=fwd_stall_constant_memory_dependency,
-                 label='stall_memory_throttle')
-rects9 = plt.bar(index, fwd_stall_not_selected, bar_width,
-                 alpha=opacity,
-                 color='0.75',
-                 hatch='o',
-                 bottom=fwd_stall_memory_throttle,
-                 label='stall_not_selected')
+color_map = ['r', 'g', 'b', 'y', 'grey', 'gold', 'purple', 'brown', 'orange', 'ivory']
+for benchmark in fwd_stall_reason_rate:
+  rates = []
+  labels = []
+  colors = []
+  count = 0
+  for reason in fwd_stall_reason_rate[benchmark]:
+    if fwd_stall_reason_rate[benchmark][reason] > 0.00000:
+      rates.append(fwd_stall_reason_rate[benchmark][reason])
+      #labels.append(reason+"("+str(fwd_stall_reason_rate[benchmark][reason])+")")
+      labels.append(reason)
+      colors.append(color_map[count])
+    count += 1
+  plt.figure(2)
+  fig, ax = plt.subplots()
+  ax.pie(rates, labels=labels, colors=colors, autopct='%1.1f%%', pctdistance=1.1, labeldistance=1.2, startangle=90)
+  #ax.pie(rates, labels=labels, autopct='%1.1f%%', startangle=90)
+  plt.axis('equal')
+  plt.tight_layout()
+  plt.savefig(prefix + benchmark + '.pdf', format='pdf', bbox_inches='tight')
 
-plt.xlabel('Benchmarks')
-plt.ylabel('Percentage of Stall Reason(%)')
-plt.ylim((0, 100))
-plt.grid()
-plt.xticks(index + bar_width/2, benchmark_list)
-plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
-           ncol=1, mode="expand", borderaxespad=0.)
-plt.tight_layout()
-plt.savefig(prefix + '.pdf', format='pdf', bbox_inches='tight')
-
-
-# Collect data and generate plot for stall reason of Forward
-prefix = "stall_reason_bwd"
-bwd_stall_inst_fetch = []
-bwd_stall_exec_dependency = []
-bwd_stall_texture = []
-bwd_stall_sync = []
-bwd_stall_other = []
-bwd_stall_memory_dependency = []
-bwd_stall_pipe_busy = []
-bwd_stall_constant_memory_dependency = []
-bwd_stall_memory_throttle = []
-bwd_stall_not_selected = []
-for i in range(0, benchmark_num):
-  bwd_kernel = filename_kernel_dict[bwd_benchmark_list[i]]
-  bwd_stall_inst_fetch.append(metric_dict[bwd_kernel[-1]]["stall_inst_fetch"])
-  bwd_stall_exec_dependency.append(metric_dict[bwd_kernel[-1]]["stall_exec_dependency"])
-  bwd_stall_texture.append(metric_dict[bwd_kernel[-1]]["stall_texture"])
-  bwd_stall_sync.append(metric_dict[bwd_kernel[-1]]["stall_sync"])
-  bwd_stall_other.append(metric_dict[bwd_kernel[-1]]["stall_other"])
-  bwd_stall_memory_dependency.append(metric_dict[bwd_kernel[-1]]["stall_memory_dependency"])
-  bwd_stall_pipe_busy.append(metric_dict[bwd_kernel[-1]]["stall_pipe_busy"])
-  bwd_stall_constant_memory_dependency.append(metric_dict[bwd_kernel[-1]]["stall_constant_memory_dependency"])
-  bwd_stall_memory_throttle.append(metric_dict[bwd_kernel[-1]]["stall_memory_throttle"])
-  bwd_stall_not_selected.append(metric_dict[bwd_kernel[-1]]["stall_not_selected"])
-
-plt.figure(3)
-rects1 = plt.bar(index, bwd_stall_inst_fetch, bar_width,
-                 alpha=opacity,
-                 color='b',
-                 label='stall_inst_fetch')
-rects2 = plt.bar(index, bwd_stall_exec_dependency, bar_width,
-                 alpha=opacity,
-                 color='r',
-                 bottom=bwd_stall_inst_fetch,
-                 label='stall_exec_dependency')
-rects3 = plt.bar(index, bwd_stall_texture, bar_width,
-                 alpha=opacity,
-                 color='g',
-                 bottom=bwd_stall_exec_dependency,
-                 label='stall_texture')
-rects4 = plt.bar(index, bwd_stall_sync, bar_width,
-                 alpha=opacity,
-                 color='c',
-                 bottom=bwd_stall_texture,
-                 label='stall_sync')
-rects5 = plt.bar(index, bwd_stall_other, bar_width,
-                 alpha=opacity,
-                 color='m',
-                 bottom=bwd_stall_sync,
-                 label='stall_other')
-rects6 = plt.bar(index, bwd_stall_memory_dependency, bar_width,
-                 alpha=opacity,
-                 color='y',
-                 bottom=bwd_stall_other,
-                 label='stall_memory_dependency')
-rects7 = plt.bar(index, bwd_stall_pipe_busy, bar_width,
-                 alpha=opacity,
-                 color='k',
-                 hatch='/',
-                 bottom=bwd_stall_memory_dependency,
-                 label='stall_pipe_busy')
-rects8 = plt.bar(index, bwd_stall_constant_memory_dependency, bar_width,
-                 alpha=opacity,
-                 color='0.25',
-                 hatch='//',
-                 bottom=bwd_stall_pipe_busy,
-                 label='stall_constant_memory_dependency')
-rects9 = plt.bar(index, bwd_stall_memory_throttle, bar_width,
-                 alpha=opacity,
-                 color='0.5',
-                 hatch='-',
-                 bottom=bwd_stall_constant_memory_dependency,
-                 label='stall_memory_throttle')
-rects9 = plt.bar(index, bwd_stall_not_selected, bar_width,
-                 alpha=opacity,
-                 color='0.75',
-                 hatch='o',
-                 bottom=bwd_stall_memory_throttle,
-                 label='stall_not_selected')
-
-plt.xlabel('Benchmarks')
-plt.ylabel('Percentage of Stall Reason(%)')
-plt.ylim((0, 100))
-plt.grid()
-plt.xticks(index + bar_width/2, benchmark_list)
-plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
-           ncol=1, mode="expand", borderaxespad=0.)
-plt.tight_layout()
-plt.savefig(prefix + '.pdf', format='pdf', bbox_inches='tight')
-
+for benchmark in bwd_stall_reason_rate:
+  rates = []
+  labels = []
+  colors = []
+  count = 0
+  for reason in bwd_stall_reason_rate[benchmark]:
+    if bwd_stall_reason_rate[benchmark][reason] > 0.00000:
+      rates.append(bwd_stall_reason_rate[benchmark][reason])
+      #labels.append(reason+"("+str(bwd_stall_reason_rate[benchmark][reason])+")")
+      labels.append(reason)
+      colors.append(color_map[count])
+    count += 1
+  plt.figure(2)
+  fig, ax = plt.subplots()
+  ax.pie(rates, labels=labels, colors=colors, autopct='%1.1f%%', pctdistance=1.1, labeldistance=1.2, startangle=90)
+  #ax.pie(rates, labels=labels, autopct='%1.1f%%', startangle=90)
+  plt.axis('equal')
+  plt.tight_layout()
+  plt.savefig(prefix + benchmark + '.pdf', format='pdf', bbox_inches='tight')
 
 # Collect data and generate plot for L1/shared utilization
 metric = "eligible_warps_per_cycle"
