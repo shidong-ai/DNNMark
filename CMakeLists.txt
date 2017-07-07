@@ -127,6 +127,7 @@ elseif(HCC_FOUND)
 
   if (EXISTS ${MIOPEN_ROOT})
     message(STATUS "MIOpen root path: " ${MIOPEN_ROOT})
+    include_directories(${MIOPEN_ROOT}/include)
     include_directories(${MIOPEN_ROOT}/src/include/miopen)
   else()
     message(FATAL_ERROR "Path to MIOpen library not exists")
