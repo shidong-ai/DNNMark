@@ -47,7 +47,7 @@ if (CUDA_FOUND)
   # Print messge to indicate whether GPU device exists
   if (CUDA_HAVE_GPU)
     message(STATUS "GPU device exists")
-    add_definitions(-DNVIDIA_CUDA)
+    add_definitions(-DNVIDIA_CUDNN)
   else()
     message(WARNING "GPU device does not exist")
   endif()
