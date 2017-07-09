@@ -24,7 +24,14 @@
 #define CORE_INCLUDE_DNN_PARAM_H_
 
 #include <iostream>
+
+#ifdef NVIDIA_CUDNN
 #include <cudnn.h>
+#endif
+
+#ifdef AMD_MIOPEN
+#include <miopen/miopen.h>
+#endif
 
 namespace dnnmark {
 
@@ -205,8 +212,12 @@ struct ActivationParam {
 #endif
 #ifdef AMD_MIOPEN
   miopenActivationMode_t mode_;
+  double alpha_;
+  double beta_;
+  double power_;
   ActivationParam()
-  : mode_(miopenActivationRELU) {}
+  : mode_(miopenActivationRELU),
+    alpha_(0.0), beta_(0.0), power_(0.0) {}
 #endif
 };
 
