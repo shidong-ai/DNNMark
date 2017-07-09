@@ -48,7 +48,12 @@ inline std::ostream &operator<<(std::ostream &os, const DataDim &data_dim) {
 }
 
 struct ConvolutionParam {
+#ifdef NVIDIA_CUDNN
   cudnnConvolutionMode_t mode_;
+#endif
+#ifdef AMD_MIOPEN
+  miopenConvolutionMode_t mode_;
+#endif
   int output_num_;
   int pad_h_;
   int pad_w_;
@@ -58,18 +63,34 @@ struct ConvolutionParam {
   int upscale_y_;
   int kernel_size_h_;
   int kernel_size_w_;
+#ifdef NVIDIA_CUDNN
   cudnnConvolutionFwdPreference_t conv_fwd_pref_;
   cudnnConvolutionBwdFilterPreference_t conv_bwd_filter_pref_;
   cudnnConvolutionBwdDataPreference_t conv_bwd_data_pref_;
+#endif
+#ifdef AMD_MIOPEN
+  miopenConvAlgoPerf_t *pref_;
+#endif
   ConvolutionParam()
-  : mode_(CUDNN_CROSS_CORRELATION), output_num_(32),
+#ifdef NVIDIA_CUDNN
+  : mode_(CUDNN_CROSS_CORRELATION),
+#endif
+#ifdef AMD_MIOPEN
+  : mode_(miopenConvolution),
+#endif
+    output_num_(32),
     pad_h_(2), pad_w_(2),
     stride_u_(1), stride_v_(1),
     upscale_x_(1), upscale_y_(1),
     kernel_size_h_(5), kernel_size_w_(5),
+#ifdef NVIDIA_CUDNN
     conv_fwd_pref_(CUDNN_CONVOLUTION_FWD_PREFER_FASTEST),
     conv_bwd_filter_pref_(CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST),
     conv_bwd_data_pref_(CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST) {}
+#endif
+#ifdef AMD_MIOPEN
+    pref_(nullptr) {}
+#endif
   
 };
 
@@ -95,7 +116,12 @@ inline std::ostream &operator<<(std::ostream &os,
 }
 
 struct PoolingParam {
+#ifdef NVIDIA_CUDNN
   cudnnPoolingMode_t mode_;
+#endif
+#ifdef AMD_MIOPEN
+  miopenPoolingMode_t mode_;
+#endif
   int pad_h_;
   int pad_w_;
   int stride_h_;
@@ -103,7 +129,12 @@ struct PoolingParam {
   int kernel_size_h_;
   int kernel_size_w_;
   PoolingParam()
+#ifdef NVIDIA_CUDNN
   : mode_(CUDNN_POOLING_MAX),
+#endif
+#ifdef AMD_MIOPEN
+  : mode_(miopenPoolingMax),
+#endif
     pad_h_(0), pad_w_(0),
     stride_h_(2), stride_w_(2),
     kernel_size_h_(3), kernel_size_w_(3) {}
@@ -130,13 +161,23 @@ inline std::ostream &operator<<(std::ostream &os,
 
 
 struct LRNParam {
+#ifdef NVIDIA_CUDNN
   cudnnLRNMode_t mode_;
+#endif
+#ifdef AMD_MIOPEN
+  miopenLRNMode_t mode_;
+#endif
   int local_size_;
   double alpha_;
   double beta_;
   double k_;
   LRNParam()
+#ifdef NVIDIA_CUDNN
   : mode_(CUDNN_LRN_CROSS_CHANNEL_DIM1),
+#endif
+#ifdef AMD_MIOPEN
+  : mode_(miopenLRNCrossChannel),
+#endif
     local_size_(5),
     alpha_(0.0001), beta_(0.75), k_(2.0) {}
 };
@@ -157,9 +198,16 @@ inline std::ostream &operator<<(std::ostream &os,
 }
 
 struct ActivationParam {
+#ifdef NVIDIA_CUDNN
   cudnnActivationMode_t mode_;
   ActivationParam()
   : mode_(CUDNN_ACTIVATION_RELU) {}
+#endif
+#ifdef AMD_MIOPEN
+  miopenActivationMode_t mode_;
+  ActivationParam()
+  : mode_(miopenActivationRELU) {}
+#endif
 };
 
 inline std::ostream &operator<<(std::ostream &os,
@@ -177,14 +225,20 @@ struct FullyConnectedParam {
 };
 
 struct SoftmaxParam {
+#ifdef NVIDIA_CUDNN
   cudnnSoftmaxAlgorithm_t algo_;
   cudnnSoftmaxMode_t mode_;
   SoftmaxParam()
   : algo_(CUDNN_SOFTMAX_ACCURATE),
     mode_(CUDNN_SOFTMAX_MODE_CHANNEL) {}
+#endif
+#ifdef AMD_MIOPEN
+  SoftmaxParam() {}
+#endif
 };
 
 struct BatchNormParam {
+#ifdef NVIDIA_CUDNN
   cudnnBatchNormMode_t mode_;
   bool save_intermediates_;
   double exp_avg_factor_;
@@ -194,6 +248,12 @@ struct BatchNormParam {
     save_intermediates_(true),
     exp_avg_factor_(1),
     epsilon_(CUDNN_BN_MIN_EPSILON) {}
+#endif
+#ifdef AMD_MIOPEN
+  miopenBatchNormMode_t mode_;
+  BatchNormParam()
+  : mode_(miopenBNPerActivation) {}
+#endif
 };
 
 inline std::ostream &operator<<(std::ostream &os,
