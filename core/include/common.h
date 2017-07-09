@@ -35,6 +35,7 @@
 
 #ifdef AMD_MIOPEN
 #include <miopen/miopen.h>
+#include <hip/hip_runtime_api.h>
 #endif
 
 namespace dnnmark {

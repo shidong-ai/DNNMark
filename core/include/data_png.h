@@ -33,12 +33,16 @@ static unsigned long long int seed = 1234;
 
 class PseudoNumGenerator {
  private:
+#ifdef NVIDIA_CUDNN
   curandGenerator_t gen_;  
+#endif
 
   // Constructor
   PseudoNumGenerator() {
+#ifdef NVIDIA_CUDNN
     CURAND_CALL(curandCreateGenerator(&gen_, CURAND_RNG_PSEUDO_DEFAULT));
     CURAND_CALL(curandSetPseudoRandomGeneratorSeed(gen_, seed));
+#endif
   }
 
   // PNG instance
@@ -46,7 +50,9 @@ class PseudoNumGenerator {
  public:
 
   ~PseudoNumGenerator() {
+#ifdef NVIDIA_CUDNN
     CURAND_CALL(curandDestroyGenerator(gen_));
+#endif
   }
 
   static PseudoNumGenerator *GetInstance() {
@@ -56,10 +62,33 @@ class PseudoNumGenerator {
     return instance_.get();
   }
   void GenerateUniformData(float *dev_ptr, int size) {
+#ifdef NVIDIA_CUDNN
     CURAND_CALL(curandGenerateUniform(gen_, dev_ptr, size));
+#endif
+#ifdef AMD_MIOPEN
+    float *host_ptr = new float[size];
+    for (int i = 0; i < size; i++)
+      host_ptr[i] = static_cast <float> (rand()) /
+                    (static_cast <float> (RAND_MAX/seed));
+    HIP_CALL(hipMemcpy(dev_ptr, host_ptr, size * sizeof(float),
+                       hipMemcpyHostToDevice));
+    delete []host_ptr;
+    
+#endif
   }
   void GenerateUniformData(double *dev_ptr, int size) {
+#ifdef NVIDIA_CUDNN
     CURAND_CALL(curandGenerateUniformDouble(gen_, dev_ptr, size));
+#endif
+#ifdef AMD_MIOPEN
+    double *host_ptr = new double[size];
+    for (int i = 0; i < size; i++)
+      host_ptr[i] = static_cast <double> (rand()) /
+                    (static_cast <double> (RAND_MAX/seed));
+    HIP_CALL(hipMemcpy(dev_ptr, host_ptr, size * sizeof(double),
+                       hipMemcpyHostToDevice));
+    delete []host_ptr;
+#endif
   }  
 };
 
