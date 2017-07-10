@@ -42,12 +42,21 @@ class Data {
   Data(int size)
   : size_(size) {
     LOG(INFO) << "Create Data chunk of size " << size_;
+#ifdef NVIDIA_CUDNN
     CUDA_CALL(cudaMalloc(&gpu_ptr_, size * sizeof(T)));
+#endif
+#ifdef AMD_MIOPEN
+    HIP_CALL(hipMalloc(&gpu_ptr_, size * sizeof(T)));
+#endif
   }
   ~Data() {
     LOG(INFO) << "Free Data chunk of size " << size_;
+#ifdef NVIDIA_CUDNN
     CUDA_CALL(cudaFree(gpu_ptr_));
-    cudaFree(gpu_ptr_);
+#endif
+#ifdef AMD_MIOPEN
+    HIP_CALL(hipFree(gpu_ptr_));
+#endif
   }
   void Filler() {
     png_ = PseudoNumGenerator::GetInstance();
