@@ -38,8 +38,8 @@
 
 namespace dnnmark {
 
-#ifdef NVIDIA_CUDNN
 class Handle {
+#ifdef NVIDIA_CUDNN
  private:
   cudnnHandle_t *cudnn_handles_;
   cublasHandle_t *blas_handles_;
@@ -55,12 +55,8 @@ class Handle {
   cublasHandle_t GetBlas(int index);
   int num_cudnn() { return num_cudnn_handles_; }
   int num_blas() { return num_blas_handles_; }
-
-};
 #endif
-
 #ifdef AMD_MIOPEN
-class Handle {
  private:
   miopenHandle_t *miopen_handles_;
   int num_handles_;
@@ -71,9 +67,8 @@ class Handle {
   miopenHandle_t Get();
   miopenHandle_t Get(int index);
   int num() { return num_handles_; }
-
-};
 #endif
+};
 
 class Descriptor {
  protected:

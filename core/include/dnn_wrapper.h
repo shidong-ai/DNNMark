@@ -26,13 +26,18 @@
 namespace dnnmark {
 
 template <typename T>
-void dnnmarkConvForward();
+void dnnmarkConvolutionForward(Handle *handle,
+                               const void *alpha,
+                               const DataTensor &bottom_desc,
+                               const void *x,
+                               const ConvolutionDesc &conv_desc,
+                               );
 
 template <typename T>
-void dnnmarkConvDataBackward();
+void dnnmarkConvolutionDataBackward();
 
 template <typename T>
-void dnnmarkConvFilterBackward();
+void dnnmarkConvolutionFilterBackward();
 
 } // namespace dnnmark
 

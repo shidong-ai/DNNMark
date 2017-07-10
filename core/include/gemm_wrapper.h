@@ -28,7 +28,7 @@
 namespace dnnmark {
 
 template <typename T>
-void dnnmarkGEMM(Handle handle,
+void dnnmarkGEMM(Handle *handle,
                  bool is_a_transpose, bool is_b_transpose,
                  int m, int n, int k,
                  T *alpha,
