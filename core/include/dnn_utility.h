@@ -62,13 +62,14 @@ class Handle {
 #ifdef AMD_MIOPEN
 class Handle {
  private:
-  miopenHandle_t miopen_handles_;
+  miopenHandle_t *miopen_handles_;
   int num_handles_;
  public:
   Handle();
   Handle(int num);
   ~Handle();
   miopenHandle_t Get();
+  miopenHandle_t Get(int index);
   int num() { return num_handles_; }
 
 };

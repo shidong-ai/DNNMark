@@ -20,12 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "gpu_utility.h"
+#include "gemm_wrapper.h"
 
 namespace dnnmark {
 
 template <>
-void DNNMarkGEMM(cublasHandle_t handle,
+void dnnmarkGEMM(Handle *handle,
                  bool is_a_transpose, bool is_b_transpose,
                  int m, int n, int k,
                  float *alpha,
@@ -33,9 +33,10 @@ void DNNMarkGEMM(cublasHandle_t handle,
                  float *b, int ldb,
                  float *beta,
                  float *c, int ldc) {
+#ifdef NVIDIA_CUDNN
   cublasOperation_t transa = is_a_transpose ? CUBLAS_OP_T : CUBLAS_OP_N;
   cublasOperation_t transb = is_b_transpose ? CUBLAS_OP_T : CUBLAS_OP_N;
-  CUBLAS_CALL(cublasSgemm(handle,
+  CUBLAS_CALL(cublasSgemm(handle->GetBlas(),
                           transa, transb,
                           m, n, k,
                           alpha,
@@ -43,11 +44,23 @@ void DNNMarkGEMM(cublasHandle_t handle,
                           b, ldb,
                           beta,
                           c, ldc));
+#endif
+#ifdef AMD_MIOPEN
+  MIOPEN_CALL(miopenGemm(handle->Get(),
+                         true,
+                         is_a_transpose, is_b_transpose,
+                         m, n, k,
+                         alpha,
+                         a, lda,
+                         b, ldb,
+                         beta,
+                         c, ldc));
+#endif
 
 }
 
 template <>
-void DNNMarkGEMM(cublasHandle_t handle,
+void dnnmarkGEMM(cublasHandle_t *handle,
                  bool is_a_transpose, bool is_b_transpose,
                  int m, int n, int k,
                  double *alpha,
@@ -55,9 +68,10 @@ void DNNMarkGEMM(cublasHandle_t handle,
                  double *b, int ldb,
                  double *beta,
                  double *c, int ldc) {
+#ifdef NVIDIA_CUDNN
   cublasOperation_t transa = is_a_transpose ? CUBLAS_OP_T : CUBLAS_OP_N;
   cublasOperation_t transb = is_b_transpose ? CUBLAS_OP_T : CUBLAS_OP_N;
-  CUBLAS_CALL(cublasDgemm(handle,
+  CUBLAS_CALL(cublasDgemm(handle->GetBlas(),
                           transa, transb,
                           m, n, k,
                           alpha,
@@ -65,6 +79,18 @@ void DNNMarkGEMM(cublasHandle_t handle,
                           b, ldb,
                           beta,
                           c, ldc));
+#endif
+#ifdef AMD_MIOPEN
+  MIOPEN_CALL(miopenGemm(handle->Get(),
+                         true,
+                         is_a_transpose, is_b_transpose,
+                         m, n, k,
+                         alpha,
+                         a, lda,
+                         b, ldb,
+                         beta,
+                         c, ldc));
+#endif
 }
 
 } // namespace dnnmark
