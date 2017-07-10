@@ -23,15 +23,23 @@
 #ifndef CORE_INCLUDE_DNN_WRAPPER_H_ 
 #define CORE_INCLUDE_DNN_WRAPPER_H_
 
+#include "common.h"
+
 namespace dnnmark {
 
 template <typename T>
-void dnnmarkConvolutionForward(Handle *handle,
+void dnnmarkConvolutionForward(const Handle &handle, RunMode mode, int idx,
                                const void *alpha,
                                const DataTensor &bottom_desc,
                                const void *x,
                                const ConvolutionDesc &conv_desc,
-                               );
+                               const void *w,
+                               //TBD algo
+                               void *workspace,
+                               size_t workspace_in_bytes,
+                               const void *beta,
+                               const DataTensor &top_desc,
+                               void *y);
 
 template <typename T>
 void dnnmarkConvolutionDataBackward();

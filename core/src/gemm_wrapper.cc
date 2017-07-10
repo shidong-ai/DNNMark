@@ -25,7 +25,7 @@
 namespace dnnmark {
 
 template <>
-void dnnmarkGEMM(Handle *handle,
+void dnnmarkGEMM(const Handle &handle, RunMode mode, int idx,
                  bool is_a_transpose, bool is_b_transpose,
                  int m, int n, int k,
                  float *alpha,
@@ -36,7 +36,8 @@ void dnnmarkGEMM(Handle *handle,
 #ifdef NVIDIA_CUDNN
   cublasOperation_t transa = is_a_transpose ? CUBLAS_OP_T : CUBLAS_OP_N;
   cublasOperation_t transb = is_b_transpose ? CUBLAS_OP_T : CUBLAS_OP_N;
-  CUBLAS_CALL(cublasSgemm(handle->GetBlas(),
+  CUBLAS_CALL(cublasSgemm(mode == COMPOSED ?
+                          handle.GetBlas(idx) : handle.GetBlas(),
                           transa, transb,
                           m, n, k,
                           alpha,
@@ -46,7 +47,8 @@ void dnnmarkGEMM(Handle *handle,
                           c, ldc));
 #endif
 #ifdef AMD_MIOPEN
-  MIOPEN_CALL(miopenGemm(handle->Get(),
+  MIOPEN_CALL(miopenGemm(mode == COMPOSED ?
+                         handle.Get(idx) : handle.Get(),
                          true,
                          is_a_transpose, is_b_transpose,
                          m, n, k,
@@ -60,7 +62,7 @@ void dnnmarkGEMM(Handle *handle,
 }
 
 template <>
-void dnnmarkGEMM(cublasHandle_t *handle,
+void dnnmarkGEMM(const cublasHandle_t &handle, RunMode mode, int idx,
                  bool is_a_transpose, bool is_b_transpose,
                  int m, int n, int k,
                  double *alpha,
@@ -71,7 +73,8 @@ void dnnmarkGEMM(cublasHandle_t *handle,
 #ifdef NVIDIA_CUDNN
   cublasOperation_t transa = is_a_transpose ? CUBLAS_OP_T : CUBLAS_OP_N;
   cublasOperation_t transb = is_b_transpose ? CUBLAS_OP_T : CUBLAS_OP_N;
-  CUBLAS_CALL(cublasDgemm(handle->GetBlas(),
+  CUBLAS_CALL(cublasDgemm(mode == COMPOSED ?
+                          handle.GetBlas(idx) : handle.GetBlas(),
                           transa, transb,
                           m, n, k,
                           alpha,
@@ -81,7 +84,8 @@ void dnnmarkGEMM(cublasHandle_t *handle,
                           c, ldc));
 #endif
 #ifdef AMD_MIOPEN
-  MIOPEN_CALL(miopenGemm(handle->Get(),
+  MIOPEN_CALL(miopenGemm(mode == COMPOSED ?
+                         handle.Get(idx) : handle.Get(),
                          true,
                          is_a_transpose, is_b_transpose,
                          m, n, k,
