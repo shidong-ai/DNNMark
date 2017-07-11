@@ -20,10 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef CORE_INCLUDE_DNN_WRAPPER_H_ 
-#define CORE_INCLUDE_DNN_WRAPPER_H_
-
-#include "common.h"
+#include "dnn_wrapper.h"
 
 namespace dnnmark {
 
@@ -39,14 +36,35 @@ void dnnmarkConvolutionForward(const Handle &handle, RunMode mode, int idx,
                                size_t workspace_in_bytes,
                                const void *beta,
                                const DataTensor &top_desc,
-                               void *y);
+                               void *y) {
+#ifdef NVIDIA_CUDNN
+  CUDNN_CALL(cudnnConvolutionForward(
+             mode == COMPOSED ?
+             handle.GetCudnn(layer_id_) : handle.GetCudnn(),
+             alpha,
+             bottom_desc.Get(), x,
+             conv_desc.GetFilter(), w,
+             conv_desc_.GetConv(),
+             conv_algo.GetFwdAlgo(), workspace, workspace_in_bytes,
+             beta,
+             top_desc.Get(), y));
+#endif
+#ifdef AMD_MIOPEN
+  MIOPEN_CALL(miopenConvolutionForward(
+              mode == COMPOSED ?
+              handle.Get(layer_id_) : handle.Get(),
+              alpha,
+              bottom_desc.Get(), x,
+              conv_desc.GetFilter(), w,
+              conv_desc_.GetConv(),
+              conv_algo.GetFwdAlgo(),
+              beta,
+              top_desc.Get(), y,
+              workspace, workspace_in_bytes));
+#endif
 
-template <typename T>
-void dnnmarkConvolutionDataBackward();
+}
 
-template <typename T>
-void dnnmarkConvolutionFilterBackward();
 
 } // namespace dnnmark
 
-#endif // CORE_INCLUDE_DNN_WRAPPER_H_

@@ -100,6 +100,10 @@ class DataManager {
     return gen_chunk_id;
   }
 
+  void RemoveData(int chunk_id) {
+    gpu_data_pool_[chunk_id].erase();
+  }
+
   Data<T> *GetData(int chunk_id) {
     return gpu_data_pool_[chunk_id].get();
   }
