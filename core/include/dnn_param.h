@@ -33,6 +33,8 @@
 #include <miopen/miopen.h>
 #endif
 
+#include "dnn_config_keywords.h"
+
 namespace dnnmark {
 
 struct DataDim {
@@ -122,6 +124,91 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
+inline void SetupConvParam(const string &var, const string &val,
+                           ConvolutionParam *conv_param) {
+  // Process all the corresponding keywords in config
+  if(isKeywordExist(var, conv_config_keywords)) {
+    if (!var.compare("conv_mode")) {
+      if (!val.compare("convolution"))
+#ifdef NVIDIA_CUDNN
+        conv_param->mode_ = CUDNN_CONVOLUTION;
+#endif
+#ifdef AMD_MIOPEN
+        conv_param->mode_ = miopenConvolution;
+#endif
+#ifdef NVIDIA_CUDNN
+      else if (!val.compare("cross_correlation"))
+        conv_param->mode_ = CUDNN_CROSS_CORRELATION;
+#endif
+#ifdef NVIDIA_CUDNN
+      else if (!val.compare("transpose"))
+        conv_param->mode_ = miopenTranspose;
+#endif
+      else
+        LOG(FATAL) << "Invalid conv mode" << std::endl;
+    } else if (!var.compare("num_output")) {
+      conv_param->output_num_ = atoi(val.c_str());
+    } else if (!var.compare("kernel_size")) {
+      conv_param->kernel_size_h_ = atoi(val.c_str());
+      conv_param->kernel_size_w_ = atoi(val.c_str());
+    } else if (!var.compare("pad")) {
+      conv_param->pad_h_ = atoi(val.c_str());
+      conv_param->pad_w_ = atoi(val.c_str());
+    } else if (!var.compare("stride")) {
+      conv_param->stride_u_ = atoi(val.c_str());
+      conv_param->stride_v_ = atoi(val.c_str());
+    } else if (!var.compare("kernel_size_h")) {
+      conv_param->kernel_size_h_ = atoi(val.c_str());
+    } else if (!var.compare("kernel_size_w")) {
+      conv_param->kernel_size_w_ = atoi(val.c_str());
+    } else if (!var.compare("pad_h")) {
+      conv_param->pad_h_ = atoi(val.c_str());
+    } else if (!var.compare("pad_w")) {
+      conv_param->pad_w_ = atoi(val.c_str());
+    } else if (!var.compare("stride_h")) {
+      conv_param->stride_u_ = atoi(val.c_str());
+    } else if (!var.compare("stride_w")) {
+      conv_param->stride_v_ = atoi(val.c_str());
+    } else if (!var.compare("conv_fwd_pref")) {
+#ifdef NVIDIA_CUDNN
+      if (!val.compare("no_workspace"))
+        conv_param->conv_fwd_pref_ = CUDNN_CONVOLUTION_FWD_NO_WORKSPACE;
+      else if (!val.compare("fastest"))
+        conv_param->conv_fwd_pref_ = CUDNN_CONVOLUTION_FWD_PREFER_FASTEST;
+      else if (!val.compare("specify_workspace_limit"))
+        conv_param->conv_fwd_pref_ =
+          CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT;
+#endif
+    } else if (!var.compare("conv_bwd_filter_pref")) {
+#ifdef NVIDIA_CUDNN
+      if (!val.compare("no_workspace"))
+        conv_param->conv_bwd_filter_pref_ =
+          CUDNN_CONVOLUTION_BWD_FILTER_NO_WORKSPACE;
+      else if (!val.compare("fastest"))
+        conv_param->conv_bwd_filter_pref_ =
+          CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST;
+      else if (!val.compare("specify_workspace_limit"))
+        conv_param->conv_bwd_filter_pref_ =
+          CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT;
+#endif
+    } else if (!var.compare("conv_bwd_data_pref")) {
+#ifdef NVIDIA_CUDNN
+      if (!val.compare("no_workspace"))
+        conv_param->conv_bwd_data_pref_ =
+          CUDNN_CONVOLUTION_BWD_DATA_NO_WORKSPACE;
+      else if (!val.compare("fastest"))
+        conv_param->conv_bwd_data_pref_ =
+          CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST;
+      else if (!val.compare("specify_workspace_limit"))
+        conv_param->conv_bwd_data_pref_ =
+          CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT;
+#endif
+    }
+  } else {
+    LOG(FATAL) << var << ": Keywords not exists" << std::endl;
+  }
+}
+
 struct PoolingParam {
 #ifdef NVIDIA_CUDNN
   cudnnPoolingMode_t mode_;
@@ -166,6 +253,56 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
+inline void SetupPoolingParam(const string &var, const string &val,
+                              PoolingParam *pool_param) {
+  // Process all the keywords in config
+  if(isKeywordExist(var, pool_config_keywords)) {
+    if (!var.compare("pool_mode")) {
+      if (!val.compare("max"))
+#ifdef NVIDIA_CUDNN
+        pool_param->mode_ = CUDNN_POOLING_MAX;
+#endif
+#ifdef AMD_MIOPEN
+        pool_param->mode_ = miopenPoolingMax;
+#endif
+#ifdef NVIDIA_CUDNN
+      else if (!val.compare("avg_include_padding"))
+        pool_param->mode_ = CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING;
+      else if (!val.compare("avg_exclude_padding"))
+        pool_param->mode_ = CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
+#endif
+#ifdef AMD_MIOPEN
+      else if (!val.compare("avg"))
+        pool_param->mode_ = miopenPoolingAverage;
+#endif
+      else
+        LOG(FATAL) << "Invalid pool mode" << std::endl;
+    } else if (!var.compare("kernel_size")) {
+      pool_param->kernel_size_h_ = atoi(val.c_str());
+      pool_param->kernel_size_w_ = atoi(val.c_str());
+    } else if (!var.compare("pad")) {
+      pool_param->pad_h_ = atoi(val.c_str());
+      pool_param->pad_w_ = atoi(val.c_str());
+    } else if (!var.compare("stride")) {
+      pool_param->stride_h_ = atoi(val.c_str());
+      pool_param->stride_w_ = atoi(val.c_str());
+    } else if (!var.compare("kernel_size_h")) {
+      pool_param->kernel_size_h_ = atoi(val.c_str());
+    } else if (!var.compare("kernel_size_w")) {
+      pool_param->kernel_size_w_ = atoi(val.c_str());
+    } else if (!var.compare("pad_h")) {
+      pool_param->pad_h_ = atoi(val.c_str());
+    } else if (!var.compare("pad_w")) {
+      pool_param->pad_w_ = atoi(val.c_str());
+    } else if (!var.compare("stride_h")) {
+      pool_param->stride_h_ = atoi(val.c_str());
+    } else if (!var.compare("stride_w")) {
+      pool_param->stride_w_ = atoi(val.c_str());
+    }
+  } else {
+    LOG(FATAL) << var << ": Keywords not exists" << std::endl;
+  }
+}
 
 struct LRNParam {
 #ifdef NVIDIA_CUDNN
@@ -204,6 +341,36 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
+inline void SetupLrnParam(const string &var, const string &val,
+                          LRNParam *lrn_param) {
+  // Process all the keywords in config
+  if(isKeywordExist(var, lrn_config_keywords)) {
+    if (!var.compare("lrn_mode")) {
+      if (!val.compare("cross_channel_dim1"))
+#ifdef NVIDIA_CUDNN
+        lrn_param->mode_ = CUDNN_LRN_CROSS_CHANNEL_DIM1;
+#endif
+#ifdef AMD_MIOPEN
+        lrn_param->mode_ = miopenLRNCrossChannel;
+      else if (!val.compare("within_channel"))
+        lrn_param->mode_ = miopenLRNWidthinChannel;
+#endif
+      else
+        LOG(FATAL) << "Invalid lrn mode" << std::endl;
+    } else if (!var.compare("local_size")) {
+      lrn_param->local_size_ = atoi(val.c_str());
+    } else if (!var.compare("alpha")) {
+      lrn_param->alpha_ = atof(val.c_str());
+    } else if (!var.compare("beta")) {
+      lrn_param->beta_ = atof(val.c_str());
+    } else if (!var.compare("k")) {
+      lrn_param->k_ = atof(val.c_str());
+    }
+  } else {
+    LOG(FATAL) << var << ": Keywords not exists" << std::endl;
+  }
+}
+
 struct ActivationParam {
 #ifdef NVIDIA_CUDNN
   cudnnActivationMode_t mode_;
@@ -229,11 +396,58 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
+inline void SetupActivationParam(const string &var, const string &val,
+                                 ActivationParam *activation_param) {
+  // Process all the keywords in config
+  if(isKeywordExist(var, activation_config_keywords)) {
+    if (!var.compare("activation_mode")) {
+#ifdef NVIDIA_CUDNN
+      if (!val.compare("sigmoid"))
+        activation_param->mode_ = CUDNN_ACTIVATION_SIGMOID;
+      else if (!val.compare("relu"))
+        activation_param->mode_ = CUDNN_ACTIVATION_RELU;
+      else if (!val.compare("tanh"))
+        activation_param->mode_ = CUDNN_ACTIVATION_TANH;
+      else if (!val.compare("clipped_relu"))
+        activation_param->mode_ = CUDNN_ACTIVATION_CLIPPED_RELU;
+      else
+        LOG(FATAL) << "Invalid activation mode" << std::endl;
+#endif
+#ifdef AMD_MIOPEN
+      if (!val.compare("sigmoid"))
+        activation_param->mode_ = miopenActivationLOGISTIC;
+      else if (!val.compare("relu"))
+        activation_param->mode_ = miopenActivationRELU;
+      else if (!val.compare("tanh"))
+        activation_param->mode_ = miopenActivationTANH;
+      else if (!val.compare("soft_relu"))
+        activation_param->mode_ = miopenActivationSOFTRELU;
+      else
+        LOG(FATAL) << "Invalid activation mode" << std::endl;
+#endif
+    }
+  } else {
+    LOG(FATAL) << var << ": Keywords not exists" << std::endl;
+  }
+}
+
 struct FullyConnectedParam {
   int output_num_;
   FullyConnectedParam()
   : output_num_(4096) {}
 };
+
+inline void SetupFcParam(const string &var, const string &val,
+                         FullyConnectedParam *fc_param) {
+  // Process all the keywords in config
+  if(isKeywordExist(var, fc_config_keywords)) {
+    if (!var.compare("num_output")) {
+      fc_param->output_num_ = atoi(val.c_str());
+    }
+  } else {
+    LOG(FATAL) << var << ": Keywords not exists" << std::endl;
+  }
+}
 
 struct SoftmaxParam {
 #ifdef NVIDIA_CUDNN
@@ -247,6 +461,33 @@ struct SoftmaxParam {
   SoftmaxParam() {}
 #endif
 };
+
+inline void SetupSoftmaxParam(const string &var, const string &val,
+                              SoftmaxParam *softmax_param) {
+  // Process all the keywords in config
+  if(isKeywordExist(var, softmax_config_keywords)) {
+    if (!var.compare("softmax_algo")) {
+#ifdef NVIDIA_CUDNN
+      if (!val.compare("fast"))
+        softmax_param->algo_ = CUDNN_SOFTMAX_FAST;
+      else if (!val.compare("accurate"))
+        softmax_param->algo_ = CUDNN_SOFTMAX_ACCURATE;
+      else if (!val.compare("log"))
+        softmax_param->algo_ = CUDNN_SOFTMAX_LOG;
+#endif
+    }
+    if (!var.compare("softmax_mode")) {
+#ifdef NVIDIA_CUDNN
+      if (!val.compare("instance"))
+        softmax_param->mode_ = CUDNN_SOFTMAX_MODE_INSTANCE;
+      else if (!val.compare("channel"))
+        softmax_param->mode_ = CUDNN_SOFTMAX_MODE_CHANNEL;
+#endif
+    }
+  } else {
+    LOG(FATAL) << var << ": Keywords not exists" << std::endl;
+  }
+}
 
 struct BatchNormParam {
 #ifdef NVIDIA_CUDNN
@@ -281,6 +522,43 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
+inline void SetupBatchNormParam(const string &var, const string &val,
+                                BatchNormParam bn_param) {
+  // Process all the keywords in config
+  if(isKeywordExist(var, bn_config_keywords)) {
+    if(!var.compare("batchnorm_mode")) {
+      if(!val.compare("per_activation"))
+#ifdef NVIDIA_CUDNN
+        bn_param->mode_ = CUDNN_BATCHNORM_PER_ACTIVATION;
+#endif
+#ifdef AMD_MIOPEN
+        bn_param->mode_ = miopenBNPerActivation;
+#endif
+      else if (!val.compare("spatial"))
+#ifdef NVIDIA_CUDNN
+        bn_param->mode_ = CUDNN_BATCHNORM_SPATIAL;
+#endif
+#ifdef AMD_MIOPEN
+        bn_param->mode_ = miopenBNSpatial;
+#endif
+    }
+    if(!var.compare("save_intermediates")) {
+      if(!val.compare("true"))
+        bn_param->save_intermediates_ = true;
+      else if (!val.compare("false"))
+        bn_param->save_intermediates_ = false;
+    }
+    if(!var.compare("exp_avg_factor")) {
+      bn_param->exp_avg_factor_ = atof(val.c_str());
+    }
+    if(!var.compare("epsilon")) {
+      bn_param->epsilon_ = atof(val.c_str());
+    }
+  } else {
+    LOG(FATAL) << var << ": Keywords not exists" << std::endl;
+  }
+}
+
 struct DropoutParam {
   float dropout_p_;
   unsigned long long random_seed_;
@@ -297,6 +575,21 @@ inline std::ostream &operator<<(std::ostream &os,
   os << "[Dropout Param] Random Seed: "
      << dropout_param.random_seed_ << std::endl;
   return os;
+}
+
+inline void SetupDropoutParam(const string &var, const string &val,
+                              DropoutParam * dropout_param) {
+  // Process all the keywords in config
+  if(isKeywordExist(var, dropout_config_keywords)) {
+    if(!var.compare("dropout_probability")) {
+      dropout_param->dropout_p_ = atof(val.c_str());
+    }
+    if(!var.compare("random_seed")) {
+      dropout_param->random_seed_ = atoi(val.c_str());
+    }
+  } else {
+    LOG(FATAL) << var << ": Keywords not exists" << std::endl;
+  }
 }
 
 struct BypassParam {

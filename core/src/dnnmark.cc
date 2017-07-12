@@ -67,68 +67,7 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
       if(isKeywordExist(var, data_config_keywords))
         break;
 
-      // Process all the corresponding keywords in config
-      if(isKeywordExist(var, conv_config_keywords)) {
-        if (!var.compare("conv_mode")) {
-          if (!val.compare("convolution"))
-            conv_param->mode_ = CUDNN_CONVOLUTION;
-          else if (!val.compare("cross_correlation"))
-            conv_param->mode_ = CUDNN_CROSS_CORRELATION;
-        } else if (!var.compare("num_output")) {
-          conv_param->output_num_ = atoi(val.c_str());
-        } else if (!var.compare("kernel_size")) {
-          conv_param->kernel_size_h_ = atoi(val.c_str());
-          conv_param->kernel_size_w_ = atoi(val.c_str());
-        } else if (!var.compare("pad")) {
-          conv_param->pad_h_ = atoi(val.c_str());
-          conv_param->pad_w_ = atoi(val.c_str());
-        } else if (!var.compare("stride")) {
-          conv_param->stride_u_ = atoi(val.c_str());
-          conv_param->stride_v_ = atoi(val.c_str());
-        } else if (!var.compare("kernel_size_h")) {
-          conv_param->kernel_size_h_ = atoi(val.c_str());
-        } else if (!var.compare("kernel_size_w")) {
-          conv_param->kernel_size_w_ = atoi(val.c_str());
-        } else if (!var.compare("pad_h")) {
-          conv_param->pad_h_ = atoi(val.c_str());
-        } else if (!var.compare("pad_w")) {
-          conv_param->pad_w_ = atoi(val.c_str());
-        } else if (!var.compare("stride_h")) {
-          conv_param->stride_u_ = atoi(val.c_str());
-        } else if (!var.compare("stride_w")) {
-          conv_param->stride_v_ = atoi(val.c_str());
-        } else if (!var.compare("conv_fwd_pref")) {
-          if (!val.compare("no_workspace"))
-            conv_param->conv_fwd_pref_ = CUDNN_CONVOLUTION_FWD_NO_WORKSPACE;
-          else if (!val.compare("fastest"))
-            conv_param->conv_fwd_pref_ = CUDNN_CONVOLUTION_FWD_PREFER_FASTEST;
-          else if (!val.compare("specify_workspace_limit"))
-            conv_param->conv_fwd_pref_ =
-              CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT;
-        } else if (!var.compare("conv_bwd_filter_pref")) {
-          if (!val.compare("no_workspace"))
-            conv_param->conv_bwd_filter_pref_ =
-              CUDNN_CONVOLUTION_BWD_FILTER_NO_WORKSPACE;
-          else if (!val.compare("fastest"))
-            conv_param->conv_bwd_filter_pref_ =
-              CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST;
-          else if (!val.compare("specify_workspace_limit"))
-            conv_param->conv_bwd_filter_pref_ =
-              CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT;
-        } else if (!var.compare("conv_bwd_data_pref")) {
-          if (!val.compare("no_workspace"))
-            conv_param->conv_bwd_data_pref_ =
-              CUDNN_CONVOLUTION_BWD_DATA_NO_WORKSPACE;
-          else if (!val.compare("fastest"))
-            conv_param->conv_bwd_data_pref_ =
-              CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST;
-          else if (!val.compare("specify_workspace_limit"))
-            conv_param->conv_bwd_data_pref_ =
-              CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT;
-        }
-      } else {
-        LOG(FATAL) << var << ": Keywords not exists" << std::endl;
-      }
+      SetupConvParam(var, val, conv_param);
       break;
     } // End of case CONVOLUTION
     case POOLING: {
@@ -141,40 +80,7 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
       if(isKeywordExist(var, data_config_keywords))
         break;
 
-      // Process all the keywords in config
-      if(isKeywordExist(var, pool_config_keywords)) {
-        if (!var.compare("pool_mode")) {
-          if (!val.compare("max"))
-            pool_param->mode_ = CUDNN_POOLING_MAX;
-          else if (!val.compare("avg_include_padding"))
-            pool_param->mode_ = CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING;
-          else if (!val.compare("avg_exclude_padding"))
-            pool_param->mode_ = CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
-        } else if (!var.compare("kernel_size")) {
-          pool_param->kernel_size_h_ = atoi(val.c_str());
-          pool_param->kernel_size_w_ = atoi(val.c_str());
-        } else if (!var.compare("pad")) {
-          pool_param->pad_h_ = atoi(val.c_str());
-          pool_param->pad_w_ = atoi(val.c_str());
-        } else if (!var.compare("stride")) {
-          pool_param->stride_h_ = atoi(val.c_str());
-          pool_param->stride_w_ = atoi(val.c_str());
-        } else if (!var.compare("kernel_size_h")) {
-          pool_param->kernel_size_h_ = atoi(val.c_str());
-        } else if (!var.compare("kernel_size_w")) {
-          pool_param->kernel_size_w_ = atoi(val.c_str());
-        } else if (!var.compare("pad_h")) {
-          pool_param->pad_h_ = atoi(val.c_str());
-        } else if (!var.compare("pad_w")) {
-          pool_param->pad_w_ = atoi(val.c_str());
-        } else if (!var.compare("stride_h")) {
-          pool_param->stride_h_ = atoi(val.c_str());
-        } else if (!var.compare("stride_w")) {
-          pool_param->stride_w_ = atoi(val.c_str());
-        }
-      } else {
-        LOG(FATAL) << var << ": Keywords not exists" << std::endl;
-      }
+      SetupPoolingParam(var, val, pool_param);
       break;
     } // End of case POOLING
     case LRN: {
@@ -187,23 +93,7 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
       if(isKeywordExist(var, data_config_keywords))
         break;
 
-      // Process all the keywords in config
-      if(isKeywordExist(var, lrn_config_keywords)) {
-        if (!var.compare("lrn_mode")) {
-          if (!val.compare("cross_channel_dim1"))
-            lrn_param->mode_ = CUDNN_LRN_CROSS_CHANNEL_DIM1;
-        } else if (!var.compare("local_size")) {
-          lrn_param->local_size_ = atoi(val.c_str());
-        } else if (!var.compare("alpha")) {
-          lrn_param->alpha_ = atof(val.c_str());
-        } else if (!var.compare("beta")) {
-          lrn_param->beta_ = atof(val.c_str());
-        } else if (!var.compare("k")) {
-          lrn_param->k_ = atof(val.c_str());
-        }
-      } else {
-        LOG(FATAL) << var << ": Keywords not exists" << std::endl;
-      }
+      SetupLrnParam(var, val, lrn_param);
       break;
     } // End of case LRN
     case ACTIVATION: {
@@ -217,20 +107,7 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
         break;
 
       // Process all the keywords in config
-      if(isKeywordExist(var, activation_config_keywords)) {
-        if (!var.compare("activation_mode")) {
-          if (!val.compare("sigmoid"))
-            activation_param->mode_ = CUDNN_ACTIVATION_SIGMOID;
-          else if (!val.compare("relu"))
-            activation_param->mode_ = CUDNN_ACTIVATION_RELU;
-          else if (!val.compare("tanh"))
-            activation_param->mode_ = CUDNN_ACTIVATION_TANH;
-          else if (!val.compare("relu"))
-            activation_param->mode_ = CUDNN_ACTIVATION_CLIPPED_RELU;
-        }
-      } else {
-        LOG(FATAL) << var << ": Keywords not exists" << std::endl;
-      }
+      SetupActivationParam(var, val, activation_param);
       break;
     } // End of case ACTIVATION
     case FC: {
@@ -243,14 +120,7 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
       if(isKeywordExist(var, data_config_keywords))
         break;
 
-      // Process all the keywords in config
-      if(isKeywordExist(var, fc_config_keywords)) {
-        if (!var.compare("num_output")) {
-          fc_param->output_num_ = atoi(val.c_str());
-        }
-      } else {
-        LOG(FATAL) << var << ": Keywords not exists" << std::endl;
-      }
+      SetupFcParam(var, val, fc_param);
       break;
     } // End of case FC
     case SOFTMAX: {
@@ -263,25 +133,7 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
       if(isKeywordExist(var, data_config_keywords))
         break;
 
-      // Process all the keywords in config
-      if(isKeywordExist(var, softmax_config_keywords)) {
-        if (!var.compare("softmax_algo")) {
-          if (!val.compare("fast"))
-            softmax_param->algo_ = CUDNN_SOFTMAX_FAST;
-          else if (!val.compare("accurate"))
-            softmax_param->algo_ = CUDNN_SOFTMAX_ACCURATE;
-          else if (!val.compare("log"))
-            softmax_param->algo_ = CUDNN_SOFTMAX_LOG;
-        }
-        if (!var.compare("softmax_mode")) {
-          if (!val.compare("instance"))
-            softmax_param->mode_ = CUDNN_SOFTMAX_MODE_INSTANCE;
-          else if (!val.compare("channel"))
-            softmax_param->mode_ = CUDNN_SOFTMAX_MODE_CHANNEL;
-        }
-      } else {
-        LOG(FATAL) << var << ": Keywords not exists" << std::endl;
-      }
+      SetupSoftmaxParam(var, val, softmax_param);
       break;
     } // End of case SOFTMAX
     case BN: {
@@ -294,29 +146,7 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
       if(isKeywordExist(var, data_config_keywords))
         break;
 
-      // Process all the keywords in config
-      if(isKeywordExist(var, bn_config_keywords)) {
-        if(!var.compare("batchnorm_mode")) {
-          if(!val.compare("per_activation"))
-            bn_param->mode_ = CUDNN_BATCHNORM_PER_ACTIVATION;
-          else if (!val.compare("spatial"))
-            bn_param->mode_ = CUDNN_BATCHNORM_SPATIAL;
-        }
-        if(!var.compare("save_intermediates")) {
-          if(!val.compare("true"))
-            bn_param->save_intermediates_ = true;
-          else if (!val.compare("false"))
-            bn_param->save_intermediates_ = false;
-        }
-        if(!var.compare("exp_avg_factor")) {
-          bn_param->exp_avg_factor_ = atof(val.c_str());
-        }
-        if(!var.compare("epsilon")) {
-          bn_param->epsilon_ = atof(val.c_str());
-        }
-      } else {
-        LOG(FATAL) << var << ": Keywords not exists" << std::endl;
-      }
+      SetupBatchNormParam(var, val, bn_param);
       break;
     } // End of case BN
     case DROPOUT: {
@@ -329,17 +159,7 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
       if(isKeywordExist(var, data_config_keywords))
         break;
 
-      // Process all the keywords in config
-      if(isKeywordExist(var, dropout_config_keywords)) {
-        if(!var.compare("dropout_probability")) {
-          dropout_param->dropout_p_ = atof(val.c_str());
-        }
-        if(!var.compare("random_seed")) {
-          dropout_param->random_seed_ = atoi(val.c_str());
-        }
-      } else {
-        LOG(FATAL) << var << ": Keywords not exists" << std::endl;
-      }
+      SetupDropoutParam(var, val, dropout_param);
       break;
     } // End of case DROPOUT
     case BYPASS: {
