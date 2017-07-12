@@ -553,7 +553,7 @@ class ConvAlgo {
     }
   }
 
-  cudnnConvolutionFwdAlgo_t GetFwdAlgo() {
+  cudnnConvolutionFwdAlgo_t GetFwdAlgo() const {
     return fwd_algo_;
   }
   void GetFwdWorkspaceSize(const Handle &handle, RunMode mode, int idx,
@@ -571,7 +571,7 @@ class ConvAlgo {
                fwd_algo_,
                workspace_size))
   }
-  cudnnConvolutionBwdFilterAlgo_t GetBwdFilterAlgo() {
+  cudnnConvolutionBwdFilterAlgo_t GetBwdFilterAlgo() const {
     return bwd_filter_algo_;
   }
   void GetBwdFilterWorkspaceSize(const Handle &handle, RunMode mode, int idx,
@@ -589,7 +589,7 @@ class ConvAlgo {
                bwd_filter_algo_,
                workspace_size))
   }
-  cudnnConvolutionBwdDataAlgo_t GetBwdDataAlgo() {
+  cudnnConvolutionBwdDataAlgo_t GetBwdDataAlgo() const {
     return bwd_data_algo_;
   }
   void GetBwdDataWorkspaceSize(const Handle &handle, RunMode mode, int idx,
@@ -708,7 +708,7 @@ class ConvAlgo {
     }
   }
 
-  miopenConvFwdAlgorithm_t GetFwdAlgo() {
+  miopenConvFwdAlgorithm_t GetFwdAlgo() const {
     return fwd_algo_;
   }
   void GetFwdWorkspaceSize(const Handle &handle, RunMode mode, int idx,
@@ -725,7 +725,7 @@ class ConvAlgo {
                 top_desc.Get(),
                 workspace_size));
   }
-  miopenConvBwdWeightsAlgorithm_t GetBwdFilterAlgo() {
+  miopenConvBwdWeightsAlgorithm_t GetBwdFilterAlgo() const {
     return bwd_filter_algo_;
   }
   void GetBwdFilterWorkspaceSize(const Handle &handle, RunMode mode, int idx,
@@ -742,7 +742,7 @@ class ConvAlgo {
                 conv_desc.GetFilter(),
                 workspace_size));
   }
-  miopenConvBwdDataAlgorithm_t GetBwdDataAlgo() {
+  miopenConvBwdDataAlgorithm_t GetBwdDataAlgo() const {
     return bwd_data_algo_;
   }
   void GetBwdDataWorkspaceSize(const Handle &handle, RunMode mode, int idx,

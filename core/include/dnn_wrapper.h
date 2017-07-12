@@ -28,6 +28,10 @@
 
 namespace dnnmark {
 
+//
+// Convolution forward/backward functions
+//
+
 template <typename T>
 inline void dnnmarkConvolutionForward(const Handle &handle,
                                       RunMode mode, int idx,
@@ -153,6 +157,30 @@ inline void dnnmarkConvolutionBackwardFilter(const Handle &handle,
               workspace, workspace_in_bytes));
 #endif
 }
+
+//
+// Pooling forward/backward functions
+//
+
+//
+// Activation forward/backward functions
+//
+
+//
+// LRN forward/backward functions
+//
+
+//
+// Fully Connected forward/backward functions
+//
+
+//
+// Softmax forward/backward functions
+//
+
+//
+// Batch Normalization forward/backward functions
+//
 
 } // namespace dnnmark
 
