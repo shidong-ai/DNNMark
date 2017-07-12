@@ -49,12 +49,12 @@ class Handle {
   Handle();
   Handle(int num);
   ~Handle();
-  cudnnHandle_t GetCudnn();
-  cudnnHandle_t GetCudnn(int index);
-  cublasHandle_t GetBlas();
-  cublasHandle_t GetBlas(int index);
-  int num_cudnn() { return num_cudnn_handles_; }
-  int num_blas() { return num_blas_handles_; }
+  cudnnHandle_t GetCudnn() const;
+  cudnnHandle_t GetCudnn(int index) const;
+  cublasHandle_t GetBlas() const;
+  cublasHandle_t GetBlas(int index) const;
+  int num_cudnn() const { return num_cudnn_handles_; }
+  int num_blas() const { return num_blas_handles_; }
 #endif
 #ifdef AMD_MIOPEN
  private:
@@ -64,9 +64,9 @@ class Handle {
   Handle();
   Handle(int num);
   ~Handle();
-  miopenHandle_t Get();
-  miopenHandle_t Get(int index);
-  int num() { return num_handles_; }
+  miopenHandle_t Get() const;
+  miopenHandle_t Get(int index) const;
+  int num() const { return num_handles_; }
 #endif
 };
 
@@ -269,7 +269,7 @@ class PoolingDesc : public Descriptor {
                  param.stride_h_, param.stride_w_));
 #endif
 #ifdef AMD_MIOPEN
-      MIOPEN_CALL(miopenSetPooling2dDescriptor_v4(pooling_desc_,
+      MIOPEN_CALL(miopenSet2dPoolingDescriptor(pooling_desc_,
                  param.mode_,
                  param.kernel_size_h_, param.kernel_size_w_,
                  param.pad_h_, param.pad_w_,
@@ -311,7 +311,6 @@ class LRNDesc : public Descriptor {
 #ifdef AMD_MIOPEN
     MIOPEN_CALL(miopenCreateLRNDescriptor(&lrn_desc_));
 #endif
-#endif
   }
 
   ~LRNDesc() {
@@ -333,9 +332,10 @@ class LRNDesc : public Descriptor {
 #endif
 #ifdef AMD_MIOPEN
       MIOPEN_CALL(miopenSetLRNDescriptor(lrn_desc_,
-                 param.local_size_,
-                 param.alpha_, param.beta_,
-                 param.k_));
+                  param.mode_,
+                  param.local_size_,
+                  param.alpha_, param.beta_,
+                  param.k_));
 #endif
     }
 
@@ -417,6 +417,7 @@ class ActivationDesc : public Descriptor {
 
 };
 
+template <typename T>
 class ConvAlgo {
 #ifdef NVIDIA_CUDNN
  private:
@@ -434,13 +435,13 @@ class ConvAlgo {
     fwd_algo_ = fwd_algo;
   }
   void SetFwdAlgo(const Handle &handle, RunMode mode, int idx,
-                  const DataTensor &bottom_desc,
-                  const ConvolutionDesc &conv_desc,
-                  const DataTensor &top_desc,
+                  const DataTensor<T> &bottom_desc,
+                  const ConvolutionDesc<T> &conv_desc,
+                  const DataTensor<T> &top_desc,
                   cudnnConvolutionFwdPreference_t pref) {
     CUDNN_CALL(cudnnGetConvolutionForwardAlgorithm(
                mode == COMPOSED ?
-               handle.Get(layer_id_) : handle.Get(),
+               handle.Get(idx) : handle.Get(),
                bottom_desc.Get(),
                conv_desc.GetFilter(),
                conv_desc.GetConv(),
@@ -450,14 +451,14 @@ class ConvAlgo {
                &fwd_algo_));
   }
   void FindFwdAlgo(const Handle &handle, RunMode mode, int idx,
-                   const DataTensor &bottom_desc,
-                   const ConvolutionDesc &conv_desc,
-                   const DataTensor &top_desc) {
+                   const DataTensor<T> &bottom_desc,
+                   const ConvolutionDesc<T> &conv_desc,
+                   const DataTensor<T> &top_desc) {
     cudnnConvolutionFwdAlgoPerf_t *perf_results;
     int *returned_algo_count;
     CUDNN_CALL(cudnnFindConvolutionForwardAlgorithm(
                mode == COMPOSED ?
-               handle.Get(layer_id_) : handle.Get(),
+               handle.Get(idx) : handle.Get(),
                bottom_desc.Get(),
                conv_desc.GetFilter(),
                conv_desc.GetConv(),
@@ -465,7 +466,7 @@ class ConvAlgo {
                1, returned_algo_count,
                perf_results));
     if (*returned_algo_count > 0) {
-      fwd_algo_ = perf_results.algo;
+      fwd_algo_ = perf_results->algo;
     } else {
       fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
     }
@@ -474,13 +475,13 @@ class ConvAlgo {
     bwd_filter_algo_ = bwd_filter_algo;
   }
   void SetBwdFilterAlgo(const Handle &handle, RunMode mode, int idx,
-                        const DataTensor &bottom_desc,
-                        const DataTensor &top_desc,
-                        const ConvolutionDesc &conv_desc,
+                        const DataTensor<T> &bottom_desc,
+                        const DataTensor<T> &top_desc,
+                        const ConvolutionDesc<T> &conv_desc,
                         cudnnConvolutionBwdFilterPreference_t pref) {
      CUDNN_CALL(cudnnGetConvolutionBackwardFilterAlgorithm(
                 mode == COMPOSED ?
-                handle.Get(layer_id_) : handle.Get(),
+                handle.Get(idx) : handle.Get(),
                 bottom_desc.Get(),
                 top_desc.Get(),
                 conv_desc.GetConv(),
@@ -490,14 +491,14 @@ class ConvAlgo {
                 &bwd_filter_algo_));   
   }
   void FindBwdFilterAlgo(const Handle &handle, RunMode mode, int idx,
-                         const DataTensor &bottom_desc,
-                         const ConvolutionDesc &conv_desc,
-                         const DataTensor &top_desc) {
+                         const DataTensor<T> &bottom_desc,
+                         const ConvolutionDesc<T> &conv_desc,
+                         const DataTensor<T> &top_desc) {
     cudnnConvolutionBwdFilterAlgoPerf_t *perf_results;
     int *returned_algo_count;
     CUDNN_CALL(cudnnFindConvolutionBackwardFilterAlgorithm(
                mode == COMPOSED ?
-               handle.Get(layer_id_) : handle.Get(),
+               handle.Get(idx) : handle.Get(),
                bottom_desc.Get(),
                top_desc.Get(),
                conv_desc.GetConv(),
@@ -505,7 +506,7 @@ class ConvAlgo {
                1, returned_algo_count,
                perf_results));
     if (*returned_algo_count > 0) {
-      bwd_filter_algo_ = perf_results.algo;
+      bwd_filter_algo_ = perf_results->algo;
     } else {
       bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
     }
@@ -515,13 +516,13 @@ class ConvAlgo {
     bwd_data_algo_ = bwd_data_algo;
   }
   void SetBwdDataAlgo(const Handle &handle, RunMode mode, int idx,
-                      const DataTensor &bottom_desc,
-                      const DataTensor &top_desc,
-                      const ConvolutionDesc &conv_desc,
+                      const DataTensor<T> &bottom_desc,
+                      const DataTensor<T> &top_desc,
+                      const ConvolutionDesc<T> &conv_desc,
                       cudnnConvolutionBwdDataPreference_t pref) {
      CUDNN_CALL(cudnnGetConvolutionBackwardDataAlgorithm(
                 mode == COMPOSED ?
-                handle.Get(layer_id_) : handle.Get(),
+                handle.Get(idx) : handle.Get(),
                 conv_desc.GetFilter(),
                 top_desc.Get(),
                 conv_desc.GetConv(),
@@ -531,14 +532,14 @@ class ConvAlgo {
                 &bwd_data_algo_));   
   }
   void FindBwdDataAlgo(const Handle &handle, RunMode mode, int idx,
-                       const DataTensor &bottom_desc,
-                       const ConvolutionDesc &conv_desc,
-                       const DataTensor &top_desc) {
+                       const DataTensor<T> &bottom_desc,
+                       const ConvolutionDesc<T> &conv_desc,
+                       const DataTensor<T> &top_desc) {
     cudnnConvolutionBwdDataAlgoPerf_t *perf_results;
     int *returned_algo_count;
     CUDNN_CALL(cudnnFindConvolutionBackwardDataAlgorithm(
                mode == COMPOSED ?
-               handle.Get(layer_id_) : handle.Get(),
+               handle.Get(idx) : handle.Get(),
                conv_desc.GetFilter(),
                top_desc.Get(),
                conv_desc.GetConv(),
@@ -546,7 +547,7 @@ class ConvAlgo {
                1, returned_algo_count,
                perf_results));
     if (*returned_algo_count > 0) {
-      bwd_data_algo_ = perf_results.algo;
+      bwd_data_algo_ = perf_results->algo;
     } else {
       bwd_data_algo_ = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
     }
@@ -556,13 +557,13 @@ class ConvAlgo {
     return fwd_algo_;
   }
   void GetFwdWorkspaceSize(const Handle &handle, RunMode mode, int idx,
-                           const DataTensor &bottom_desc,
-                           const DataTensor &top_desc,
-                           const ConvolutionDesc &conv_desc,
+                           const DataTensor<T> &bottom_desc,
+                           const DataTensor<T> &top_desc,
+                           const ConvolutionDesc<T> &conv_desc,
                            size_t *workspace_size) {
     CUDNN_CALL(cudnnGetConvolutionForwardWorkspaceSize(
                mode == COMPOSED ?
-               Handle.GetCudnn(layer_id_) : Handle.GetCudnn(),
+               handle.GetCudnn(idx) : handle.GetCudnn(),
                bottom_desc.Get(),
                conv_desc.GetFilter(),
                conv_desc.GetConv(),
@@ -574,13 +575,13 @@ class ConvAlgo {
     return bwd_filter_algo_;
   }
   void GetBwdFilterWorkspaceSize(const Handle &handle, RunMode mode, int idx,
-                                 const DataTensor &bottom_desc,
-                                 const DataTensor &top_desc,
-                                 const ConvolutionDesc &conv_desc,
+                                 const DataTensor<T> &bottom_desc,
+                                 const DataTensor<T> &top_desc,
+                                 const ConvolutionDesc<T> &conv_desc,
                                  size_t *workspace_size) {
     CUDNN_CALL(cudnnGetConvolutionBackwardFilterWorkspaceSize(
                mode == COMPOSED ?
-               Handle.GetCudnn(layer_id_) : Handle.GetCudnn(),
+               handle.GetCudnn(idx) : handle.GetCudnn(),
                bottom_desc.Get(),
                top_desc.Get(),
                conv_desc.GetConv(),
@@ -592,13 +593,13 @@ class ConvAlgo {
     return bwd_data_algo_;
   }
   void GetBwdDataWorkspaceSize(const Handle &handle, RunMode mode, int idx,
-                               const DataTensor &bottom_desc,
-                               const DataTensor &top_desc,
-                               const ConvolutionDesc &conv_desc,
+                               const DataTensor<T> &bottom_desc,
+                               const DataTensor<T> &top_desc,
+                               const ConvolutionDesc<T> &conv_desc,
                                size_t *workspace_size) {
     CUDNN_CALL(cudnnGetConvolutionBackwardDataWorkspaceSize(
                mode == COMPOSED ?
-               Handle.GetCudnn(layer_id_) : Handle.GetCudnn(),
+               handle.GetCudnn(idx) : handle.GetCudnn(),
                conv_desc.GetFilter(),
                top_desc.Get(),
                conv_desc.GetConv(),
@@ -623,9 +624,9 @@ class ConvAlgo {
     fwd_algo_ = fwd_algo;
   }
   void FindFwdAlgo(const Handle &handle, RunMode mode, int idx,
-                   const DataTensor &bottom_desc,
-                   const ConvolutionDesc &conv_desc,
-                   const DataTensor &top_desc,
+                   const DataTensor<T> &bottom_desc,
+                   const ConvolutionDesc<T> &conv_desc,
+                   const DataTensor<T> &top_desc,
                    const void *x,
                    const void *w,
                    void *y,
@@ -635,15 +636,15 @@ class ConvAlgo {
     int *returned_algo_count;
     MIOPEN_CALL(miopenFindConvolutionForwardAlgorithm(
                 mode == COMPOSED ?
-                handle.Get(layer_id_) : handle.Get(),
+                handle.Get(idx) : handle.Get(),
                 bottom_desc.Get(), x,
                 conv_desc.GetFilter(), w,
                 conv_desc.GetConv(),
-                top_desc.Get(), y
+                top_desc.Get(), y,
                 1, returned_algo_count,
                 perf_results, workspace, workspace_size, true));
     if (*returned_algo_count > 0) {
-      fwd_algo_ = perf_results.fwd_algo;
+      fwd_algo_ = perf_results->fwd_algo;
     } else {
       fwd_algo_ = miopenConvolutionFwdAlgoGEMM;
     }
@@ -652,9 +653,9 @@ class ConvAlgo {
     bwd_filter_algo_ = bwd_filter_algo;
   }
   void FindBwdFilterAlgo(const Handle &handle, RunMode mode, int idx,
-                         const DataTensor &bottom_desc,
-                         const ConvolutionDesc &conv_desc,
-                         const DataTensor &top_desc,
+                         const DataTensor<T> &bottom_desc,
+                         const ConvolutionDesc<T> &conv_desc,
+                         const DataTensor<T> &top_desc,
                          const void *x,
                          const void *dw,
                          void *dy,
@@ -664,15 +665,15 @@ class ConvAlgo {
     int *returned_algo_count;
     MIOPEN_CALL(miopenFindConvolutionBackwardWeightsAlgorithm(
                 mode == COMPOSED ?
-                handle.Get(layer_id_) : handle.Get(),
-                top_desc.Get(), dy
+                handle.Get(idx) : handle.Get(),
+                top_desc.Get(), dy,
                 bottom_desc.Get(), x,
                 conv_desc.GetConv(),
-                conv_desc.GetFilter(), w,
+                conv_desc.GetFilter(), dw,
                 1, returned_algo_count,
                 perf_results, workspace, workspace_size, true));
     if (*returned_algo_count > 0) {
-      bwd_filter_algo_ = perf_results.bwd_weights_algo;
+      bwd_filter_algo_ = perf_results->bwd_weights_algo;
     } else {
       bwd_filter_algo_ = miopenConvolutionBwdWeightsAlgoGEMM;
     }
@@ -681,9 +682,9 @@ class ConvAlgo {
     bwd_data_algo_ = bwd_data_algo;
   }
   void FindBwdDataAlgo(const Handle &handle, RunMode mode, int idx,
-                       const DataTensor &bottom_desc,
-                       const ConvolutionDesc &conv_desc,
-                       const DataTensor &top_desc,
+                       const DataTensor<T> &bottom_desc,
+                       const ConvolutionDesc<T> &conv_desc,
+                       const DataTensor<T> &top_desc,
                        const void *x,
                        const void *dw,
                        void *dy,
@@ -693,15 +694,15 @@ class ConvAlgo {
     int *returned_algo_count;
     MIOPEN_CALL(miopenFindConvolutionBackwardDataAlgorithm(
                 mode == COMPOSED ?
-                handle.Get(layer_id_) : handle.Get(),
-                top_desc.Get(), dy
+                handle.Get(idx) : handle.Get(),
+                top_desc.Get(), dy,
                 bottom_desc.Get(), x,
                 conv_desc.GetConv(),
-                conv_desc.GetFilter(), w,
+                conv_desc.GetFilter(), dw,
                 1, returned_algo_count,
                 perf_results, workspace, workspace_size, true));
     if (*returned_algo_count > 0) {
-      bwd_data_algo_ = perf_results.bwd_data_algo;
+      bwd_data_algo_ = perf_results->bwd_data_algo;
     } else {
       bwd_data_algo_ = miopenConvolutionBwdDataAlgoGEMM;
     }
@@ -711,52 +712,52 @@ class ConvAlgo {
     return fwd_algo_;
   }
   void GetFwdWorkspaceSize(const Handle &handle, RunMode mode, int idx,
-                           const DataTensor &bottom_desc,
-                           const DataTensor &top_desc,
-                           const ConvolutionDesc &conv_desc,
+                           const DataTensor<T> &bottom_desc,
+                           const DataTensor<T> &top_desc,
+                           const ConvolutionDesc<T> &conv_desc,
                            size_t *workspace_size) {
     MIOPEN_CALL(miopenGetConvolutionForwardGetWorkSpaceSize(
                 mode == COMPOSED ?
-                Handle.Get(layer_id_) : Handle.Get(),
+                handle.Get(idx) : handle.Get(),
                 conv_desc.GetFilter(),
                 bottom_desc.Get(),
                 conv_desc.GetConv(),
                 top_desc.Get(),
-                workspace_size))
+                workspace_size));
   }
   miopenConvBwdWeightsAlgorithm_t GetBwdFilterAlgo() {
     return bwd_filter_algo_;
   }
   void GetBwdFilterWorkspaceSize(const Handle &handle, RunMode mode, int idx,
-                                 const DataTensor &bottom_desc,
-                                 const DataTensor &top_desc,
-                                 const ConvolutionDesc &conv_desc,
+                                 const DataTensor<T> &bottom_desc,
+                                 const DataTensor<T> &top_desc,
+                                 const ConvolutionDesc<T> &conv_desc,
                                  size_t *workspace_size) {
     MIOPEN_CALL(miopenGetConvolutionBackwardWeightsGetWorkSpaceSize(
                 mode == COMPOSED ?
-                Handle.Get(layer_id_) : Handle.Get(),
+                handle.Get(idx) : handle.Get(),
                 top_desc.Get(),
                 bottom_desc.Get(),
                 conv_desc.GetConv(),
                 conv_desc.GetFilter(),
-                workspace_size))
+                workspace_size));
   }
   miopenConvBwdDataAlgorithm_t GetBwdDataAlgo() {
     return bwd_data_algo_;
   }
   void GetBwdDataWorkspaceSize(const Handle &handle, RunMode mode, int idx,
-                               const DataTensor &bottom_desc,
-                               const DataTensor &top_desc,
-                               const ConvolutionDesc &conv_desc,
+                               const DataTensor<T> &bottom_desc,
+                               const DataTensor<T> &top_desc,
+                               const ConvolutionDesc<T> &conv_desc,
                                size_t *workspace_size) {
     MIOPEN_CALL(miopenGetConvolutionBackwardDataGetWorkSpaceSize(
                 mode == COMPOSED ?
-                Handle.Get(layer_id_) : Handle.Get(),
+                handle.Get(idx) : handle.Get(),
                 top_desc.Get(),
                 conv_desc.GetFilter(),
                 conv_desc.GetConv(),
                 bottom_desc.Get(),
-                workspace_size))
+                workspace_size));
   }
 #endif
 };
@@ -768,7 +769,7 @@ inline void ProfilerStart(const Handle &handle, RunMode mode, int idx) {
 #endif
 #ifdef AMD_MIOPEN
   miopenEnableProfiling(mode == COMPOSED ?
-                        Handle.Get(layer_id_) : Handle.Get(), true);
+                        handle.Get(idx) : handle.Get(), true);
 #endif
 }
 inline void ProfilerStop(const Handle &handle, RunMode mode, int idx) {
@@ -777,7 +778,7 @@ inline void ProfilerStop(const Handle &handle, RunMode mode, int idx) {
 #endif
 #ifdef AMD_MIOPEN
   miopenEnableProfiling(mode == COMPOSED ?
-                        Handle.Get(layer_id_) : Handle.Get(), false);
+                        handle.Get(idx) : handle.Get(), false);
 #endif
 }
 

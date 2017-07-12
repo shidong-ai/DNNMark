@@ -34,7 +34,8 @@
 
 #include "common.h"
 #include "utility.h"
-#include "gpu_utility.h"
+#include "gemm_wrapper.h"
+#include "dnn_wrapper.h"
 #include "dnn_config_keywords.h"
 #include "dnn_param.h"
 #include "dnn_utility.h"

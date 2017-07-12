@@ -128,7 +128,9 @@ elseif(HCC_FOUND)
   if (EXISTS ${MIOPEN_ROOT})
     message(STATUS "MIOpen root path: " ${MIOPEN_ROOT})
     include_directories(${MIOPEN_ROOT}/include)
-    include_directories(${MIOPEN_ROOT}/src/include/miopen)
+    include_directories(${MIOPEN_ROOT}/src/include)
+    include_directories(${MIOPEN_ROOT}/build/include)
+    include_directories(/opt/rocm/hip/include)
   else()
     message(FATAL_ERROR "Path to MIOpen library not exists")
   endif()
@@ -138,7 +140,10 @@ elseif(HCC_FOUND)
   find_package(hip REQUIRED PATHS /opt/rocm)
 
   # Add a guard for AMD MIOpen
-  add_definitions(-DAMD_MIOpen)
+  add_definitions(-DAMD_MIOPEN)
+
+  # Add deinition of C++11 stardard
+  add_definitions(-std=c++11)
 
   # Enable double data type
   if (double-test)
@@ -167,6 +172,7 @@ elseif(HCC_FOUND)
                         ${MIOPEN_LIBRARY}
                         ${GLOG_LIBRARY}
                         m)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE -D__HIP_PLATFORM_HCC__=1 )
 
 else()
 

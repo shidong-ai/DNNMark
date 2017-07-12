@@ -95,7 +95,7 @@ do {\
 #define MIOPEN_CALL(x) \
 do {\
   miopenStatus_t ret = x;\
-  if(ret != MIOPEN_STATUS_SUCCESS) {\
+  if(ret != miopenStatusSuccess) {\
     std::cout << "MIOpen Error: " << ret << " at " << __FILE__ << __LINE__;\
     exit(EXIT_FAILURE);\
   }\
@@ -140,6 +140,9 @@ template <> class DataType<double> {
   static const void *one, *zero;
 };
 #endif
+
+// Min epsilon for BN
+#define BN_MIN_EPSILON 1e-5
 
 // Benchmark running mode
 // None: the benchmark haven't been setup

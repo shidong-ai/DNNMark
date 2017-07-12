@@ -24,6 +24,8 @@
 #define CORE_INCLUDE_DNN_PARAM_H_
 
 #include <iostream>
+#include <string>
+#include <glog/logging.h>
 
 #ifdef NVIDIA_CUDNN
 #include <cudnn.h>
@@ -33,6 +35,7 @@
 #include <miopen/miopen.h>
 #endif
 
+#include "common.h"
 #include "dnn_config_keywords.h"
 
 namespace dnnmark {
@@ -124,7 +127,7 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-inline void SetupConvParam(const string &var, const string &val,
+inline void SetupConvParam(const std::string &var, const std::string &val,
                            ConvolutionParam *conv_param) {
   // Process all the corresponding keywords in config
   if(isKeywordExist(var, conv_config_keywords)) {
@@ -253,7 +256,7 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-inline void SetupPoolingParam(const string &var, const string &val,
+inline void SetupPoolingParam(const std::string &var, const std::string &val,
                               PoolingParam *pool_param) {
   // Process all the keywords in config
   if(isKeywordExist(var, pool_config_keywords)) {
@@ -341,7 +344,7 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-inline void SetupLrnParam(const string &var, const string &val,
+inline void SetupLrnParam(const std::string &var, const std::string &val,
                           LRNParam *lrn_param) {
   // Process all the keywords in config
   if(isKeywordExist(var, lrn_config_keywords)) {
@@ -353,7 +356,7 @@ inline void SetupLrnParam(const string &var, const string &val,
 #ifdef AMD_MIOPEN
         lrn_param->mode_ = miopenLRNCrossChannel;
       else if (!val.compare("within_channel"))
-        lrn_param->mode_ = miopenLRNWidthinChannel;
+        lrn_param->mode_ = miopenLRNWithinChannel;
 #endif
       else
         LOG(FATAL) << "Invalid lrn mode" << std::endl;
@@ -396,7 +399,7 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-inline void SetupActivationParam(const string &var, const string &val,
+inline void SetupActivationParam(const std::string &var, const std::string &val,
                                  ActivationParam *activation_param) {
   // Process all the keywords in config
   if(isKeywordExist(var, activation_config_keywords)) {
@@ -437,7 +440,7 @@ struct FullyConnectedParam {
   : output_num_(4096) {}
 };
 
-inline void SetupFcParam(const string &var, const string &val,
+inline void SetupFcParam(const std::string &var, const std::string &val,
                          FullyConnectedParam *fc_param) {
   // Process all the keywords in config
   if(isKeywordExist(var, fc_config_keywords)) {
@@ -462,7 +465,7 @@ struct SoftmaxParam {
 #endif
 };
 
-inline void SetupSoftmaxParam(const string &var, const string &val,
+inline void SetupSoftmaxParam(const std::string &var, const std::string &val,
                               SoftmaxParam *softmax_param) {
   // Process all the keywords in config
   if(isKeywordExist(var, softmax_config_keywords)) {
@@ -492,20 +495,23 @@ inline void SetupSoftmaxParam(const string &var, const string &val,
 struct BatchNormParam {
 #ifdef NVIDIA_CUDNN
   cudnnBatchNormMode_t mode_;
+#endif
+#ifdef AMD_MIOPEN
+  miopenBatchNormMode_t mode_;
+#endif
   bool save_intermediates_;
   double exp_avg_factor_;
   double epsilon_;
   BatchNormParam()
+#ifdef NVIDIA_CUDNN
   : mode_(CUDNN_BATCHNORM_PER_ACTIVATION),
-    save_intermediates_(true),
-    exp_avg_factor_(1),
-    epsilon_(CUDNN_BN_MIN_EPSILON) {}
 #endif
 #ifdef AMD_MIOPEN
-  miopenBatchNormMode_t mode_;
-  BatchNormParam()
-  : mode_(miopenBNPerActivation) {}
+  : mode_(miopenBNPerActivation),
 #endif
+    save_intermediates_(true),
+    exp_avg_factor_(1),
+    epsilon_(BN_MIN_EPSILON) {}
 };
 
 inline std::ostream &operator<<(std::ostream &os,
@@ -522,8 +528,8 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-inline void SetupBatchNormParam(const string &var, const string &val,
-                                BatchNormParam bn_param) {
+inline void SetupBatchNormParam(const std::string &var, const std::string &val,
+                                BatchNormParam *bn_param) {
   // Process all the keywords in config
   if(isKeywordExist(var, bn_config_keywords)) {
     if(!var.compare("batchnorm_mode")) {
@@ -577,7 +583,7 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-inline void SetupDropoutParam(const string &var, const string &val,
+inline void SetupDropoutParam(const std::string &var, const std::string &val,
                               DropoutParam * dropout_param) {
   // Process all the keywords in config
   if(isKeywordExist(var, dropout_config_keywords)) {

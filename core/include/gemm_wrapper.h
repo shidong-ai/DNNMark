@@ -23,7 +23,8 @@
 #ifndef CORE_INCLUDE_GEMM_H_
 #define CORE_INCLUDE_GEMM_H_
 
-#include <common.h>
+#include "common.h"
+#include "dnn_utility.h"
 
 namespace dnnmark {
 

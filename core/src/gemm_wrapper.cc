@@ -62,7 +62,7 @@ void dnnmarkGEMM(const Handle &handle, RunMode mode, int idx,
 }
 
 template <>
-void dnnmarkGEMM(const cublasHandle_t &handle, RunMode mode, int idx,
+void dnnmarkGEMM(const Handle &handle, RunMode mode, int idx,
                  bool is_a_transpose, bool is_b_transpose,
                  int m, int n, int k,
                  double *alpha,

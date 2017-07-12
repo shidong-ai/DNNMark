@@ -64,7 +64,7 @@ class ConvolutionLayer : public Layer<T> {
   int weights_diff_chunk_id_;
 
   // Algorithm specific parameters
-  ConvAlgo conv_algo_;
+  ConvAlgo<T> conv_algo_;
   size_t fwd_workspace_size_;
   size_t bwd_data_workspace_size_;
   size_t bwd_filter_workspace_size_;

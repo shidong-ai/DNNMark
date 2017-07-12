@@ -77,14 +77,16 @@ Handle::~Handle() {
 }
 
 #ifdef NVIDIA_CUDNN
-cudnnHandle_t Handle::GetCudnn() { return cudnn_handles_[0]; }
-cudnnHandle_t Handle::GetCudnn(int index) { return cudnn_handles_[index]; }
-cublasHandle_t Handle::GetBlas() { return blas_handles_[0]; }
-cublasHandle_t Handle::GetBlas(int index) { return blas_handles_[index]; }
+cudnnHandle_t Handle::GetCudnn() const { return cudnn_handles_[0]; }
+cudnnHandle_t Handle::GetCudnn(int index) const {
+  return cudnn_handles_[index];
+}
+cublasHandle_t Handle::GetBlas() const { return blas_handles_[0]; }
+cublasHandle_t Handle::GetBlas(int index) const { return blas_handles_[index]; }
 #endif
 #ifdef AMD_MIOPEN
-miopenHandle_t Get() { return miopen_handles_[0]; }
-miopenHandle_t Get(int index) { return miopen_handles_[index]; }
+miopenHandle_t Handle::Get() const { return miopen_handles_[0]; }
+miopenHandle_t Handle::Get(int index) const { return miopen_handles_[index]; }
 #endif
 
 Descriptor::Descriptor()

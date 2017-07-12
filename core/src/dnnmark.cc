@@ -20,7 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#ifdef NVIDIA_CUDNN
 #include "cudnn.h"
+#endif
+#ifdef AMD_MIOPEN
+#include <miopen/miopen.h>
+#endif
 
 #include "dnnmark.h"
 
