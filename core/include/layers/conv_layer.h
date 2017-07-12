@@ -236,39 +236,37 @@ class ConvolutionLayer : public Layer<T> {
     }
 
     // Convolution forward computation
-    cudaProfilerStart();
+    ProfilerStart((*p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_);
     for (int i = 0; i < num_tops_; i++) {
-      CUDNN_CALL(cudnnConvolutionBackwardFilter(
-                p_dnnmark_->getRunMode() == COMPOSED ?
-                p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-                p_dnnmark_->GetHandle()->GetCudnn(),
+      dnnmarkConvolutionBackwardFilter(
+                *(p_dnnmark_->GetHandle()),
+                p_dnnmark_->getRunMode(), layer_id_,
                 DataType<T>::one,
-                bottom_desc_.Get(), bottoms_[i]->Get(),
-                top_desc_.Get(), top_diffs_[i]->Get(),
-                desc_.GetConv(),
-                bwd_filter_algo_,
+                bottom_desc_, bottoms_[i]->Get(),
+                top_desc_, top_diffs_[i]->Get(),
+                desc_,
+                conv_algo_,
                 bwd_filter_workspace_, bwd_filter_workspace_size_,
                 DataType<T>::zero,
-                desc_.GetFilter(), weights_diff_->Get()));
-      CUDNN_CALL(cudnnConvolutionBackwardData(
-                p_dnnmark_->getRunMode() == COMPOSED ?
-                p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-                p_dnnmark_->GetHandle()->GetCudnn(),
+                desc_.GetFilter(), weights_diff_->Get());
+      dnnmarkConvolutionBackwardData(
+                *(p_dnnmark_->GetHandle()),
+                p_dnnmark_->getRunMode(), layer_id_,
                 DataType<T>::one,
-                desc_.GetFilter(), weights_->Get(),
-                top_desc_.Get(), top_diffs_[i]->Get(),
-                desc_.GetConv(),
-                bwd_data_algo_,
+                top_desc_, top_diffs_[i]->Get(),
+                desc_, weights_->Get(),
+                conv_algo_,
                 bwd_data_workspace_, bwd_data_workspace_size_,
                 DataType<T>::zero,
-                bottom_desc_.Get(), bottoms_[i]->Get()));
+                bottom_desc_, bottoms_[i]->Get());
     }
-    cudaProfilerStop();
+    ProfilerStop((*p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_);
 
-    // TODO: evaluate the necessity of freeing memory here
     // Free the workspace
-    CUDA_CALL(cudaFree(bwd_data_workspace_));
-    CUDA_CALL(cudaFree(bwd_filter_workspace_));
+    data_manager_->RemoveData(bwd_data_workspace_id_);
+    data_manager_->RemoveData(bwd_filter_workspace_id_);
   }
 
 };

@@ -68,11 +68,87 @@ inline void dnnmarkConvolutionForward(const Handle &handle,
 
 }
 
-template <typename T>
-void dnnmarkConvolutionDataBackward();
+inline void dnnmarkConvolutionBackwardData(const Handle &handle,
+                                           RunMode mode, int idx,
+                                           const void *alpha,
+                                           const DataTensor &top_desc,
+                                           const void *dy,
+                                           const ConvolutionDesc &conv_desc,
+                                           const void *w,
+                                           const ConvAlgo &conv_algo,
+                                           void *workspace,
+                                           size_t workspace_in_bytes,
+                                           const void *beta,
+                                           const DataTensor &bottom_desc,
+                                           void *dx) {
+#ifdef NVIDIA_CUDNN
+  CUDNN_CALL(cudnnConvolutionBackwardData(
+             mode == COMPOSED ?
+             Handle.GetCudnn(layer_id_) : Handle.GetCudnn(),
+             alpha,
+             conv_desc.GetFilter(), w,
+             top_desc.Get(), dy,
+             conv_desc.GetConv(),
+             conv_algo.GetBwdDataAlgo(),
+             workspace, workspace_in_bytes,
+             beta,
+             bottom_desc.Get(), dx));
+#endif
+#ifdef AMD_MIOPEN
+  MIOPEN_CALL(miopenConvolutionBackwardData(
+              mode == COMPOSED ?
+              Handle.Get(layer_id_) : Handle.Get(),
+              alpha,
+              top_desc.Get(), dy,
+              conv_desc.GetFilter(), w,
+              conv_desc.GetConv(),
+              conv_algo.GetBwdDataAlgo(),
+              beta,
+              bottom_desc.Get(), dx,
+              workspace, workspace_in_bytes));
+#endif
+}
 
-template <typename T>
-void dnnmarkConvolutionFilterBackward();
+inline void dnnmarkConvolutionBackwardFilter(const Handle &handle,
+                                             RunMode mode, int idx,
+                                             const void *alpha,
+                                             const DataTensor &bottom_desc,
+                                             const void *x,
+                                             const DataTensor &top_desc,
+                                             const void *dy,
+                                             const ConvolutionDesc &conv_desc,
+                                             const ConvAlgo &conv_algo,
+                                             void *workspace,
+                                             size_t workspace_in_bytes,
+                                             const void *beta,
+                                             void *dw) {
+#ifdef NVIDIA_CUDNN
+  CUDNN_CALL(cudnnConvolutionBackwardFilter(
+             mode == COMPOSED ?
+             Handle.GetCudnn(layer_id_) : Handle.GetCudnn(),
+             alpha,
+             bottom_desc.Get(), x,
+             top_desc.Get(), dy,
+             conv_desc.GetConv(),
+             conv_algo.GetBwdFilterAlgo(),
+             workspace, workspace_in_bytes,
+             beta,
+             conv_desc.GetFilter(), dw));
+#endif
+#ifdef AMD_MIOPEN
+  MIOPEN_CALL(miopenConvolutionBackwardWeights(
+              mode == COMPOSED ?
+              Handle.Get(layer_id_) : Handle.Get(),
+              alpha,
+              top_desc.Get(), dy,
+              bottom_desc.Get(), x,
+              conv_desc.GetConv(),
+              conv_algo.GetBwdDataAlgo(),
+              beta,
+              conv_desc.GetFilter(), dw,
+              workspace, workspace_in_bytes));
+#endif
+}
 
 } // namespace dnnmark
 
