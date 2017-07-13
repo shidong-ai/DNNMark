@@ -353,6 +353,15 @@ class LRNDesc : public Descriptor {
     return nullptr;
   }
 
+  void GetWorkspaceSize(size_t *workspace_size) {
+#ifdef AMD_MIOPEN
+    if (set_)
+      MIOPEN_CALL(miopenLRNGetWorkSpaceSize(lrn_desc_, workspace_size));
+    else
+      LOG(FATAL) << "LRN descriptor NOT set";
+#endif
+  }
+
 };
 
 template <typename T>

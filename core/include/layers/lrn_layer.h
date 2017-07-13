@@ -57,10 +57,16 @@ class LRNLayer : public Layer<T> {
   // LRN specific descriptor
   LRNDesc<T> desc_;
 
+  // Workspace
+  size_t workspace_size_;
+  Data<T> *workspace_;
+  int workspace_id_;
+
  public:
   LRNLayer(DNNMark<T> *p_dnnmark)
   : Layer<T>(p_dnnmark),
     lrn_param_(), desc_() {
+    workspace_size_ = 0;
   }
 
   LRNParam *getLRNParam() { return &lrn_param_; }
@@ -103,6 +109,13 @@ class LRNLayer : public Layer<T> {
         top_diffs_.push_back(
           data_manager_->GetData(top_diff_chunk_ids_[i]));
       }
+    }
+
+    // Allocate workspace
+    desc_.GetWorkspaceSize(workspace_size_);
+    if (workspace_size > 0) {
+      workspace_id_ = data_manager_->CreateData(workspace_size_);
+      workspace_ = data_manager_->GetData(workspace_id_);
     }
   }
 
