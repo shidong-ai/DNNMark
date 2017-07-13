@@ -166,6 +166,75 @@ inline void dnnmarkConvolutionBackwardFilter(const Handle &handle,
 // Activation forward/backward functions
 //
 
+template <typename T>
+inline void dnnmarkActivationForward(const Handle &handle,
+                         RunMode mode, int idx,
+                         const ActivationDesc<T> &activation_desc,
+                         const void *alpha,
+                         const DataTensor<T> &bottom_desc,
+                         const void *x,
+                         const void *beta,
+                         const DataTensor<T> &top_desc,
+                         void *y) {
+#ifdef NVIDIA_CUDNN
+  CUDNN_CALL(cudnnActivationForward(
+             mode == COMPOSED ?
+             handle.GetCudnn(idx) : handle.GetCudnn(),
+             activation_desc.Get(),
+             alpha,
+             bottom_desc_.Get(), x,
+             beta,
+             top_desc_.Get(), y));
+#endif
+#ifdef AMD_MIOPEN
+  MIOPEN_CALL(miopenActivationForward(
+              mode == COMPOSED ?
+              handle.Get(idx) : handle.Get(),
+              activation_desc.Get(),
+              alpha,
+              bottom_desc_.Get(), x,
+              beta,
+              top_desc_.Get(), y));
+#endif
+}
+
+template <typename T>
+inline void dnnmarkActivationBackward(const Handle &handle,
+                         RunMode mode, int idx,
+                         const ActivationDesc<T> &activation_desc,
+                         const void *alpha,
+                         const DataTensor<T> &top_desc,
+                         const void *y,
+                         const void *dy,
+                         const void *beta,
+                         const DataTensor<T> &bottom_desc,
+                         const void *x,
+                         void *dx) {
+#ifdef NVIDIA_CUDNN
+  CUDNN_CALL(cudnnActivationBackward(
+             mode == COMPOSED ?
+             handle.GetCudnn(idx) : handle.GetCudnn(),
+             activation_desc.Get(),
+             alpha,
+             top_desc_.Get(), y,
+             top_desc_.Get(), dy,
+             bottom_desc_.Get(), x,
+             beta,
+             bottom_desc_.Get(), dx));
+#endif
+#ifdef AMD_MIOPEN
+  MIOPEN_CALL(miopenActivationBackward(
+              mode == COMPOSED ?
+              handle.Get(idx) : handle.Get(),
+              activation_desc.Get(),
+              alpha,
+              top_desc_.Get(), y,
+              top_desc_.Get(), dy,
+              bottom_desc_.Get(), x,
+              beta,
+              bottom_desc_.Get(), dx));
+#endif
+}
 //
 // LRN forward/backward functions
 //
