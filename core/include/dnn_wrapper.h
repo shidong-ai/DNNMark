@@ -283,12 +283,12 @@ inline void dnnmarkLRNBackward(const Handle &handle,
                          const LRNParam<T> &lrn_param,
                          const void *alpha,
                          const DataTensor<T> &top_desc,
-                         void *y,
-                         void *dy,
+                         const void *y,
+                         const void *dy,
                          const void *beta,
                          const DataTensor<T> &bottom_desc,
                          const void *x,
-                         const void *dx,
+                         void *dx,
                          void *workspace) {
 #ifdef NVIDIA_CUDNN
   CUDNN_CALL(cudnnLRNCrossChannelBackward(
@@ -326,9 +326,197 @@ inline void dnnmarkLRNBackward(const Handle &handle,
 // Softmax forward/backward functions
 //
 
+template <typename T>
+inline void dnnmarkSoftmaxForward(const Handle &handle,
+                         RunMode mode, int idx,
+                         const SoftmaxParam &softmax_param,
+                         const void *alpha,
+                         const DataTensor<T> &bottom_desc,
+                         const void *x,
+                         const void *beta,
+                         const DataTensor<T> &top_desc,
+                         void *y) {
+#ifdef NVIDIA_CUDNN
+  CUDNN_CALL(cudnnSoftmaxForward(
+             mode == COMPOSED ?
+             handle.GetCudnn(idx) : handle.GetCudnn(),
+             softmax_param.algo_,
+             softmax_param.mode_,
+             alpha,
+             bottom_desc_.Get(), x,
+             beta,
+             top_desc_.Get(), y));
+#endif
+#ifdef AMD_MIOPEN
+  MIOPEN_CALL(miopenSoftmaxForward(
+              mode == COMPOSED ?
+              handle.Get(idx) : handle.Get(),
+              alpha,
+              bottom_desc_.Get(), x,
+              beta,
+              top_desc_.Get(), y));
+#endif
+}
+
+template <typename T>
+inline void dnnmarkSoftmaxBackward(const Handle &handle,
+                         RunMode mode, int idx,
+                         const SoftmaxParam &softmax_param,
+                         const void *alpha,
+                         const DataTensor<T> &top_desc,
+                         const void *y,
+                         const void *dy,
+                         const void *beta,
+                         const DataTensor<T> &bottom_desc,
+                         void *dx) {
+#ifdef NVIDIA_CUDNN
+  CUDNN_CALL(cudnnSoftmaxBackward(
+             mode == COMPOSED ?
+             handle.GetCudnn(idx) : handle.GetCudnn(),
+             softmax_param.algo_,
+             softmax_param.mode_,
+             alpha,
+             top_desc_.Get(), y,
+             top_desc_.Get(), dy,
+             beta,
+             bottom_desc_.Get(), dx));
+#endif
+#ifdef AMD_MIOPEN
+  MIOPEN_CALL(miopenSoftmaxBackward(
+             mode == COMPOSED ?
+             handle.GetCudnn(idx) : handle.GetCudnn(),
+             alpha,
+             top_desc_.Get(), y,
+             top_desc_.Get(), dy,
+             beta,
+             bottom_desc_.Get(), dx));
+  MIOPEN_CALL(miopenSoftmaxForward(
+              mode == COMPOSED ?
+              handle.Get(idx) : handle.Get(),
+              alpha,
+              bottom_desc_.Get(), x,
+              beta,
+              top_desc_.Get(), y));
+#endif
+}
+
 //
 // Batch Normalization forward/backward functions
 //
+
+template <typename T>
+inline void dnnmarkBackNormalizationForwardTraining(
+            const Handle &handle,
+            RunMode mode, int idx,
+            const BatchNormParam &bn_param,
+            const void *alpha,
+            const void *beta,
+            const DataTensor<T> &bottom_desc,
+            const void *x,
+            const DataTensor<T> &top_desc,
+            void *y,
+            const DataTensor<T> &scale_bias_mean_var_desc,
+            void *bn_scale,
+            void *bn_bias,
+            double exp_avg_factor,
+            void *result_running_mean,
+            void *result_running_var,
+            double epsilon,
+            void *result_save_mean,
+            void *result_save_var) {
+#ifdef NVIDIA_CUDNN
+  CUDNN_CALL(cudnnBatchNormalizationForwardTraining(
+             mode == COMPOSED ?
+             handle.GetCudnn(idx) : handle.GetCudnn(),
+             bn_param.mode_,
+             alpha,
+             beta,
+             bottom_desc_.Get(), x,
+             top_desc_.Get(), y,
+             scale_bias_mean_var_desc.Get(),
+             bn_scale, bn_bias,
+             exp_avg_factor,
+             result_running_mean, result_running_var,
+             epsilon,
+             result_save_mean, result_save_var));
+#endif
+#ifdef AMD_MIOPEN
+  MIOPEN_CALL(miopenBatchNormalizationForwardTraining(
+              mode == COMPOSED ?
+              handle.GetCudnn(idx) : handle.GetCudnn(),
+              bn_param.mode_,
+              alpha,
+              beta,
+              bottom_desc_.Get(), x,
+              top_desc_.Get(), y,
+              scale_bias_mean_var_desc.Get(),
+              bn_scale, bn_bias,
+              exp_avg_factor,
+              result_running_mean, result_running_var,
+              epsilon,
+              result_save_mean, result_save_var));
+#endif
+}
+
+template <typename T>
+inline void dnnmarkBackNormalizationBackward(
+            const Handle &handle,
+            RunMode mode, int idx,
+            const BatchNormParam &bn_param,
+            const void *alpha_data_diff,
+            const void *beta_data_diff,
+            const void *alpha_param_diff,
+            const void *beta_param_diff,
+            const DataTensor<T> &bottom_desc,
+            const void *x,
+            void *dx
+            const DataTensor<T> &top_desc,
+            const void *dy,
+            const DataTensor<T> &scale_bias_mean_var_desc,
+            const void *bn_scale,
+            void *result_bn_scale_diff,
+            void *result_bn_bias_diff,
+            double exp_avg_factor,
+            double epsilon,
+            const void *saved_mean,
+            const void *saved_var) {
+#ifdef NVIDIA_CUDNN
+  CUDNN_CALL(cudnnBatchNormalizationBackward(
+             mode == COMPOSED ?
+             handle.GetCudnn(idx) : handle.GetCudnn(),
+             bn_param.mode_,
+             alpha_data_diff,
+             beta_data_diff,
+             alpha_param_diff,
+             beta_param_diff,
+             bottom_desc_.Get(), x, dx
+             top_desc_.Get(), dy,
+             scale_bias_mean_var_desc.Get(),
+             bn_scale,
+             bn_scale_diff, bn_bias_diff,
+             exp_avg_factor,
+             epsilon,
+             saved_mean, saved_var));
+#endif
+#ifdef AMD_MIOPEN
+  MIOPEN_CALL(miopenBatchNormalizationBackward(
+              mode == COMPOSED ?
+              handle.GetCudnn(idx) : handle.GetCudnn(),
+              bn_param.mode_,
+              alpha_data_diff,
+              beta_data_diff,
+              alpha_param_diff,
+              beta_param_diff,
+              bottom_desc_.Get(), x, dx
+              top_desc_.Get(), dy,
+              scale_bias_mean_var_desc.Get(),
+              bn_scale,
+              bn_scale_diff, bn_bias_diff,
+              exp_avg_factor,
+              epsilon,
+              saved_mean, saved_var));
+#endif
+}
 
 } // namespace dnnmark
 
