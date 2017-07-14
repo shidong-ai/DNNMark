@@ -158,10 +158,12 @@ class FullyConnectedLayer : public Layer<T> {
     bool is_b_transpose = false;
 
     // Fully connected forward computation
-    cudaProfilerStart();
+    ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_);
     for (int i = 0; i < num_bottoms_; i++) {
       // Y = T(W) * X                                                               
-      DNNMarkGEMM(p_dnnmark_->GetHandle()->GetBlas(),
+      dnnmarkGEMM(*(p_dnnmark_->GetHandle()),
+                  p_dnnmark_->getRunMode(), layer_id_,
                   is_a_transpose, is_b_transpose,
                   M, N, K,
                   &scale_alpha_,
@@ -170,7 +172,8 @@ class FullyConnectedLayer : public Layer<T> {
                   &scale_beta_,
                   tops_[i]->Get(), ldc);
     }
-    cudaProfilerStop();
+    ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_);
 
   }
 
@@ -199,10 +202,12 @@ class FullyConnectedLayer : public Layer<T> {
     bool is_b_transpose = true;
 
     // Fully connected backward weights computation
-    cudaProfilerStart();
+    ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_);
     for (int i = 0; i < num_tops_; i++) {
       // d(W) = X * T(d(Y))
-      DNNMarkGEMM(p_dnnmark_->GetHandle()->GetBlas(),
+      dnnmarkGEMM(*(p_dnnmark_->GetHandle()),
+                  p_dnnmark_->getRunMode(), layer_id_,
                   is_a_transpose, is_b_transpose,
                   M, N, K,
                   &scale_alpha_,
@@ -211,7 +216,8 @@ class FullyConnectedLayer : public Layer<T> {
                   &scale_beta_,
                   weights_diff_->Get(), ldc);
     }
-    cudaProfilerStop();
+    ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_);
 
     M = num_rows_weights_;
     N = input_dim_.n_;
@@ -223,10 +229,12 @@ class FullyConnectedLayer : public Layer<T> {
     is_b_transpose = false;
 
     // Fully connected backward data computation
-    cudaProfilerStart();
+    ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_);
     for (int i = 0; i < num_tops_; i++) {
       // d(X) = W * d(Y)
-      DNNMarkGEMM(p_dnnmark_->GetHandle()->GetBlas(),
+      dnnmarkGEMM(*(p_dnnmark_->GetHandle()),
+                  p_dnnmark_->getRunMode(), layer_id_,
                   is_a_transpose, is_b_transpose,
                   M, N, K,
                   &scale_alpha_,
@@ -235,7 +243,8 @@ class FullyConnectedLayer : public Layer<T> {
                   &scale_beta_,
                   bottom_diffs_[i]->Get(), ldc);
     }
-    cudaProfilerStop();
+    ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_);
   }
 
 };

@@ -129,7 +129,7 @@ class ActivationLayer : public Layer<T> {
       dnnmarkActivationForward(
              *(p_dnnmark_->GetHandle()),
              p_dnnmark_->getRunMode(), layer_id_,
-             desc_.Get(),
+             desc_,
              DataType<T>::one, 
              bottom_desc_, bottoms_[i]->Get(),
              DataType<T>::zero,
@@ -160,7 +160,7 @@ class ActivationLayer : public Layer<T> {
       dnnmarkActivationBackward(
              *(p_dnnmark_->GetHandle()),
              p_dnnmark_->getRunMode(), layer_id_,
-             desc_.Get(),
+             desc_,
              DataType<T>::one,
              top_desc_, tops_[i]->Get(), top_diffs_[i]->Get(),
              DataType<T>::zero,

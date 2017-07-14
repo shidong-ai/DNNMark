@@ -247,9 +247,9 @@ class ConvolutionLayer : public Layer<T> {
                 top_desc_, top_diffs_[i]->Get(),
                 desc_,
                 conv_algo_,
-                bwd_filter_workspace_, bwd_filter_workspace_size_,
+                bwd_filter_workspace_->Get(), bwd_filter_workspace_size_,
                 DataType<T>::zero,
-                desc_.GetFilter(), weights_diff_->Get());
+                weights_diff_->Get());
       dnnmarkConvolutionBackwardData(
                 *(p_dnnmark_->GetHandle()),
                 p_dnnmark_->getRunMode(), layer_id_,
@@ -257,7 +257,7 @@ class ConvolutionLayer : public Layer<T> {
                 top_desc_, top_diffs_[i]->Get(),
                 desc_, weights_->Get(),
                 conv_algo_,
-                bwd_data_workspace_, bwd_data_workspace_size_,
+                bwd_data_workspace_->Get(), bwd_data_workspace_size_,
                 DataType<T>::zero,
                 bottom_desc_, bottoms_[i]->Get());
     }
