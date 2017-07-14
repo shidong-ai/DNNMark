@@ -353,10 +353,11 @@ class LRNDesc : public Descriptor {
     return nullptr;
   }
 
-  void GetWorkspaceSize(size_t *workspace_size) {
+  void GetWorkspaceSize(miopenTensorDescriptor_t y_desc,
+                        size_t *workspace_size) {
 #ifdef AMD_MIOPEN
     if (set_)
-      MIOPEN_CALL(miopenLRNGetWorkSpaceSize(lrn_desc_, workspace_size));
+      MIOPEN_CALL(miopenLRNGetWorkSpaceSize(y_desc, workspace_size));
     else
       LOG(FATAL) << "LRN descriptor NOT set";
 #endif

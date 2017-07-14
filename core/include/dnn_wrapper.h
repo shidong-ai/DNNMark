@@ -182,9 +182,9 @@ inline void dnnmarkActivationForward(const Handle &handle,
              handle.GetCudnn(idx) : handle.GetCudnn(),
              activation_desc.Get(),
              alpha,
-             bottom_desc_.Get(), x,
+             bottom_desc.Get(), x,
              beta,
-             top_desc_.Get(), y));
+             top_desc.Get(), y));
 #endif
 #ifdef AMD_MIOPEN
   MIOPEN_CALL(miopenActivationForward(
@@ -192,9 +192,9 @@ inline void dnnmarkActivationForward(const Handle &handle,
               handle.Get(idx) : handle.Get(),
               activation_desc.Get(),
               alpha,
-              bottom_desc_.Get(), x,
+              bottom_desc.Get(), x,
               beta,
-              top_desc_.Get(), y));
+              top_desc.Get(), y));
 #endif
 }
 
@@ -216,11 +216,11 @@ inline void dnnmarkActivationBackward(const Handle &handle,
              handle.GetCudnn(idx) : handle.GetCudnn(),
              activation_desc.Get(),
              alpha,
-             top_desc_.Get(), y,
-             top_desc_.Get(), dy,
-             bottom_desc_.Get(), x,
+             top_desc.Get(), y,
+             top_desc.Get(), dy,
+             bottom_desc.Get(), x,
              beta,
-             bottom_desc_.Get(), dx));
+             bottom_desc.Get(), dx));
 #endif
 #ifdef AMD_MIOPEN
   MIOPEN_CALL(miopenActivationBackward(
@@ -228,11 +228,11 @@ inline void dnnmarkActivationBackward(const Handle &handle,
               handle.Get(idx) : handle.Get(),
               activation_desc.Get(),
               alpha,
-              top_desc_.Get(), y,
-              top_desc_.Get(), dy,
-              bottom_desc_.Get(), x,
+              top_desc.Get(), y,
+              top_desc.Get(), dy,
+              bottom_desc.Get(), x,
               beta,
-              bottom_desc_.Get(), dx));
+              bottom_desc.Get(), dx));
 #endif
 }
 
@@ -244,7 +244,7 @@ template <typename T>
 inline void dnnmarkLRNForward(const Handle &handle,
                          RunMode mode, int idx,
                          const LRNDesc<T> &lrn_desc,
-                         const LRNParam<T> &lrn_param,
+                         const LRNParam &lrn_param,
                          const void *alpha,
                          const DataTensor<T> &bottom_desc,
                          const void *x,
@@ -259,9 +259,9 @@ inline void dnnmarkLRNForward(const Handle &handle,
              lrn_desc.Get(),
              lrn_param.mode_,
              alpha,
-             bottom_desc_.Get(), x,
+             bottom_desc.Get(), x,
              beta,
-             top_desc_.Get(), y));
+             top_desc.Get(), y));
 #endif
 #ifdef AMD_MIOPEN
   MIOPEN_CALL(miopenLRNForward(
@@ -269,9 +269,9 @@ inline void dnnmarkLRNForward(const Handle &handle,
               handle.Get(idx) : handle.Get(),
               lrn_desc.Get(),
               alpha,
-              bottom_desc_.Get(), x,
+              bottom_desc.Get(), x,
               beta,
-              top_desc_.Get(), y,
+              top_desc.Get(), y,
               true, workspace));
 #endif
 }
@@ -280,7 +280,7 @@ template <typename T>
 inline void dnnmarkLRNBackward(const Handle &handle,
                          RunMode mode, int idx,
                          const LRNDesc<T> &lrn_desc,
-                         const LRNParam<T> &lrn_param,
+                         const LRNParam &lrn_param,
                          const void *alpha,
                          const DataTensor<T> &top_desc,
                          const void *y,
@@ -297,11 +297,11 @@ inline void dnnmarkLRNBackward(const Handle &handle,
              lrn_desc.Get(),
              lrn_param.mode_,
              alpha,
-             top_desc_.Get(), y,
-             top_desc_.Get(), dy,
-             bottom_desc_.Get(), x,
+             top_desc.Get(), y,
+             top_desc.Get(), dy,
+             bottom_desc.Get(), x,
              beta,
-             bottom_desc_.Get(), dx));
+             bottom_desc.Get(), dx));
 #endif
 #ifdef AMD_MIOPEN
   MIOPEN_CALL(miopenLRNBackward(
@@ -309,11 +309,11 @@ inline void dnnmarkLRNBackward(const Handle &handle,
               handle.Get(idx) : handle.Get(),
               lrn_desc.Get(),
               alpha,
-              top_desc_.Get(), y,
-              top_desc_.Get(), dy,
-              bottom_desc_.Get(), x,
+              top_desc.Get(), y,
+              top_desc.Get(), dy,
+              bottom_desc.Get(), x,
               beta,
-              bottom_desc_.Get(), dx,
+              bottom_desc.Get(), dx,
               workspace));
 #endif
 }
@@ -343,18 +343,18 @@ inline void dnnmarkSoftmaxForward(const Handle &handle,
              softmax_param.algo_,
              softmax_param.mode_,
              alpha,
-             bottom_desc_.Get(), x,
+             bottom_desc.Get(), x,
              beta,
-             top_desc_.Get(), y));
+             top_desc.Get(), y));
 #endif
 #ifdef AMD_MIOPEN
   MIOPEN_CALL(miopenSoftmaxForward(
               mode == COMPOSED ?
               handle.Get(idx) : handle.Get(),
               alpha,
-              bottom_desc_.Get(), x,
+              bottom_desc.Get(), x,
               beta,
-              top_desc_.Get(), y));
+              top_desc.Get(), y));
 #endif
 }
 
@@ -376,27 +376,21 @@ inline void dnnmarkSoftmaxBackward(const Handle &handle,
              softmax_param.algo_,
              softmax_param.mode_,
              alpha,
-             top_desc_.Get(), y,
-             top_desc_.Get(), dy,
+             top_desc.Get(), y,
+             top_desc.Get(), dy,
              beta,
-             bottom_desc_.Get(), dx));
+             bottom_desc.Get(), dx));
 #endif
 #ifdef AMD_MIOPEN
   MIOPEN_CALL(miopenSoftmaxBackward(
              mode == COMPOSED ?
-             handle.GetCudnn(idx) : handle.GetCudnn(),
+             handle.Get(idx) : handle.Get(),
              alpha,
-             top_desc_.Get(), y,
-             top_desc_.Get(), dy,
+             top_desc.Get(), y,
+             top_desc.Get(), dy,
              beta,
-             bottom_desc_.Get(), dx));
-  MIOPEN_CALL(miopenSoftmaxForward(
-              mode == COMPOSED ?
-              handle.Get(idx) : handle.Get(),
-              alpha,
-              bottom_desc_.Get(), x,
-              beta,
-              top_desc_.Get(), y));
+             bottom_desc.Get(), dx));
+
 #endif
 }
 
@@ -431,8 +425,8 @@ inline void dnnmarkBackNormalizationForwardTraining(
              bn_param.mode_,
              alpha,
              beta,
-             bottom_desc_.Get(), x,
-             top_desc_.Get(), y,
+             bottom_desc.Get(), x,
+             top_desc.Get(), y,
              scale_bias_mean_var_desc.Get(),
              bn_scale, bn_bias,
              exp_avg_factor,
@@ -443,12 +437,12 @@ inline void dnnmarkBackNormalizationForwardTraining(
 #ifdef AMD_MIOPEN
   MIOPEN_CALL(miopenBatchNormalizationForwardTraining(
               mode == COMPOSED ?
-              handle.GetCudnn(idx) : handle.GetCudnn(),
+              handle.Get(idx) : handle.Get(),
               bn_param.mode_,
               alpha,
               beta,
-              bottom_desc_.Get(), x,
-              top_desc_.Get(), y,
+              bottom_desc.Get(), x,
+              top_desc.Get(), y,
               scale_bias_mean_var_desc.Get(),
               bn_scale, bn_bias,
               exp_avg_factor,
@@ -469,7 +463,7 @@ inline void dnnmarkBackNormalizationBackward(
             const void *beta_param_diff,
             const DataTensor<T> &bottom_desc,
             const void *x,
-            void *dx
+            void *dx,
             const DataTensor<T> &top_desc,
             const void *dy,
             const DataTensor<T> &scale_bias_mean_var_desc,
@@ -489,11 +483,11 @@ inline void dnnmarkBackNormalizationBackward(
              beta_data_diff,
              alpha_param_diff,
              beta_param_diff,
-             bottom_desc_.Get(), x, dx
-             top_desc_.Get(), dy,
+             bottom_desc.Get(), x, dx
+             top_desc.Get(), dy,
              scale_bias_mean_var_desc.Get(),
              bn_scale,
-             bn_scale_diff, bn_bias_diff,
+             result_bn_scale_diff, result_bn_bias_diff,
              exp_avg_factor,
              epsilon,
              saved_mean, saved_var));
@@ -501,17 +495,17 @@ inline void dnnmarkBackNormalizationBackward(
 #ifdef AMD_MIOPEN
   MIOPEN_CALL(miopenBatchNormalizationBackward(
               mode == COMPOSED ?
-              handle.GetCudnn(idx) : handle.GetCudnn(),
+              handle.Get(idx) : handle.Get(),
               bn_param.mode_,
               alpha_data_diff,
               beta_data_diff,
               alpha_param_diff,
               beta_param_diff,
-              bottom_desc_.Get(), x, dx
-              top_desc_.Get(), dy,
+              bottom_desc.Get(), x, dx,
+              top_desc.Get(), dy,
               scale_bias_mean_var_desc.Get(),
               bn_scale,
-              bn_scale_diff, bn_bias_diff,
+              result_bn_scale_diff, result_bn_bias_diff,
               exp_avg_factor,
               epsilon,
               saved_mean, saved_var));

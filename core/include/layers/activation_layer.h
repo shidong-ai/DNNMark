@@ -135,7 +135,8 @@ class ActivationLayer : public Layer<T> {
              DataType<T>::zero,
              top_desc_, tops_[i]->Get());
     }
-    cudaProfilerStop();
+    ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_);
 
   }
   void BackwardPropagation() {
