@@ -470,7 +470,6 @@ inline void dnnmarkBackNormalizationBackward(
             const void *bn_scale,
             void *result_bn_scale_diff,
             void *result_bn_bias_diff,
-            double exp_avg_factor,
             double epsilon,
             const void *saved_mean,
             const void *saved_var) {
@@ -488,7 +487,6 @@ inline void dnnmarkBackNormalizationBackward(
              scale_bias_mean_var_desc.Get(),
              bn_scale,
              result_bn_scale_diff, result_bn_bias_diff,
-             exp_avg_factor,
              epsilon,
              saved_mean, saved_var));
 #endif
@@ -506,7 +504,6 @@ inline void dnnmarkBackNormalizationBackward(
               scale_bias_mean_var_desc.Get(),
               bn_scale,
               result_bn_scale_diff, result_bn_bias_diff,
-              exp_avg_factor,
               epsilon,
               saved_mean, saved_var));
 #endif

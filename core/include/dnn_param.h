@@ -492,6 +492,17 @@ inline void SetupSoftmaxParam(const std::string &var, const std::string &val,
   }
 }
 
+enum BatchNormMode {
+#ifdef NVIDIA_CUDNN
+  PerActivation = CUDNN_BATCHNORM_PER_ACTIVATION,
+  Spatial = CUDNN_BATCHNORM_SPATIAL
+#endif
+#ifdef AMD_MIOPEN
+  PerActivation = miopenBNPerActivation,
+  Spatial = miopenBNSpatial
+#endif
+}
+
 struct BatchNormParam {
 #ifdef NVIDIA_CUDNN
   cudnnBatchNormMode_t mode_;
@@ -504,10 +515,10 @@ struct BatchNormParam {
   double epsilon_;
   BatchNormParam()
 #ifdef NVIDIA_CUDNN
-  : mode_(CUDNN_BATCHNORM_PER_ACTIVATION),
+  : mode_((cudnnbatchNormMode_t)PerActivation),
 #endif
 #ifdef AMD_MIOPEN
-  : mode_(miopenBNPerActivation),
+  : mode_((miopenBatchNormMode_t)PerActivation),
 #endif
     save_intermediates_(true),
     exp_avg_factor_(1),
@@ -535,17 +546,17 @@ inline void SetupBatchNormParam(const std::string &var, const std::string &val,
     if(!var.compare("batchnorm_mode")) {
       if(!val.compare("per_activation"))
 #ifdef NVIDIA_CUDNN
-        bn_param->mode_ = CUDNN_BATCHNORM_PER_ACTIVATION;
+        bn_param->mode_ = (cudnnbatchNormMode_t)PerActivation;
 #endif
 #ifdef AMD_MIOPEN
-        bn_param->mode_ = miopenBNPerActivation;
+        bn_param->mode_ = (miopenBatchNormMode_t)PerActivation;
 #endif
       else if (!val.compare("spatial"))
 #ifdef NVIDIA_CUDNN
-        bn_param->mode_ = CUDNN_BATCHNORM_SPATIAL;
+        bn_param->mode_ = (cudnnbatchNormMode_t)Spatial;
 #endif
 #ifdef AMD_MIOPEN
-        bn_param->mode_ = miopenBNSpatial;
+        bn_param->mode_ = (miopenBatchNormMode_t)Spatial;
 #endif
     }
     if(!var.compare("save_intermediates")) {
