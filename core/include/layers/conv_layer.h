@@ -201,7 +201,7 @@ class ConvolutionLayer : public Layer<T> {
       }
     }
     // Convolution forward computation
-    ProfilerStart((*p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+    ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_);
     for (int i = 0; i < num_bottoms_; i++) {
       dnnmarkConvolutionForward(
@@ -215,7 +215,7 @@ class ConvolutionLayer : public Layer<T> {
                 DataType<T>::zero,
                 top_desc_, tops_[i]->Get());
     }
-    ProfilerStop((*p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+    ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_);
 
     // Free the workspace
@@ -236,7 +236,7 @@ class ConvolutionLayer : public Layer<T> {
     }
 
     // Convolution forward computation
-    ProfilerStart((*p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+    ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_);
     for (int i = 0; i < num_tops_; i++) {
       dnnmarkConvolutionBackwardFilter(
@@ -261,7 +261,7 @@ class ConvolutionLayer : public Layer<T> {
                 DataType<T>::zero,
                 bottom_desc_, bottoms_[i]->Get());
     }
-    ProfilerStop((*p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+    ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_);
 
     // Free the workspace
