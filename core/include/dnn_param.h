@@ -501,7 +501,7 @@ enum BatchNormMode {
   PerActivation = miopenBNPerActivation,
   Spatial = miopenBNSpatial
 #endif
-}
+};
 
 struct BatchNormParam {
 #ifdef NVIDIA_CUDNN

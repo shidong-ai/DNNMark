@@ -428,6 +428,61 @@ class ActivationDesc : public Descriptor {
 };
 
 template <typename T>
+class BypassDesc : public Descriptor {
+ private:
+#ifdef NVIDIA_CUDNN
+  DataDim dim_;
+#endif
+#ifdef AMD_MIOPEN
+  miopenActivationDescriptor_t activation_desc_;
+#endif
+ public:
+  BypassDesc()
+  : Descriptor() {
+#ifdef AMD_MIOPEN
+    MIOPEN_CALL(miopenCreateActivationDescriptor(&activation_desc_));
+#endif
+  }
+
+  ~BypassDesc() {
+#ifdef AMD_MIOPEN
+    MIOPEN_CALL(miopenDestroyActivationDescriptor(activation_desc_));
+#endif
+  }
+
+  void Set(DataDim dim) {
+    if (!set_) {
+#ifdef NVIDIA_CUDNN
+      dim_.n_ = dim.n_;
+      dim_.c_ = dim.c_;
+      dim_.h_ = dim.h_;
+      dim_.w_ = dim.w_;
+#endif
+#ifdef AMD_MIOPEN
+      MIOPEN_CALL(miopenSetActivationDescriptor(activation_desc_,
+                 miopenActivationPATHTRU,
+                 0, 0, 0));
+#endif
+    }
+
+    set_ = true;
+  }
+
+#ifdef NVIDIA_CUDNN
+  DataDim Get() {
+    return dim_;
+  }
+#endif
+#ifdef AMD_MIOPEN
+  miopenActivationDescriptor_t Get() {
+    if (set_)
+      return activation_desc_;
+    return nullptr;
+  }
+#endif
+};
+
+template <typename T>
 class ConvAlgo {
 #ifdef NVIDIA_CUDNN
  private:

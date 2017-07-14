@@ -509,6 +509,78 @@ inline void dnnmarkBackNormalizationBackward(
 #endif
 }
 
+//
+// Bypass layer
+//
+
+template <typename T>
+inline void dnnmarkBypassForward(const Handle &handle,
+                         RunMode mode, int idx,
+                         const BypassDesc<T> &bypass_desc,
+                         const void *alpha,
+                         const DataTensor<T> &bottom_desc,
+                         const void *x,
+                         const void *beta,
+                         const DataTensor<T> &top_desc,
+                         void *y) {
+#ifdef NVIDIA_CUDNN
+  CUDA_CALL(cudaMemcpy(tops_[i]->Get(),
+                       bottoms_[i]->Get(),
+                       sizeof(T) * bypass_desc.Get().n_
+                                 * bypass_desc.Get().c_
+                                 * bypass_desc.Get().h_
+                                 * bypass_desc.Get().w_,
+                       cudaMemcpyDeviceToDevice
+                       ));
+#endif
+#ifdef AMD_MIOPEN
+  MIOPEN_CALL(miopenActivationForward(
+              mode == COMPOSED ?
+              handle.Get(idx) : handle.Get(),
+              bypass_desc.Get(),
+              alpha,
+              bottom_desc.Get(), x,
+              beta,
+              top_desc.Get(), y));
+#endif
+}
+
+template <typename T>
+inline void dnnmarkBypassBackward(const Handle &handle,
+                         RunMode mode, int idx,
+                         const BypassDesc<T> &bypass_desc,
+                         const void *alpha,
+                         const DataTensor<T> &top_desc,
+                         const void *y,
+                         const void *dy,
+                         const void *beta,
+                         const DataTensor<T> &bottom_desc,
+                         const void *x,
+                         void *dx) {
+#ifdef NVIDIA_CUDNN
+  CUDA_CALL(cudaMemcpy(top_diffs_[i]->Get(),
+                       bottom_diffs_[i]->Get(),
+                       sizeof(T) * bypass_desc.Get().n_
+                                 * bypass_desc.Get().c_
+                                 * bypass_desc.Get().h_
+                                 * bypass_desc.Get().w_,
+                       cudaMemcpyDeviceToDevice
+                       ));
+#endif
+#ifdef AMD_MIOPEN
+  MIOPEN_CALL(miopenActivationBackward(
+              mode == COMPOSED ?
+              handle.Get(idx) : handle.Get(),
+              bypass_desc.Get(),
+              alpha,
+              top_desc.Get(), y,
+              top_desc.Get(), dy,
+              bottom_desc.Get(), x,
+              beta,
+              bottom_desc.Get(), dx));
+#endif
+}
+
 } // namespace dnnmark
 
 #endif // CORE_INCLUDE_DNN_WRAPPER_H_
