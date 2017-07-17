@@ -112,7 +112,7 @@ class LRNLayer : public Layer<T> {
     }
 
     // Allocate workspace
-    desc_.GetWorkspaceSize(top_desc_.Get(), &workspace_size_);
+    desc_.GetWorkspaceSize(top_desc_, &workspace_size_);
     if (workspace_size_ > 0) {
       workspace_id_ = data_manager_->CreateData(workspace_size_);
       workspace_ = data_manager_->GetData(workspace_id_);

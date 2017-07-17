@@ -353,11 +353,11 @@ class LRNDesc : public Descriptor {
     return nullptr;
   }
 
-  void GetWorkspaceSize(miopenTensorDescriptor_t y_desc,
+  void GetWorkspaceSize(DataTensor<T> y_desc,
                         size_t *workspace_size) {
 #ifdef AMD_MIOPEN
     if (set_)
-      MIOPEN_CALL(miopenLRNGetWorkSpaceSize(y_desc, workspace_size));
+      MIOPEN_CALL(miopenLRNGetWorkSpaceSize(y_desc.Get(), workspace_size));
     else
       LOG(FATAL) << "LRN descriptor NOT set";
 #endif
@@ -479,6 +479,87 @@ class BypassDesc : public Descriptor {
       return activation_desc_;
     return nullptr;
   }
+#endif
+};
+
+template <typename T>
+class DropoutDesc : public Descriptor {
+ private:
+#ifdef NVIDIA_CUDNN
+  cudnnDropoutDescriptor_t dropout_desc_;
+#endif
+#ifdef AMD_MIOPEN
+#endif
+ public:
+  DropoutDesc()
+  : Descriptor() {
+#ifdef NVIDIA_CUDNN
+    CUDNN_CALL(cudnnCreateDropoutDescriptor(&dropout_desc_));
+#endif
+#ifdef AMD_MIOPEN
+#endif
+  }
+
+  ~DropoutDesc() {
+#ifdef NVIDIA_CUDNN
+    CUDNN_CALL(cudnnDestroyDropoutDescriptor(dropout_desc_));
+#endif
+#ifdef AMD_MIOPEN
+#endif
+  }
+
+  void SetStatesSize(const Handle &handle, RunMode mode, int idx,
+                     size_t *state_size) {
+#ifdef NVIDIA_CUDNN
+    CUDNN_CALL(cudnnDropoutGetStatesSize(mode ?
+                                         handle.GetCudnn(idx_):
+                                         handle.GetHandle()->GetCudnn(),
+                                         states_size));
+#endif
+#ifdef AMD_MIOPEN
+#endif
+  }
+
+  void SetReserveSpaceSize(DataTensor<T> bottom_desc,
+                           size_t *reserve_space_size) {
+#ifdef NVIDIA_CUDNN
+    CUDNN_CALL(cudnnDropoutGetReserveSpaceSize(bottom_desc.Get(),
+                                               &reserve_space_size));
+#endif
+#ifdef AMD_MIOPEN
+#endif
+  }
+
+  void Set(const Handle &handle, RunMode mode, int idx,
+           const DropoutParam &dropout_param,
+           void *states, size_t state_size) {
+    if (!set_) {
+#ifdef NVIDIA_CUDNN
+      if (state_size > 0)
+        CUDNN_CALL(cudnnSetDropoutDescriptor(dropout_desc_,
+                                       mode == COMPOSED ?
+                                       handle.GetCudnn(idx):
+                                       handle.GetCudnn(),
+                                       dropout_param.dropout_p_,
+                                       states,
+                                       states_size,
+                                       dropout_param.random_seed_));
+      else
+        LOG(FATAL) << "The size is ZERO";
+#endif
+#ifdef AMD_MIOPEN
+#endif
+    }
+
+    set_ = true;
+  }
+
+#ifdef NVIDIA_CUDNN
+  cudnnDropoutDescriptor_t Get() {
+    return dropout_desc_;
+  }
+#endif
+#ifdef AMD_MIOPEN
 #endif
 };
 

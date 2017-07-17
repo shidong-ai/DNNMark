@@ -581,6 +581,58 @@ inline void dnnmarkBypassBackward(const Handle &handle,
 #endif
 }
 
+//
+// Dropout layer
+//
+
+template <typename T>
+inline void dnnmarkDropoutForward(const Handle &handle,
+                         RunMode mode, int idx,
+                         const DropoutDesc<T> &dropout_desc,
+                         const DataTensor<T> &bottom_desc,
+                         const void *x,
+                         const DataTensor<T> &top_desc,
+                         void *y,
+                         void *reserve_space, size_t reserve_space_size) {
+#ifdef NVIDIA_CUDNN
+  CUDNN_CALL(cudnnDropoutForward(
+          mode == COMPOSED ?
+          handle.GetCudnn(idx) : handle.GetCudnn(),
+          dropout_desc_,
+          bottom_desc_.Get(), x->Get(),
+          top_desc_.Get(), y->Get(),
+          reserve_space,
+          reserve_space_size
+          ));
+#endif
+#ifdef AMD_MIOPEN
+#endif
+}
+
+template <typename T>
+inline void dnnmarkDropoutBackward(const Handle &handle,
+                         RunMode mode, int idx,
+                         const DropoutDesc<T> &dropout_desc,
+                         const DataTensor<T> &top_desc,
+                         const void *dy,
+                         const DataTensor<T> &bottom_desc,
+                         void *dx,
+                         void *reserve_space, size_t reserve_space_size) {
+#ifdef NVIDIA_CUDNN
+  CUDNN_CALL(cudnnDropoutBackward(
+          mode == COMPOSED ?
+          handle.GetCudnn(idx) : handle.GetCudnn(),
+          dropout_desc_,
+          top_desc_.Get(), dy->Get(),
+          bottom_desc_.Get(), dx->Get(),
+          reserve_space,
+          reserve_space_size
+          ));
+#endif
+#ifdef AMD_MIOPEN
+#endif
+}
+
 } // namespace dnnmark
 
 #endif // CORE_INCLUDE_DNN_WRAPPER_H_
