@@ -210,7 +210,7 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
 }
 
 template <typename T>
-int DNNMark<T>::ParseAllConfig(const std::string &config_file) {
+void DNNMark<T>::ParseAllConfig(const std::string &config_file) {
   // TODO: use multithread in the future
   // Parse DNNMark specific config
   ParseGeneralConfig(config_file);

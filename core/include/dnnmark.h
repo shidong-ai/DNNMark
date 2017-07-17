@@ -86,7 +86,7 @@ class DNNMark {
 
   DNNMark();
   DNNMark(int num_layers);
-  int ParseAllConfig(const std::string &config_file);
+  void ParseAllConfig(const std::string &config_file);
   int ParseGeneralConfig(const std::string &config_file);
   int ParseLayerConfig(const std::string &config_file);
   int Initialize();

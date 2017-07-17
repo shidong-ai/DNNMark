@@ -143,7 +143,7 @@ elseif(HCC_FOUND)
   add_definitions(-DAMD_MIOPEN)
 
   # Add deinition of C++11 stardard
-  add_definitions(-std=c++11)
+  add_definitions(-std=c++11 -Wno-attributes)
 
   # Enable double data type
   if (double-test)
@@ -165,14 +165,23 @@ elseif(HCC_FOUND)
   # Find MIOpen libraries
   find_library(MIOPEN_LIBRARY MIOpen ${MIOPEN_ROOT}/build/lib)
 
+  # Find other libraries
+  find_library(HIP_HCC hip_hcc /opt/rocm/hip/lib)
+
+  # Find glog libraries
+  find_library(GLOG_LIBRARY glog)
+
   # Add DNNMark library
   add_library(${PROJECT_NAME} SHARED ${DNNMARK_SOURCES})
   add_dependencies(${PROJECT_NAME} ${MIOPEN_LIBRARY})
   target_link_libraries(${PROJECT_NAME} 
                         ${MIOPEN_LIBRARY}
+                        ${HIP_HCC}
                         ${GLOG_LIBRARY}
                         m)
-  target_compile_definitions(${PROJECT_NAME} PRIVATE -D__HIP_PLATFORM_HCC__=1 )
+  set_target_properties(${PROJECT_NAME} PROPERTIES
+      COMPILE_FLAGS ${COMPILER_FLAGS}
+      LINK_FLAGS ${LINKER_FLAGS})
 
 else()
 

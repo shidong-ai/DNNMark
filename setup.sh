@@ -22,5 +22,5 @@ then
 elif [ ${OPTION} = "HIP" ]
 then
   MIOPEN_PATH=${HOME}/MIOpen
-  cmake -DMIOPEN_ROOT=${MIOPEN_PATH} ..
+  CXX=/opt/rocm/hcc/bin/hcc cmake -DMIOPEN_ROOT=${MIOPEN_PATH} ..
 fi
