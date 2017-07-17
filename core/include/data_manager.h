@@ -101,7 +101,7 @@ class DataManager {
   }
 
   void RemoveData(int chunk_id) {
-    gpu_data_pool_[chunk_id].erase();
+    gpu_data_pool_.erase(chunk_id);
   }
 
   Data<T> *GetData(int chunk_id) {

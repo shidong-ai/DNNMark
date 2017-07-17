@@ -127,10 +127,10 @@ class DataTensor : public Descriptor {
   }
 
 #ifdef NVIDIA_CUDNN
-  cudnnTensorDescriptor_t Get() {
+  cudnnTensorDescriptor_t Get() const {
 #endif
 #ifdef AMD_MIOPEN
-  miopenTensorDescriptor_t Get() {
+  miopenTensorDescriptor_t Get() const {
 #endif
     if (set_)
       return desc_;
@@ -206,10 +206,10 @@ class ConvolutionDesc : public Descriptor {
   }
 
 #ifdef NVIDIA_CUDNN
-  cudnnFilterDescriptor_t GetFilter() {
+  cudnnFilterDescriptor_t GetFilter() const {
 #endif
 #ifdef AMD_MIOPEN
-  miopenTensorDescriptor_t GetFilter() {
+  miopenTensorDescriptor_t GetFilter() const {
 #endif
     if (set_)
       return filter_desc_;
@@ -217,10 +217,10 @@ class ConvolutionDesc : public Descriptor {
   }
 
 #ifdef NVIDIA_CUDNN
-  cudnnConvolutionDescriptor_t GetConv() {
+  cudnnConvolutionDescriptor_t GetConv() const {
 #endif
 #ifdef AMD_MIOPEN
-  miopenConvolutionDescriptor_t GetConv() {
+  miopenConvolutionDescriptor_t GetConv() const {
 #endif
     if (set_)
       return conv_desc_;
@@ -281,10 +281,10 @@ class PoolingDesc : public Descriptor {
   }
 
 #ifdef NVIDIA_CUDNN
-  cudnnPoolingDescriptor_t Get() {
+  cudnnPoolingDescriptor_t Get() const {
 #endif
 #ifdef AMD_MIOPEN
-  miopenPoolingDescriptor_t Get() {
+  miopenPoolingDescriptor_t Get() const {
 #endif
     if (set_)
       return pooling_desc_;
@@ -343,10 +343,10 @@ class LRNDesc : public Descriptor {
   }
 
 #ifdef NVIDIA_CUDNN
-  cudnnLRNDescriptor_t Get() {
+  cudnnLRNDescriptor_t Get() const {
 #endif
 #ifdef AMD_MIOPEN
-  miopenLRNDescriptor_t Get() {
+  miopenLRNDescriptor_t Get() const {
 #endif
     if (set_)
       return lrn_desc_;
@@ -415,10 +415,10 @@ class ActivationDesc : public Descriptor {
   }
 
 #ifdef NVIDIA_CUDNN
-  cudnnActivationDescriptor_t Get() {
+  cudnnActivationDescriptor_t Get() const {
 #endif
 #ifdef AMD_MIOPEN
-  miopenActivationDescriptor_t Get() {
+  miopenActivationDescriptor_t Get() const {
 #endif
     if (set_)
       return activation_desc_;
@@ -469,12 +469,12 @@ class BypassDesc : public Descriptor {
   }
 
 #ifdef NVIDIA_CUDNN
-  DataDim Get() {
+  DataDim Get() const {
     return dim_;
   }
 #endif
 #ifdef AMD_MIOPEN
-  miopenActivationDescriptor_t Get() {
+  miopenActivationDescriptor_t Get() const {
     if (set_)
       return activation_desc_;
     return nullptr;
@@ -555,7 +555,7 @@ class DropoutDesc : public Descriptor {
   }
 
 #ifdef NVIDIA_CUDNN
-  cudnnDropoutDescriptor_t Get() {
+  cudnnDropoutDescriptor_t Get() const {
     return dropout_desc_;
   }
 #endif
@@ -862,7 +862,7 @@ class ConvAlgo {
                            const DataTensor<T> &top_desc,
                            const ConvolutionDesc<T> &conv_desc,
                            size_t *workspace_size) {
-    MIOPEN_CALL(miopenGetConvolutionForwardGetWorkSpaceSize(
+    MIOPEN_CALL(miopenConvolutionForwardGetWorkSpaceSize(
                 mode == COMPOSED ?
                 handle.Get(idx) : handle.Get(),
                 conv_desc.GetFilter(),
@@ -879,7 +879,7 @@ class ConvAlgo {
                                  const DataTensor<T> &top_desc,
                                  const ConvolutionDesc<T> &conv_desc,
                                  size_t *workspace_size) {
-    MIOPEN_CALL(miopenGetConvolutionBackwardWeightsGetWorkSpaceSize(
+    MIOPEN_CALL(miopenConvolutionBackwardWeightsGetWorkSpaceSize(
                 mode == COMPOSED ?
                 handle.Get(idx) : handle.Get(),
                 top_desc.Get(),
@@ -896,7 +896,7 @@ class ConvAlgo {
                                const DataTensor<T> &top_desc,
                                const ConvolutionDesc<T> &conv_desc,
                                size_t *workspace_size) {
-    MIOPEN_CALL(miopenGetConvolutionBackwardDataGetWorkSpaceSize(
+    MIOPEN_CALL(miopenConvolutionBackwardDataGetWorkSpaceSize(
                 mode == COMPOSED ?
                 handle.Get(idx) : handle.Get(),
                 top_desc.Get(),

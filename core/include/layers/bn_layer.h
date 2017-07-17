@@ -72,10 +72,16 @@ class BatchNormLayer : public Layer<T> {
   Data<T> *bn_saved_inv_variance_;
   int bn_saved_inv_variance_chunk_id_;
 
+  // Work around for MIOpen library
+  T alpha_;
+  T beta_;
+
  public:
   BatchNormLayer(DNNMark<T> *p_dnnmark)
   : Layer<T>(p_dnnmark),
     bn_param_() {
+      alpha_ = 1.0;
+      beta_ = 0.0;
   }
 
   BatchNormParam *getBatchNormParam() { return &bn_param_; }
@@ -190,8 +196,10 @@ class BatchNormLayer : public Layer<T> {
               *(p_dnnmark_->GetHandle()),
               p_dnnmark_->getRunMode(), layer_id_,
               bn_param_,
-              DataType<T>::one,
-              DataType<T>::zero,
+              //DataType<T>::one,
+              //DataType<T>::zero,
+              &alpha_,
+              &beta_,
               bottom_desc_, bottoms_[i]->Get(),
               top_desc_, tops_[i]->Get(),
               bn_specifics_desc_,
@@ -231,10 +239,14 @@ class BatchNormLayer : public Layer<T> {
               *(p_dnnmark_->GetHandle()),
               p_dnnmark_->getRunMode(), layer_id_,
               bn_param_,
-              DataType<T>::one,
-              DataType<T>::zero,
-              DataType<T>::one,
-              DataType<T>::zero,
+              //DataType<T>::one,
+              //DataType<T>::zero,
+              //DataType<T>::one,
+              //DataType<T>::zero,
+              &alpha_,
+              &beta_,
+              &alpha_,
+              &beta_,
               bottom_desc_, bottoms_[i]->Get(), bottom_diffs_[i]->Get(),
               top_desc_, top_diffs_[i]->Get(),
               bn_specifics_desc_,

@@ -151,7 +151,7 @@ inline void dnnmarkConvolutionBackwardFilter(const Handle &handle,
               top_desc.Get(), dy,
               bottom_desc.Get(), x,
               conv_desc.GetConv(),
-              conv_algo.GetBwdDataAlgo(),
+              conv_algo.GetBwdFilterAlgo(),
               beta,
               conv_desc.GetFilter(), dw,
               workspace, workspace_in_bytes));
@@ -399,12 +399,12 @@ inline void dnnmarkSoftmaxBackward(const Handle &handle,
 //
 
 template <typename T>
-inline void dnnmarkBackNormalizationForwardTraining(
+inline void dnnmarkBatchNormalizationForwardTraining(
             const Handle &handle,
             RunMode mode, int idx,
             const BatchNormParam &bn_param,
-            const void *alpha,
-            const void *beta,
+            void *alpha,
+            void *beta,
             const DataTensor<T> &bottom_desc,
             const void *x,
             const DataTensor<T> &top_desc,
@@ -453,7 +453,7 @@ inline void dnnmarkBackNormalizationForwardTraining(
 }
 
 template <typename T>
-inline void dnnmarkBackNormalizationBackward(
+inline void dnnmarkBatchNormalizationBackward(
             const Handle &handle,
             RunMode mode, int idx,
             const BatchNormParam &bn_param,
@@ -499,8 +499,9 @@ inline void dnnmarkBackNormalizationBackward(
               beta_data_diff,
               alpha_param_diff,
               beta_param_diff,
-              bottom_desc.Get(), x, dx,
+              bottom_desc.Get(), x,
               top_desc.Get(), dy,
+              bottom_desc.Get(), dx,
               scale_bias_mean_var_desc.Get(),
               bn_scale,
               result_bn_scale_diff, result_bn_bias_diff,

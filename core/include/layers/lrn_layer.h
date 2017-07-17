@@ -141,13 +141,13 @@ class LRNLayer : public Layer<T> {
     for (int i = 0; i < num_bottoms_; i++) {
       dnnmarkLRNForward(
              *(p_dnnmark_->GetHandle()),
-             p_dnnmark_->getRunMode, layer_id_,
+             p_dnnmark_->getRunMode(), layer_id_,
              desc_,
              lrn_param_,
              DataType<T>::one, 
              bottom_desc_, bottoms_[i]->Get(),
              DataType<T>::zero,
-             top_desc_, tops_[i]->Get());
+             top_desc_, tops_[i]->Get(), workspace_->Get());
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_);
@@ -173,12 +173,11 @@ class LRNLayer : public Layer<T> {
     for (int i = 0; i < num_tops_; i++) {
       dnnmarkLRNBackward(
              *(p_dnnmark_->GetHandle()),
-             p_dnnmark_->getRunMode, layer_id_,
+             p_dnnmark_->getRunMode(), layer_id_,
              desc_,
              lrn_param_,
              DataType<T>::one, 
              top_desc_, tops_[i]->Get(), top_diffs_[i]->Get(),
-             bottom_desc_.Get(),
              DataType<T>::zero,
              bottom_desc_,
              bottoms_[i]->Get(),
