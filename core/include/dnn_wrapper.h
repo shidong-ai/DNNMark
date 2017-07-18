@@ -23,8 +23,11 @@
 #ifndef CORE_INCLUDE_DNN_WRAPPER_H_ 
 #define CORE_INCLUDE_DNN_WRAPPER_H_
 
+#include <iostream>
+
 #include "common.h"
 #include "dnn_utility.h"
+#include "data_manager.h"
 
 namespace dnnmark {
 
@@ -251,7 +254,7 @@ inline void dnnmarkLRNForward(const Handle &handle,
                          const void *beta,
                          const DataTensor<T> &top_desc,
                          void *y,
-                         void *workspace) {
+                         Data<T> *workspace) {
 #ifdef NVIDIA_CUDNN
   CUDNN_CALL(cudnnLRNCrossChannelForward(
              mode == COMPOSED ?
@@ -272,7 +275,7 @@ inline void dnnmarkLRNForward(const Handle &handle,
               bottom_desc.Get(), x,
               beta,
               top_desc.Get(), y,
-              true, workspace));
+              true, workspace->Get()));
 #endif
 }
 
@@ -289,7 +292,7 @@ inline void dnnmarkLRNBackward(const Handle &handle,
                          const DataTensor<T> &bottom_desc,
                          const void *x,
                          void *dx,
-                         void *workspace) {
+                         Data<T> *workspace) {
 #ifdef NVIDIA_CUDNN
   CUDNN_CALL(cudnnLRNCrossChannelBackward(
              mode == COMPOSED ?
@@ -314,7 +317,7 @@ inline void dnnmarkLRNBackward(const Handle &handle,
               bottom_desc.Get(), x,
               beta,
               bottom_desc.Get(), dx,
-              workspace));
+              workspace->Get()));
 #endif
 }
 

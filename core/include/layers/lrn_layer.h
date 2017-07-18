@@ -147,7 +147,7 @@ class LRNLayer : public Layer<T> {
              DataType<T>::one, 
              bottom_desc_, bottoms_[i]->Get(),
              DataType<T>::zero,
-             top_desc_, tops_[i]->Get(), workspace_->Get());
+             top_desc_, tops_[i]->Get(), workspace_);
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_);
@@ -182,7 +182,7 @@ class LRNLayer : public Layer<T> {
              bottom_desc_,
              bottoms_[i]->Get(),
              bottom_diffs_[i]->Get(),
-             workspace_->Get());
+             workspace_);
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_);

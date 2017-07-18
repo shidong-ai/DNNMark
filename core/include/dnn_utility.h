@@ -353,7 +353,7 @@ class LRNDesc : public Descriptor {
     return nullptr;
   }
 
-  void GetWorkspaceSize(DataTensor<T> y_desc,
+  void GetWorkspaceSize(const DataTensor<T> &y_desc,
                         size_t *workspace_size) {
 #ifdef AMD_MIOPEN
     if (set_)
