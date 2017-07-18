@@ -53,7 +53,7 @@ inline void dnnmarkConvolutionForward(const Handle &handle,
              alpha,
              bottom_desc.Get(), x,
              conv_desc.GetFilter(), w,
-             conv_desc_.GetConv(),
+             conv_desc.GetConv(),
              conv_algo.GetFwdAlgo(), workspace, workspace_in_bytes,
              beta,
              top_desc.Get(), y));
@@ -482,8 +482,9 @@ inline void dnnmarkBatchNormalizationBackward(
              beta_data_diff,
              alpha_param_diff,
              beta_param_diff,
-             bottom_desc.Get(), x, dx
+             bottom_desc.Get(), x,
              top_desc.Get(), dy,
+             bottom_desc.Get(), dx,
              scale_bias_mean_var_desc.Get(),
              bn_scale,
              result_bn_scale_diff, result_bn_bias_diff,
@@ -525,8 +526,8 @@ inline void dnnmarkBypassForward(const Handle &handle,
                          const DataTensor<T> &top_desc,
                          void *y) {
 #ifdef NVIDIA_CUDNN
-  CUDA_CALL(cudaMemcpy(tops_[i]->Get(),
-                       bottoms_[i]->Get(),
+  CUDA_CALL(cudaMemcpy(y,
+                       x,
                        sizeof(T) * bypass_desc.Get().n_
                                  * bypass_desc.Get().c_
                                  * bypass_desc.Get().h_
@@ -559,8 +560,8 @@ inline void dnnmarkBypassBackward(const Handle &handle,
                          const void *x,
                          void *dx) {
 #ifdef NVIDIA_CUDNN
-  CUDA_CALL(cudaMemcpy(top_diffs_[i]->Get(),
-                       bottom_diffs_[i]->Get(),
+  CUDA_CALL(cudaMemcpy(dx,
+                       dy,
                        sizeof(T) * bypass_desc.Get().n_
                                  * bypass_desc.Get().c_
                                  * bypass_desc.Get().h_
@@ -599,9 +600,9 @@ inline void dnnmarkDropoutForward(const Handle &handle,
   CUDNN_CALL(cudnnDropoutForward(
           mode == COMPOSED ?
           handle.GetCudnn(idx) : handle.GetCudnn(),
-          dropout_desc_,
-          bottom_desc_.Get(), x->Get(),
-          top_desc_.Get(), y->Get(),
+          dropout_desc.Get(),
+          bottom_desc.Get(), x,
+          top_desc.Get(), y,
           reserve_space,
           reserve_space_size
           ));
@@ -623,9 +624,9 @@ inline void dnnmarkDropoutBackward(const Handle &handle,
   CUDNN_CALL(cudnnDropoutBackward(
           mode == COMPOSED ?
           handle.GetCudnn(idx) : handle.GetCudnn(),
-          dropout_desc_,
-          top_desc_.Get(), dy->Get(),
-          bottom_desc_.Get(), dx->Get(),
+          dropout_desc.Get(),
+          top_desc.Get(), dy,
+          bottom_desc.Get(), dx,
           reserve_space,
           reserve_space_size
           ));

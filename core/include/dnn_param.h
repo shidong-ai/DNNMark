@@ -143,7 +143,7 @@ inline void SetupConvParam(const std::string &var, const std::string &val,
       else if (!val.compare("cross_correlation"))
         conv_param->mode_ = CUDNN_CROSS_CORRELATION;
 #endif
-#ifdef NVIDIA_CUDNN
+#ifdef MIOPEN
       else if (!val.compare("transpose"))
         conv_param->mode_ = miopenTranspose;
 #endif
@@ -515,7 +515,7 @@ struct BatchNormParam {
   double epsilon_;
   BatchNormParam()
 #ifdef NVIDIA_CUDNN
-  : mode_((cudnnbatchNormMode_t)PerActivation),
+  : mode_((cudnnBatchNormMode_t)PerActivation),
 #endif
 #ifdef AMD_MIOPEN
   : mode_((miopenBatchNormMode_t)PerActivation),
@@ -546,14 +546,14 @@ inline void SetupBatchNormParam(const std::string &var, const std::string &val,
     if(!var.compare("batchnorm_mode")) {
       if(!val.compare("per_activation"))
 #ifdef NVIDIA_CUDNN
-        bn_param->mode_ = (cudnnbatchNormMode_t)PerActivation;
+        bn_param->mode_ = (cudnnBatchNormMode_t)PerActivation;
 #endif
 #ifdef AMD_MIOPEN
         bn_param->mode_ = (miopenBatchNormMode_t)PerActivation;
 #endif
       else if (!val.compare("spatial"))
 #ifdef NVIDIA_CUDNN
-        bn_param->mode_ = (cudnnbatchNormMode_t)Spatial;
+        bn_param->mode_ = (cudnnBatchNormMode_t)Spatial;
 #endif
 #ifdef AMD_MIOPEN
         bn_param->mode_ = (miopenBatchNormMode_t)Spatial;

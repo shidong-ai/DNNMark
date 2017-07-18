@@ -512,9 +512,9 @@ class DropoutDesc : public Descriptor {
                      size_t *state_size) {
 #ifdef NVIDIA_CUDNN
     CUDNN_CALL(cudnnDropoutGetStatesSize(mode ?
-                                         handle.GetCudnn(idx_):
-                                         handle.GetHandle()->GetCudnn(),
-                                         states_size));
+                                         handle.GetCudnn(idx):
+                                         handle.GetCudnn(),
+                                         state_size));
 #endif
 #ifdef AMD_MIOPEN
 #endif
@@ -524,7 +524,7 @@ class DropoutDesc : public Descriptor {
                            size_t *reserve_space_size) {
 #ifdef NVIDIA_CUDNN
     CUDNN_CALL(cudnnDropoutGetReserveSpaceSize(bottom_desc.Get(),
-                                               &reserve_space_size));
+                                               reserve_space_size));
 #endif
 #ifdef AMD_MIOPEN
 #endif
@@ -542,7 +542,7 @@ class DropoutDesc : public Descriptor {
                                        handle.GetCudnn(),
                                        dropout_param.dropout_p_,
                                        states,
-                                       states_size,
+                                       state_size,
                                        dropout_param.random_seed_));
       else
         LOG(FATAL) << "The size is ZERO";
@@ -587,7 +587,7 @@ class ConvAlgo {
                   cudnnConvolutionFwdPreference_t pref) {
     CUDNN_CALL(cudnnGetConvolutionForwardAlgorithm(
                mode == COMPOSED ?
-               handle.Get(idx) : handle.Get(),
+               handle.GetCudnn(idx) : handle.GetCudnn(),
                bottom_desc.Get(),
                conv_desc.GetFilter(),
                conv_desc.GetConv(),
@@ -604,7 +604,7 @@ class ConvAlgo {
     int *returned_algo_count;
     CUDNN_CALL(cudnnFindConvolutionForwardAlgorithm(
                mode == COMPOSED ?
-               handle.Get(idx) : handle.Get(),
+               handle.GetCudnn(idx) : handle.GetCudnn(),
                bottom_desc.Get(),
                conv_desc.GetFilter(),
                conv_desc.GetConv(),
@@ -627,7 +627,7 @@ class ConvAlgo {
                         cudnnConvolutionBwdFilterPreference_t pref) {
      CUDNN_CALL(cudnnGetConvolutionBackwardFilterAlgorithm(
                 mode == COMPOSED ?
-                handle.Get(idx) : handle.Get(),
+                handle.GetCudnn(idx) : handle.GetCudnn(),
                 bottom_desc.Get(),
                 top_desc.Get(),
                 conv_desc.GetConv(),
@@ -644,7 +644,7 @@ class ConvAlgo {
     int *returned_algo_count;
     CUDNN_CALL(cudnnFindConvolutionBackwardFilterAlgorithm(
                mode == COMPOSED ?
-               handle.Get(idx) : handle.Get(),
+               handle.GetCudnn(idx) : handle.GetCudnn(),
                bottom_desc.Get(),
                top_desc.Get(),
                conv_desc.GetConv(),
@@ -668,7 +668,7 @@ class ConvAlgo {
                       cudnnConvolutionBwdDataPreference_t pref) {
      CUDNN_CALL(cudnnGetConvolutionBackwardDataAlgorithm(
                 mode == COMPOSED ?
-                handle.Get(idx) : handle.Get(),
+                handle.GetCudnn(idx) : handle.GetCudnn(),
                 conv_desc.GetFilter(),
                 top_desc.Get(),
                 conv_desc.GetConv(),
@@ -685,7 +685,7 @@ class ConvAlgo {
     int *returned_algo_count;
     CUDNN_CALL(cudnnFindConvolutionBackwardDataAlgorithm(
                mode == COMPOSED ?
-               handle.Get(idx) : handle.Get(),
+               handle.GetCudnn(idx) : handle.GetCudnn(),
                conv_desc.GetFilter(),
                top_desc.Get(),
                conv_desc.GetConv(),
@@ -715,7 +715,7 @@ class ConvAlgo {
                conv_desc.GetConv(),
                top_desc.Get(),
                fwd_algo_,
-               workspace_size))
+               workspace_size));
   }
   cudnnConvolutionBwdFilterAlgo_t GetBwdFilterAlgo() const {
     return bwd_filter_algo_;
@@ -733,7 +733,7 @@ class ConvAlgo {
                conv_desc.GetConv(),
                conv_desc.GetFilter(),
                bwd_filter_algo_,
-               workspace_size))
+               workspace_size));
   }
   cudnnConvolutionBwdDataAlgo_t GetBwdDataAlgo() const {
     return bwd_data_algo_;
@@ -751,7 +751,7 @@ class ConvAlgo {
                conv_desc.GetConv(),
                bottom_desc.Get(),
                bwd_data_algo_,
-               workspace_size))
+               workspace_size));
   }
 #endif
 #ifdef AMD_MIOPEN
