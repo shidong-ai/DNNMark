@@ -165,6 +165,80 @@ inline void dnnmarkConvolutionBackwardFilter(const Handle &handle,
 // Pooling forward/backward functions
 //
 
+template <typename T>
+inline void dnnmarkPoolingForward(const Handle &handle, 
+		RunMode mode, int idx, 
+		const PoolingDesc<T> &pooling_desc,
+		const void *alpha, 
+		const DataTensor<T> &x_desc, 
+		const void *x, 
+		const void *beta, 
+		const DataTensor<T> &y_desc, 
+		void * y, 
+		Data<T> *workspace,
+		size_t workspace_in_bytes) {
+#ifdef NVIDIA_CUDNN
+	CUDNN_CALL(cudnnPoolingForward(
+				mode == COMPOSED ? handle.GetCudnn(idx) : handle.GetCudnn(),
+				pooling_desc.Get(),
+				alpha, 
+				x_desc.Get(), x, 
+				beta, 
+				y_desc.Get(), y);
+#endif
+#ifdef AMD_MIOPEN
+	MIOPEN_CALL(miopenPoolingForward(
+		        mode == COMPOSED ? handle.Get(idx):handle.Get(),
+		        pooling_desc.Get(), 
+		        alpha, 
+		        x_desc.Get(), x, 
+		        beta, 
+		        y_desc.Get(), y, 
+		        false,
+		        workspace->Get(), workspace_in_bytes));
+#endif
+}
+
+template <typename T>
+inline void dnnmarkPoolingBackward(const Handle &handle, 
+		RunMode mode, int idx, 
+		const PoolingDesc<T> &pooling_desc, 
+		const void *alpha, 
+		const DataTensor<T> &y_desc,
+		const void *y, 
+		const DataTensor<T> &dy_desc,
+		const void *dy, 
+		const DataTensor<T> &x_desc, 
+		const void *x,
+		const void *beta, 
+		const DataTensor<T> &dx_desc, 
+		void *dx, 
+		Data<T> *workspace) {
+#ifdef NVIDIA_CUDNN
+	CUDNN_CALL(cudnnPoolingBackward(
+				mode == COMPOSED ? handle.GetCudnn(idx) : handle.GetCudnn(), 
+				pooling_desc.Get(), 
+				alpha, 
+				y_desc.Get(), y, 
+				dy_desc.Get(), dy, 
+				x_desc.Get(), x, 
+				beta, 
+				dx_desc.Get(), dx));
+#endif
+#ifdef AMD_MIOPEN
+	MIOPEN_CALL(miopenPoolingBackward(
+				mode == COMPOSED ? handle.Get() : handle.Get(),
+				pooling_desc.Get(), 
+				alpha, 
+				y_desc.Get(), y, 
+				dy_desc.Get(), dy, 
+				x_desc.Get(), x, 
+				beta, 
+				dx_desc.Get(), dx, 
+				workspace->Get()));
+#endif
+}
+
 //
 // Activation forward/backward functions
 //

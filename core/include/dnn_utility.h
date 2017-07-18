@@ -291,6 +291,15 @@ class PoolingDesc : public Descriptor {
     return nullptr;
   }
 
+  void GetWorkspaceSize(const DataTensor<T> &y_desc,
+                        size_t *workspace_size) {
+#ifdef AMD_MIOPEN
+    if (set_)
+      MIOPEN_CALL(miopenPoolingGetWorkSpaceSize(y_desc.Get(), workspace_size));
+    else
+      LOG(FATAL) << "Pooling descriptor NOT set";
+#endif
+  }
 };
 
 template <typename T>
