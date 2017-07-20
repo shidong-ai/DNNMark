@@ -787,8 +787,8 @@ class ConvAlgo {
                    void *y,
                    void *workspace,
                    size_t workspace_size) {
-    miopenConvAlgoPerf_t *perf_results;
-    int *returned_algo_count;
+    miopenConvAlgoPerf_t perf_results;
+    int returned_algo_count;
     MIOPEN_CALL(miopenFindConvolutionForwardAlgorithm(
                 mode == COMPOSED ?
                 handle.Get(idx) : handle.Get(),
@@ -796,10 +796,10 @@ class ConvAlgo {
                 conv_desc.GetFilter(), w,
                 conv_desc.GetConv(),
                 top_desc.Get(), y,
-                1, returned_algo_count,
-                perf_results, workspace, workspace_size, true));
-    if (*returned_algo_count > 0) {
-      fwd_algo_ = perf_results->fwd_algo;
+                1, &returned_algo_count,
+                &perf_results, workspace, workspace_size, true));
+    if (returned_algo_count > 0) {
+      fwd_algo_ = perf_results.fwd_algo;
     } else {
       fwd_algo_ = miopenConvolutionFwdAlgoGEMM;
     }
@@ -812,12 +812,12 @@ class ConvAlgo {
                          const ConvolutionDesc<T> &conv_desc,
                          const DataTensor<T> &top_desc,
                          const void *x,
-                         const void *dw,
-                         void *dy,
+                         const void *dy,
+                         void *dw,
                          void *workspace,
                          size_t workspace_size) {
-    miopenConvAlgoPerf_t *perf_results;
-    int *returned_algo_count;
+    miopenConvAlgoPerf_t perf_results;
+    int returned_algo_count;
     MIOPEN_CALL(miopenFindConvolutionBackwardWeightsAlgorithm(
                 mode == COMPOSED ?
                 handle.Get(idx) : handle.Get(),
@@ -825,10 +825,10 @@ class ConvAlgo {
                 bottom_desc.Get(), x,
                 conv_desc.GetConv(),
                 conv_desc.GetFilter(), dw,
-                1, returned_algo_count,
-                perf_results, workspace, workspace_size, true));
-    if (*returned_algo_count > 0) {
-      bwd_filter_algo_ = perf_results->bwd_weights_algo;
+                1, &returned_algo_count,
+                &perf_results, workspace, workspace_size, true));
+    if (returned_algo_count > 0) {
+      bwd_filter_algo_ = perf_results.bwd_weights_algo;
     } else {
       bwd_filter_algo_ = miopenConvolutionBwdWeightsAlgoGEMM;
     }
@@ -840,24 +840,24 @@ class ConvAlgo {
                        const DataTensor<T> &bottom_desc,
                        const ConvolutionDesc<T> &conv_desc,
                        const DataTensor<T> &top_desc,
-                       const void *x,
-                       const void *dw,
-                       void *dy,
+                       const void *dy,
+                       const void *w,
+                       void *dx,
                        void *workspace,
                        size_t workspace_size) {
-    miopenConvAlgoPerf_t *perf_results;
-    int *returned_algo_count;
+    miopenConvAlgoPerf_t perf_results;
+    int returned_algo_count;
     MIOPEN_CALL(miopenFindConvolutionBackwardDataAlgorithm(
                 mode == COMPOSED ?
                 handle.Get(idx) : handle.Get(),
                 top_desc.Get(), dy,
-                bottom_desc.Get(), x,
+                conv_desc.GetFilter(), w,
                 conv_desc.GetConv(),
-                conv_desc.GetFilter(), dw,
-                1, returned_algo_count,
-                perf_results, workspace, workspace_size, true));
-    if (*returned_algo_count > 0) {
-      bwd_data_algo_ = perf_results->bwd_data_algo;
+                bottom_desc.Get(), dx,
+                1, &returned_algo_count,
+                &perf_results, workspace, workspace_size, true));
+    if (returned_algo_count > 0) {
+      bwd_data_algo_ = perf_results.bwd_data_algo;
     } else {
       bwd_data_algo_ = miopenConvolutionBwdDataAlgoGEMM;
     }

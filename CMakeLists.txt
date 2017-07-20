@@ -125,19 +125,20 @@ elseif(HCC_FOUND)
                   OUTPUT_VARIABLE HCC_LINKER_FLAGS)
   set(LINKER_FLAGS "${LINKER_FLAGS} ${HCC_LINKER_FLAGS}")
 
+  set(ROCM_ROOT /opt/rocm)
   if (EXISTS ${MIOPEN_ROOT})
     message(STATUS "MIOpen root path: " ${MIOPEN_ROOT})
     include_directories(${MIOPEN_ROOT}/include)
     include_directories(${MIOPEN_ROOT}/src/include)
     include_directories(${MIOPEN_ROOT}/build/include)
-    include_directories(/opt/rocm/hip/include)
+    include_directories(${ROCM_ROOT}/hip/include)
   else()
     message(FATAL_ERROR "Path to MIOpen library not exists")
   endif()
 
   # Locate HIP to this project
-  list(APPEND CMAKE_PREFIX_PATH /opt/rocm/hcc /opt/rocm/hip)
-  find_package(hip REQUIRED PATHS /opt/rocm)
+  list(APPEND CMAKE_PREFIX_PATH ${ROCM_ROOT}/hcc ${ROCM_ROOT}/hip)
+  find_package(hip REQUIRED PATHS ${ROCM_ROOT})
 
   # Add a guard for AMD MIOpen
   add_definitions(-DAMD_MIOPEN)
@@ -163,7 +164,7 @@ elseif(HCC_FOUND)
   message(STATUS "DNNMark Source files: " ${DNNMARK_SOURCES})
 
   # Find MIOpen libraries
-  find_library(MIOPEN_LIBRARY MIOpen ${MIOPEN_ROOT}/build/lib)
+  find_library(MIOPEN_LIBRARY MIOpen ${MIOPEN_ROOT}/lib)
 
   # Find other libraries
   find_library(HIP_HCC hip_hcc /opt/rocm/hip/lib)

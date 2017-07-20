@@ -201,8 +201,6 @@ class ConvolutionLayer : public Layer<T> {
       }
     }
     // Convolution forward computation
-    ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
     for (int i = 0; i < num_bottoms_; i++) {
       dnnmarkConvolutionForward(
                 *(p_dnnmark_->GetHandle()),
@@ -210,13 +208,11 @@ class ConvolutionLayer : public Layer<T> {
                 DataType<T>::one,
                 bottom_desc_, bottoms_[i]->Get(),
                 desc_, weights_->Get(),
-                conv_algo_,
+                &conv_algo_,
                 fwd_workspace_->Get(), fwd_workspace_size_,
                 DataType<T>::zero,
                 top_desc_, tops_[i]->Get());
     }
-    ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
 
     // Free the workspace
     data_manager_->RemoveData(fwd_workspace_id_);
@@ -236,8 +232,6 @@ class ConvolutionLayer : public Layer<T> {
     }
 
     // Convolution forward computation
-    ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
     for (int i = 0; i < num_tops_; i++) {
       dnnmarkConvolutionBackwardFilter(
                 *(p_dnnmark_->GetHandle()),
@@ -246,7 +240,7 @@ class ConvolutionLayer : public Layer<T> {
                 bottom_desc_, bottoms_[i]->Get(),
                 top_desc_, top_diffs_[i]->Get(),
                 desc_,
-                conv_algo_,
+                &conv_algo_,
                 bwd_filter_workspace_->Get(), bwd_filter_workspace_size_,
                 DataType<T>::zero,
                 weights_diff_->Get());
@@ -256,13 +250,11 @@ class ConvolutionLayer : public Layer<T> {
                 DataType<T>::one,
                 top_desc_, top_diffs_[i]->Get(),
                 desc_, weights_->Get(),
-                conv_algo_,
+                &conv_algo_,
                 bwd_data_workspace_->Get(), bwd_data_workspace_size_,
                 DataType<T>::zero,
                 bottom_desc_, bottoms_[i]->Get());
     }
-    ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
 
     // Free the workspace
     data_manager_->RemoveData(bwd_data_workspace_id_);

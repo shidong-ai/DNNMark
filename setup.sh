@@ -21,6 +21,6 @@ then
   cmake -DCUDNN_ROOT=${CUDNN_PATH} ..
 elif [ ${OPTION} = "HIP" ]
 then
-  MIOPEN_PATH=${HOME}/MIOpen
+  MIOPEN_PATH=/opt/rocm/miopen
   CXX=/opt/rocm/hcc/bin/hcc cmake -DMIOPEN_ROOT=${MIOPEN_PATH} ..
 fi
