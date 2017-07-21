@@ -72,10 +72,16 @@ class BatchNormLayer : public Layer<T> {
   Data<T> *bn_saved_inv_variance_;
   int bn_saved_inv_variance_chunk_id_;
 
+  // Work around for MIOpen library
+  T alpha_;
+  T beta_;
+
  public:
   BatchNormLayer(DNNMark<T> *p_dnnmark)
   : Layer<T>(p_dnnmark),
     bn_param_() {
+      alpha_ = 1.0;
+      beta_ = 0.0;
   }
 
   BatchNormParam *getBatchNormParam() { return &bn_param_; }
@@ -85,15 +91,15 @@ class BatchNormLayer : public Layer<T> {
     Layer<T>::Setup();
 
     // Set up batch normalization related data
-    if(bn_param_.epsilon_ < CUDNN_BN_MIN_EPSILON) {
-      LOG(FATAL) << "The value of epsilon cannot be less than CUDNN_BN_MIN_EPSILON.\n"
-                 << "This value is defined as " << CUDNN_BN_MIN_EPSILON << " in cudnn.h.\n";
+    if(bn_param_.epsilon_ < BN_MIN_EPSILON) {
+      LOG(FATAL) << "The value of epsilon cannot be less than BN_MIN_EPSILON."
+                 << "This value is defined as " << BN_MIN_EPSILON;
     }
-    if(bn_param_.mode_ == CUDNN_BATCHNORM_PER_ACTIVATION) {
+    if((BatchNormMode)(bn_param_.mode_) == PerActivation) {
       bn_specifics_desc_.Set(1, input_dim_.c_, input_dim_.h_, input_dim_.w_);
       bn_specifics_size_ = input_dim_.c_ * input_dim_.h_ * input_dim_.w_;
     }
-    else {
+    else if ((BatchNormMode)(bn_param_.mode_) == Spatial) {
       bn_specifics_desc_.Set(1, input_dim_.c_, 1, 1);
       bn_specifics_size_ = input_dim_.c_;
     }
@@ -183,18 +189,20 @@ class BatchNormLayer : public Layer<T> {
     }
 
     // Batch normalization forward computation
-    cudaProfilerStart();
+    ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_);
     for (int i = 0; i < num_bottoms_; i++) {
-      CUDNN_CALL(cudnnBatchNormalizationForwardTraining(
-              p_dnnmark_->getRunMode() == COMPOSED ?
-              p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-              p_dnnmark_->GetHandle()->GetCudnn(),
-              bn_param_.mode_,
-              DataType<T>::one,
-              DataType<T>::zero,
-              bottom_desc_.Get(), bottoms_[i]->Get(),
-              top_desc_.Get(), tops_[i]->Get(),
-              bn_specifics_desc_.Get(),
+      dnnmarkBatchNormalizationForwardTraining(
+              *(p_dnnmark_->GetHandle()),
+              p_dnnmark_->getRunMode(), layer_id_,
+              bn_param_,
+              //DataType<T>::one,
+              //DataType<T>::zero,
+              &alpha_,
+              &beta_,
+              bottom_desc_, bottoms_[i]->Get(),
+              top_desc_, tops_[i]->Get(),
+              bn_specifics_desc_,
               bn_scale_->Get(),
               bn_bias_->Get(),
               bn_param_.exp_avg_factor_,
@@ -203,10 +211,10 @@ class BatchNormLayer : public Layer<T> {
               bn_param_.epsilon_,
               bn_saved_mean_->Get(),
               bn_saved_inv_variance_->Get()
-              ));
+              );
     }
-    cudaProfilerStop();
-
+    ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_);
   }
 
   void BackwardPropagation() {
@@ -224,30 +232,34 @@ class BatchNormLayer : public Layer<T> {
     }
 
     // Batch normalization backward computation
-    cudaProfilerStart();
+    ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_);
     for (int i = 0; i < num_tops_; i++) {
-      CUDNN_CALL(cudnnBatchNormalizationBackward(
-              p_dnnmark_->getRunMode() == COMPOSED ?
-              p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-              p_dnnmark_->GetHandle()->GetCudnn(),
-              bn_param_.mode_,
-              DataType<T>::one,
-              DataType<T>::zero,
-              DataType<T>::one,
-              DataType<T>::zero,
-              bottom_desc_.Get(), bottoms_[i]->Get(),
-              top_desc_.Get(), top_diffs_[i]->Get(),
-              bottom_desc_.Get(), bottom_diffs_[i]->Get(),
-              bn_specifics_desc_.Get(),
+      dnnmarkBatchNormalizationBackward(
+              *(p_dnnmark_->GetHandle()),
+              p_dnnmark_->getRunMode(), layer_id_,
+              bn_param_,
+              //DataType<T>::one,
+              //DataType<T>::zero,
+              //DataType<T>::one,
+              //DataType<T>::zero,
+              &alpha_,
+              &beta_,
+              &alpha_,
+              &beta_,
+              bottom_desc_, bottoms_[i]->Get(), bottom_diffs_[i]->Get(),
+              top_desc_, top_diffs_[i]->Get(),
+              bn_specifics_desc_,
               bn_scale_->Get(),
               bn_scale_diffs_->Get(),
               bn_bias_diffs_->Get(),
               bn_param_.epsilon_,
               bn_saved_mean_->Get(),
               bn_saved_inv_variance_->Get()
-              ));
+              );
     }
-    cudaProfilerStop();
+    ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_);
   }
 
 };

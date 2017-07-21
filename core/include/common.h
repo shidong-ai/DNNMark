@@ -24,13 +24,23 @@
 #define CORE_INCLUDE_COMMON_H_
 
 #include <iostream>
+
+#ifdef NVIDIA_CUDNN
 #include <cuda.h>
 #include <cuda_profiler_api.h>
 #include <curand.h>
 #include <cudnn.h>
 #include <cublas_v2.h>
+#endif
+
+#ifdef AMD_MIOPEN
+#include <miopen/miopen.h>
+#include <hip/hip_runtime_api.h>
+#endif
 
 namespace dnnmark {
+
+#ifdef NVIDIA_CUDNN
 
 #define CUDA_CALL(x) \
 do {\
@@ -68,6 +78,31 @@ do {\
   }\
 } while(0)\
 
+#endif
+
+#ifdef AMD_MIOPEN
+
+#define HIP_CALL(x) \
+do {\
+  hipError_t ret = x;\
+  if(ret != hipSuccess) {\
+    std::cout << "HIP Error at " << __FILE__ << __LINE__ << std::endl;\
+    std::cout << hipGetErrorString(ret) << std::endl;\
+    exit(EXIT_FAILURE);\
+  }\
+} while(0)\
+
+#define MIOPEN_CALL(x) \
+do {\
+  miopenStatus_t ret = x;\
+  if(ret != miopenStatusSuccess) {\
+    std::cout << "MIOpen Error: " << ret << " at " << __FILE__ << __LINE__;\
+    exit(EXIT_FAILURE);\
+  }\
+} while(0)\
+
+#endif
+
 #define CONFIG_CHECK(x) \
 do {\
   if ((x) != 0) {\
@@ -87,16 +122,27 @@ template <typename T>
 class DataType;
 template <> class DataType<float>  {
  public:
+#ifdef NVIDIA_CUDNN
   static const cudnnDataType_t type = CUDNN_DATA_FLOAT;
+#endif
+#ifdef AMD_MIOPEN
+  static const miopenDataType_t type = miopenFloat;
+#endif
   static float oneval, zeroval;
   static const void *one, *zero;
 };
+
+#ifdef NVIDIA_CUDNN
 template <> class DataType<double> {
  public:
   static const cudnnDataType_t type = CUDNN_DATA_DOUBLE;
   static double oneval, zeroval;
   static const void *one, *zero;
 };
+#endif
+
+// Min epsilon for BN
+#define BN_MIN_EPSILON 1e-5
 
 // Benchmark running mode
 // None: the benchmark haven't been setup

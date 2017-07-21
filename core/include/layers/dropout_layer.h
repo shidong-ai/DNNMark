@@ -53,16 +53,18 @@ class DropoutLayer : public Layer<T> {
 
  private:
   DropoutParam dropout_param_;
-  cudnnDropoutDescriptor_t dropout_desc_;
+  DropoutDesc<T> desc_;
   size_t random_states_size_;
-  void *random_states_;
+  int random_states_id_;
+  Data<T> *random_states_;
   size_t reserve_space_size_;
-  void *reserve_space_;
+  int reserve_space_id_;
+  Data<T> *reserve_space_;
  
  public:
   DropoutLayer(DNNMark<T> *p_dnnmark)
   : Layer<T>(p_dnnmark),
-    dropout_param_() {
+    dropout_param_(), desc_() {
   }
 
   DropoutParam *getDropoutParam() { return &dropout_param_; }
@@ -74,25 +76,22 @@ class DropoutLayer : public Layer<T> {
     // Set up dropout related data
 
 
-    CUDNN_CALL(cudnnCreateDropoutDescriptor(&dropout_desc_));
-    CUDNN_CALL(cudnnDropoutGetReserveSpaceSize(bottom_desc_.Get(), &reserve_space_size_));
-    CUDNN_CALL(cudnnDropoutGetStatesSize(p_dnnmark_->getRunMode() == COMPOSED ?
-                                         p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-                                         p_dnnmark_->GetHandle()->GetCudnn(),
-                                         &random_states_size_));
+    desc_.SetReserveSpaceSize(bottom_desc_, &reserve_space_size_);
+    desc_.SetStatesSize(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                        layer_id_, &random_states_size_);
     
-    CUDA_CALL(cudaMalloc(&random_states_, random_states_size_));
-    
-    CUDNN_CALL(cudnnSetDropoutDescriptor(dropout_desc_,
-                                         p_dnnmark_->getRunMode() == COMPOSED ?
-                                         p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-                                         p_dnnmark_->GetHandle()->GetCudnn(),
-                                         dropout_param_.dropout_p_,
-                                         random_states_,
-                                         random_states_size_,
-                                         dropout_param_.random_seed_));
+    if (random_states_size_ > 0) {
+      random_states_id_ = data_manager_->CreateData(random_states_size_);
+      random_states_ = data_manager_->GetData(random_states_id_);
+    }
 
-    CUDA_CALL(cudaMalloc(&reserve_space_, reserve_space_size_));
+    desc_.Set(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(), layer_id_,
+              dropout_param_, random_states_->Get(), random_states_size_);
+    
+    if (reserve_space_size_ > 0) {
+      reserve_space_id_ = data_manager_->CreateData(reserve_space_size_);
+      reserve_space_ = data_manager_->GetData(reserve_space_id_);
+    }
 
     if (input_dim_.n_ != 0 && input_dim_.c_ != 0 &&
         input_dim_.h_ != 0 && input_dim_.w_ != 0) {
@@ -145,25 +144,21 @@ class DropoutLayer : public Layer<T> {
     }
 
     // Dropout forwards
-    cudaProfilerStart();
+    ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_);
     for (int i = 0; i < num_bottoms_; i++) {
-      CUDNN_CALL(cudnnDropoutForward(
-              p_dnnmark_->getRunMode() == COMPOSED ?
-              p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-              p_dnnmark_->GetHandle()->GetCudnn(),
-              dropout_desc_,
-              bottom_desc_.Get(), bottoms_[i]->Get(),
-              top_desc_.Get(), tops_[i]->Get(),
+      dnnmarkDropoutForward(
+              *(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+              layer_id_,
+              desc_,
+              bottom_desc_, bottoms_[i]->Get(),
+              top_desc_, tops_[i]->Get(),
               reserve_space_,
               reserve_space_size_
-              ));
+              );
     }
-    cudaProfilerStop();
-
-    //TODO: Evaluate the necessity of freeing memory here
-    CUDA_CALL(cudaFree(random_states_));
-    CUDA_CALL(cudaFree(reserve_space_));
-    CUDNN_CALL(cudnnDestroyDropoutDescriptor(dropout_desc_));
+    ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_);
   }
 
   void BackwardPropagation() {
@@ -171,35 +166,26 @@ class DropoutLayer : public Layer<T> {
         !previous_layer_name_.compare("null")) {
       // Fill the top and top diff data
       for (int i = 0; i < num_tops_; i++) {
-        tops_[i]->Filler();
         top_diffs_[i]->Filler();
-      }
-      // Fill the bottom data
-      for (int i = 0; i < num_bottoms_; i++) {
-        bottoms_[i]->Filler();
       }
     }
 
     // Dropout backwards
-    cudaProfilerStart();
+    ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_);
     for (int i = 0; i < num_tops_; i++) {
-      CUDNN_CALL(cudnnDropoutBackward(
-              p_dnnmark_->getRunMode() == COMPOSED ?
-              p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-              p_dnnmark_->GetHandle()->GetCudnn(),
-              dropout_desc_,
-              bottom_desc_.Get(), bottoms_[i]->Get(),
-              top_desc_.Get(), tops_[i]->Get(),
+      dnnmarkDropoutBackward(
+              *(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+              layer_id_,
+              desc_,
+              top_desc_, top_diffs_[i]->Get(),
+              bottom_desc_, bottom_diffs_[i]->Get(),
               reserve_space_,
               reserve_space_size_
-              ));
+              );
     }
-    cudaProfilerStop();
-
-    //TODO: Evaluate the necessity of freeing memory here
-    CUDA_CALL(cudaFree(random_states_));
-    CUDA_CALL(cudaFree(reserve_space_));
-    CUDNN_CALL(cudnnDestroyDropoutDescriptor(dropout_desc_));
+    ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_);
   }
 
 };

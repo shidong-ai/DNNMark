@@ -34,7 +34,8 @@
 
 #include "common.h"
 #include "utility.h"
-#include "gpu_utility.h"
+#include "gemm_wrapper.h"
+#include "dnn_wrapper.h"
 #include "dnn_config_keywords.h"
 #include "dnn_param.h"
 #include "dnn_utility.h"
@@ -85,7 +86,7 @@ class DNNMark {
 
   DNNMark();
   DNNMark(int num_layers);
-  int ParseAllConfig(const std::string &config_file);
+  void ParseAllConfig(const std::string &config_file);
   int ParseGeneralConfig(const std::string &config_file);
   int ParseLayerConfig(const std::string &config_file);
   int Initialize();

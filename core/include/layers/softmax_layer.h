@@ -118,21 +118,20 @@ class SoftmaxLayer : public Layer<T> {
     }
 
     // Softmax forward computation
-    cudaProfilerStart();
+    ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_);
     for (int i = 0; i < num_bottoms_; i++) {
-      CUDNN_CALL(cudnnSoftmaxForward(
-              p_dnnmark_->getRunMode() == COMPOSED ?
-              p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-              p_dnnmark_->GetHandle()->GetCudnn(),
-              softmax_param_.algo_,
-              softmax_param_.mode_,
+      dnnmarkSoftmaxForward(
+              *(p_dnnmark_->GetHandle()),
+              p_dnnmark_->getRunMode(), layer_id_,
+              softmax_param_,
               DataType<T>::one,                                                  
-              bottom_desc_.Get(), bottoms_[i]->Get(),
+              bottom_desc_, bottoms_[i]->Get(),
               DataType<T>::zero,
-              top_desc_.Get(), tops_[i]->Get()));
+              top_desc_, tops_[i]->Get());
     }
-    cudaProfilerStop();
-
+    ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_);
   }
 
   void BackwardPropagation() {
@@ -150,22 +149,21 @@ class SoftmaxLayer : public Layer<T> {
     }
 
     // Softmax backward computation
-    cudaProfilerStart();
+    ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_);
     for (int i = 0; i < num_tops_; i++) {
-      CUDNN_CALL(cudnnSoftmaxBackward(
-              p_dnnmark_->getRunMode() == COMPOSED ?
-              p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-              p_dnnmark_->GetHandle()->GetCudnn(),
-              softmax_param_.algo_,
-              softmax_param_.mode_,
+      dnnmarkSoftmaxBackward(
+              *(p_dnnmark_->GetHandle()),
+              p_dnnmark_->getRunMode(), layer_id_,
+              softmax_param_,
               DataType<T>::one,
-              top_desc_.Get(), tops_[i]->Get(),
-              top_desc_.Get(), top_diffs_[i]->Get(),
+              top_desc_, tops_[i]->Get(), top_diffs_[i]->Get(),
               DataType<T>::zero,
-              bottom_desc_.Get(),
-              bottom_diffs_[i]->Get()));
+              bottom_desc_,
+              bottom_diffs_[i]->Get());
     }
-    cudaProfilerStop();
+    ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_);
   }
 
 };

@@ -25,7 +25,6 @@
 
 #include <vector>
 #include <glog/logging.h>
-#include "cudnn.h"
 #include "common.h"
 #include "dnn_param.h"
 #include "dnn_utility.h"
