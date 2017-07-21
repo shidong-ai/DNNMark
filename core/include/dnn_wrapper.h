@@ -209,13 +209,13 @@ inline void dnnmarkPoolingForward(const Handle &handle,
 		Data<T> *workspace,
 		size_t workspace_in_bytes) {
 #ifdef NVIDIA_CUDNN
-	CUDNN_CALL(cudnnPoolingForward(
+  CUDNN_CALL(cudnnPoolingForward(
 				mode == COMPOSED ? handle.GetCudnn(idx) : handle.GetCudnn(),
 				pooling_desc.Get(),
 				alpha, 
 				x_desc.Get(), x, 
 				beta, 
-				y_desc.Get(), y);
+				y_desc.Get(), y));
 #endif
 #ifdef AMD_MIOPEN
 	MIOPEN_CALL(miopenPoolingForward(
