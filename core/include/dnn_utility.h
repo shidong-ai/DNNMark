@@ -797,7 +797,7 @@ class ConvAlgo {
                 conv_desc.GetConv(),
                 top_desc.Get(), y,
                 1, &returned_algo_count,
-                &perf_results, workspace, workspace_size, true));
+                &perf_results, workspace, workspace_size, false));
     if (returned_algo_count > 0) {
       fwd_algo_ = perf_results.fwd_algo;
     } else {
@@ -826,7 +826,7 @@ class ConvAlgo {
                 conv_desc.GetConv(),
                 conv_desc.GetFilter(), dw,
                 1, &returned_algo_count,
-                &perf_results, workspace, workspace_size, true));
+                &perf_results, workspace, workspace_size, false));
     if (returned_algo_count > 0) {
       bwd_filter_algo_ = perf_results.bwd_weights_algo;
     } else {
@@ -855,7 +855,7 @@ class ConvAlgo {
                 conv_desc.GetConv(),
                 bottom_desc.Get(), dx,
                 1, &returned_algo_count,
-                &perf_results, workspace, workspace_size, true));
+                &perf_results, workspace, workspace_size, false));
     if (returned_algo_count > 0) {
       bwd_data_algo_ = perf_results.bwd_data_algo;
     } else {
