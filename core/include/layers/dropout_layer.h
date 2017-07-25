@@ -145,7 +145,7 @@ class DropoutLayer : public Layer<T> {
 
     // Dropout forwards
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "DropoutFwd");
     for (int i = 0; i < num_bottoms_; i++) {
       dnnmarkDropoutForward(
               *(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
@@ -158,7 +158,7 @@ class DropoutLayer : public Layer<T> {
               );
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "DropoutFwd");
   }
 
   void BackwardPropagation() {
@@ -172,7 +172,7 @@ class DropoutLayer : public Layer<T> {
 
     // Dropout backwards
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "DropoutBwd");
     for (int i = 0; i < num_tops_; i++) {
       dnnmarkDropoutBackward(
               *(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
@@ -185,7 +185,7 @@ class DropoutLayer : public Layer<T> {
               );
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "DropoutBwd");
   }
 
 };

@@ -14,6 +14,8 @@ int main(int argc, char **argv) {
   dnnmark.Initialize();
   dnnmark.Forward();
   dnnmark.Backward();
+  dnnmark.GetTimer()->SumRecords();
+  LOG(INFO) << "Total running time(ms): " << dnnmark.GetTimer()->GetTotalTime();
   LOG(INFO) << "DNNMark suites: Tear down...";
   return 0;
 }

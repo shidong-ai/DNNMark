@@ -119,7 +119,7 @@ class SoftmaxLayer : public Layer<T> {
 
     // Softmax forward computation
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "SoftmaxFwd");
     for (int i = 0; i < num_bottoms_; i++) {
       dnnmarkSoftmaxForward(
               *(p_dnnmark_->GetHandle()),
@@ -131,7 +131,7 @@ class SoftmaxLayer : public Layer<T> {
               top_desc_, tops_[i]->Get());
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "SoftmaxFwd");
   }
 
   void BackwardPropagation() {
@@ -150,7 +150,7 @@ class SoftmaxLayer : public Layer<T> {
 
     // Softmax backward computation
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "SoftmaxBwd");
     for (int i = 0; i < num_tops_; i++) {
       dnnmarkSoftmaxBackward(
               *(p_dnnmark_->GetHandle()),
@@ -163,7 +163,7 @@ class SoftmaxLayer : public Layer<T> {
               bottom_diffs_[i]->Get());
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "SoftmaxBwd");
   }
 
 };

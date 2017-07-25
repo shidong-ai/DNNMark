@@ -66,6 +66,7 @@ struct ConvolutionParam {
 #ifdef AMD_MIOPEN
   miopenConvolutionMode_t mode_;
 #endif
+  bool propagation_;
   int output_num_;
   int pad_h_;
   int pad_w_;
@@ -94,7 +95,7 @@ struct ConvolutionParam {
     pad_h_(2), pad_w_(2),
     stride_u_(1), stride_v_(1),
     upscale_x_(1), upscale_y_(1),
-    kernel_size_h_(5), kernel_size_w_(5),
+    kernel_size_h_(5), kernel_size_w_(5), propagation_(true),
 #ifdef NVIDIA_CUDNN
     conv_fwd_pref_(CUDNN_CONVOLUTION_FWD_PREFER_FASTEST),
     conv_bwd_filter_pref_(CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST),
@@ -172,6 +173,9 @@ inline void SetupConvParam(const std::string &var, const std::string &val,
       conv_param->stride_u_ = atoi(val.c_str());
     } else if (!var.compare("stride_w")) {
       conv_param->stride_v_ = atoi(val.c_str());
+    } else if (!var.compare("propagation")) {
+      if (!val.compare("false"))
+        conv_param->propagation_ = false;
     } else if (!var.compare("conv_fwd_pref")) {
 #ifdef NVIDIA_CUDNN
       if (!val.compare("no_workspace"))

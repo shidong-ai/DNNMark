@@ -190,7 +190,7 @@ class BatchNormLayer : public Layer<T> {
 
     // Batch normalization forward computation
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "BnFwd");
     for (int i = 0; i < num_bottoms_; i++) {
       dnnmarkBatchNormalizationForwardTraining(
               *(p_dnnmark_->GetHandle()),
@@ -214,7 +214,7 @@ class BatchNormLayer : public Layer<T> {
               );
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "BnFwd");
   }
 
   void BackwardPropagation() {
@@ -233,7 +233,7 @@ class BatchNormLayer : public Layer<T> {
 
     // Batch normalization backward computation
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "BnBwd");
     for (int i = 0; i < num_tops_; i++) {
       dnnmarkBatchNormalizationBackward(
               *(p_dnnmark_->GetHandle()),
@@ -259,7 +259,7 @@ class BatchNormLayer : public Layer<T> {
               );
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "BnBwd");
   }
 
 };

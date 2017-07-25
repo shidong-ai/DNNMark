@@ -34,6 +34,7 @@
 
 #include "common.h"
 #include "utility.h"
+#include "timer.h"
 #include "gemm_wrapper.h"
 #include "dnn_wrapper.h"
 #include "dnn_config_keywords.h"
@@ -76,6 +77,9 @@ class DNNMark {
   std::map<std::string, int> name_id_map_;
   int num_layers_added_;
 
+  // Timer
+  Timer timer_;
+
   // Private functions
   void SetLayerParams(LayerType layer_type,
                       int current_layer_id,
@@ -103,6 +107,8 @@ class DNNMark {
     return name_id_map_.find(name) != name_id_map_.end();
   }
   RunMode getRunMode() { return run_mode_; }
+
+  Timer *GetTimer() { return &timer_; }
 
 };
 

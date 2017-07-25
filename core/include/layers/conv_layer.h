@@ -205,6 +205,7 @@ class ConvolutionLayer : public Layer<T> {
       dnnmarkConvolutionForward(
                 *(p_dnnmark_->GetHandle()),
                 p_dnnmark_->getRunMode(), layer_id_,
+                p_dnnmark_->GetTimer(),
                 DataType<T>::one,
                 bottom_desc_, bottoms_[i]->Get(),
                 desc_, weights_->Get(),
@@ -233,27 +234,31 @@ class ConvolutionLayer : public Layer<T> {
 
     // Convolution forward computation
     for (int i = 0; i < num_tops_; i++) {
-      dnnmarkConvolutionBackwardFilter(
-                *(p_dnnmark_->GetHandle()),
-                p_dnnmark_->getRunMode(), layer_id_,
-                DataType<T>::one,
-                bottom_desc_, bottoms_[i]->Get(),
-                top_desc_, top_diffs_[i]->Get(),
-                desc_,
-                &conv_algo_,
-                bwd_filter_workspace_->Get(), bwd_filter_workspace_size_,
-                DataType<T>::zero,
-                weights_diff_->Get());
-      dnnmarkConvolutionBackwardData(
-                *(p_dnnmark_->GetHandle()),
-                p_dnnmark_->getRunMode(), layer_id_,
-                DataType<T>::one,
-                top_desc_, top_diffs_[i]->Get(),
-                desc_, weights_->Get(),
-                &conv_algo_,
-                bwd_data_workspace_->Get(), bwd_data_workspace_size_,
-                DataType<T>::zero,
-                bottom_desc_, bottoms_[i]->Get());
+      if (conv_param_.propagation_) {
+        dnnmarkConvolutionBackwardFilter(
+                  *(p_dnnmark_->GetHandle()),
+                  p_dnnmark_->getRunMode(), layer_id_,
+                  p_dnnmark_->GetTimer(),
+                  DataType<T>::one,
+                  bottom_desc_, bottoms_[i]->Get(),
+                  top_desc_, top_diffs_[i]->Get(),
+                  desc_,
+                  &conv_algo_,
+                  bwd_filter_workspace_->Get(), bwd_filter_workspace_size_,
+                  DataType<T>::zero,
+                  weights_diff_->Get());
+        dnnmarkConvolutionBackwardData(
+                  *(p_dnnmark_->GetHandle()),
+                  p_dnnmark_->getRunMode(), layer_id_,
+                  p_dnnmark_->GetTimer(),
+                  DataType<T>::one,
+                  top_desc_, top_diffs_[i]->Get(),
+                  desc_, weights_->Get(),
+                  &conv_algo_,
+                  bwd_data_workspace_->Get(), bwd_data_workspace_size_,
+                  DataType<T>::zero,
+                  bottom_desc_, bottoms_[i]->Get());
+      }
     }
 
     // Free the workspace

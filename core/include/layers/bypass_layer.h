@@ -123,7 +123,7 @@ class BypassLayer : public Layer<T> {
 
     // Bypass forwards - copy bottom data to top.
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "BypassFwd");
     for (int i = 0; i < num_bottoms_; i++) {
       dnnmarkBypassForward(*(p_dnnmark_->GetHandle()),
                            p_dnnmark_->getRunMode(), layer_id_,
@@ -136,7 +136,7 @@ class BypassLayer : public Layer<T> {
                            tops_[i]->Get());
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "BypassFwd");
   }
 
   void BackwardPropagation() {
@@ -155,7 +155,7 @@ class BypassLayer : public Layer<T> {
 
     // Bypass backwards - copy top_diff data to bottom_diff
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "BypassBwd");
     for (int i = 0; i < num_tops_; i++) {
       dnnmarkBypassBackward(*(p_dnnmark_->GetHandle()),
                            p_dnnmark_->getRunMode(), layer_id_,
@@ -170,7 +170,7 @@ class BypassLayer : public Layer<T> {
                            bottom_diffs_[i]->Get());
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "BypassBwd");
   }
 
 };

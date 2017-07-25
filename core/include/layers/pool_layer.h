@@ -148,7 +148,7 @@ class PoolingLayer : public Layer<T> {
 
     // pooling forward computation
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "PoolFwd");
     for (int i = 0; i < num_bottoms_; i++) {
 	  dnnmarkPoolingForward(*(p_dnnmark_->GetHandle()), 
 			  p_dnnmark_->getRunMode(), layer_id_, 
@@ -162,7 +162,7 @@ class PoolingLayer : public Layer<T> {
 			  workspace_, workspace_size_);
     }
 	ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "PoolFwd");
   }
 
   void BackwardPropagation() {
@@ -181,7 +181,7 @@ class PoolingLayer : public Layer<T> {
 
     // pooling backward computation
 	ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "PoolBwd");
     for (int i = 0; i < num_tops_; i++) {
       dnnmarkPoolingBackward(*(p_dnnmark_->GetHandle()), 
 			  p_dnnmark_->getRunMode(), layer_id_, 
@@ -195,7 +195,7 @@ class PoolingLayer : public Layer<T> {
 			  workspace_);
     }
 	ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "PoolBwd");
   }
 };
 

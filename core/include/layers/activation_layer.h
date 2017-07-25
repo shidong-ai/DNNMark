@@ -124,7 +124,7 @@ class ActivationLayer : public Layer<T> {
 
     // activationing forward computation
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "ActFwd");
     for (int i = 0; i < num_bottoms_; i++) {
       dnnmarkActivationForward(
              *(p_dnnmark_->GetHandle()),
@@ -136,7 +136,7 @@ class ActivationLayer : public Layer<T> {
              top_desc_, tops_[i]->Get());
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "ActFwd");
 
   }
   void BackwardPropagation() {
@@ -155,7 +155,7 @@ class ActivationLayer : public Layer<T> {
 
     // activationing backward computation
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "ActBwd");
     for (int i = 0; i < num_bottoms_; i++) {
       dnnmarkActivationBackward(
              *(p_dnnmark_->GetHandle()),
@@ -167,7 +167,7 @@ class ActivationLayer : public Layer<T> {
              bottom_desc_, bottoms_[i]->Get(), bottom_diffs_[i]->Get());
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "ActBwd");
   }
 
 };

@@ -35,6 +35,7 @@
 
 #include "common.h"
 #include "dnn_param.h"
+#include "timer.h"
 
 namespace dnnmark {
 
@@ -918,7 +919,8 @@ class ConvAlgo {
 };
 
 // Profiling marker
-inline void ProfilerStart(const Handle &handle, RunMode mode, int idx) {
+inline void ProfilerStart(const Handle &handle, RunMode mode, int idx,
+                          Timer *timer, const std::string &layer) {
 #ifdef NVIDIA_CUDNN
   cudaProfilerStart();
 #endif
@@ -926,8 +928,10 @@ inline void ProfilerStart(const Handle &handle, RunMode mode, int idx) {
   miopenEnableProfiling(mode == COMPOSED ?
                         handle.Get(idx) : handle.Get(), true);
 #endif
+  timer->Start(layer);
 }
-inline void ProfilerStop(const Handle &handle, RunMode mode, int idx) {
+inline void ProfilerStop(const Handle &handle, RunMode mode, int idx,
+                         Timer *timer, const std::string &layer) {
 #ifdef NVIDIA_CUDNN
   cudaProfilerStop();
 #endif
@@ -935,6 +939,7 @@ inline void ProfilerStop(const Handle &handle, RunMode mode, int idx) {
   miopenEnableProfiling(mode == COMPOSED ?
                         handle.Get(idx) : handle.Get(), false);
 #endif
+  timer->Stop(layer);
 }
 
 } // namespace dnnmark

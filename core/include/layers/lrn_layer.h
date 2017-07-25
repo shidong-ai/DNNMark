@@ -137,7 +137,7 @@ class LRNLayer : public Layer<T> {
 
     // lrn forward computation
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "LrnFwd");
     for (int i = 0; i < num_bottoms_; i++) {
       dnnmarkLRNForward(
              *(p_dnnmark_->GetHandle()),
@@ -150,7 +150,7 @@ class LRNLayer : public Layer<T> {
              top_desc_, tops_[i]->Get(), workspace_);
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "LrnFwd");
 
   }
   void BackwardPropagation() {
@@ -169,7 +169,7 @@ class LRNLayer : public Layer<T> {
 
     // lrn backward computation
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "LrnBwd");
     for (int i = 0; i < num_tops_; i++) {
       dnnmarkLRNBackward(
              *(p_dnnmark_->GetHandle()),
@@ -185,7 +185,7 @@ class LRNLayer : public Layer<T> {
              workspace_);
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "LrnBwd");
   }
 
 };

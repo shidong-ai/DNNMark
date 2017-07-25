@@ -159,7 +159,7 @@ class FullyConnectedLayer : public Layer<T> {
 
     // Fully connected forward computation
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "FcFwd");
     for (int i = 0; i < num_bottoms_; i++) {
       // Y = T(W) * X                                                               
       dnnmarkGEMM(*(p_dnnmark_->GetHandle()),
@@ -173,7 +173,7 @@ class FullyConnectedLayer : public Layer<T> {
                   tops_[i]->Get(), ldc);
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "FcFwd");
 
   }
 
@@ -203,7 +203,7 @@ class FullyConnectedLayer : public Layer<T> {
 
     // Fully connected backward weights computation
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "FcBwdFilter");
     for (int i = 0; i < num_tops_; i++) {
       // d(W) = X * T(d(Y))
       dnnmarkGEMM(*(p_dnnmark_->GetHandle()),
@@ -217,7 +217,7 @@ class FullyConnectedLayer : public Layer<T> {
                   weights_diff_->Get(), ldc);
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "FcBwdFilter");
 
     M = num_rows_weights_;
     N = input_dim_.n_;
@@ -230,7 +230,7 @@ class FullyConnectedLayer : public Layer<T> {
 
     // Fully connected backward data computation
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "FcBwdData");
     for (int i = 0; i < num_tops_; i++) {
       // d(X) = W * d(Y)
       dnnmarkGEMM(*(p_dnnmark_->GetHandle()),
@@ -244,7 +244,7 @@ class FullyConnectedLayer : public Layer<T> {
                   bottom_diffs_[i]->Get(), ldc);
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_);
+                  layer_id_, p_dnnmark_->GetTimer(), "FcBwdData");
   }
 
 };
