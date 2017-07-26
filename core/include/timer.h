@@ -66,7 +66,8 @@ class StopWatch {
 class Timer {
  private:
   StopWatch watch_;
-  std::map<std::string, double> timing_table_;
+  std::vector<std::string> layer_table_;
+  std::vector<double> timing_table_;
   int num_records_;
   double total_time_;
 
@@ -76,19 +77,26 @@ class Timer {
 
   void Start(const std::string &layer) {
     watch_.Start();
-    timing_table_[layer] = 0.0;
+    layer_table_.push_back(layer);
   }
 
   // Stop and record the current elapsed time and record it
   void Stop(const std::string &layer) {
     watch_.Stop();
-    timing_table_[layer] = watch_.DiffInMs();
+    if (!layer.compare(layer_table_.back()))
+      timing_table_.push_back(watch_.DiffInMs());
+    else
+      LOG(FATAL) << "Layer to measure doesn't match";
   }
 
   // Sum up all the recorded times and store the sum to vec_
   void SumRecords() {
-    for (auto const &i : timing_table_)
-      total_time_ += i.second;
+    int index = 0;
+    for (auto const &i : layer_table_) {
+      LOG(INFO) << i << ": " << timing_table_[index];
+      total_time_ += timing_table_[index];
+      index++;
+    }
   }
 
   double GetTotalTime() {

@@ -928,7 +928,7 @@ inline void ProfilerStart(const Handle &handle, RunMode mode, int idx,
   miopenEnableProfiling(mode == COMPOSED ?
                         handle.Get(idx) : handle.Get(), true);
 #endif
-  timer->Start(layer);
+  timer->Start(layer + "_" + std::to_string(idx));
 }
 inline void ProfilerStop(const Handle &handle, RunMode mode, int idx,
                          Timer *timer, const std::string &layer) {
@@ -939,7 +939,7 @@ inline void ProfilerStop(const Handle &handle, RunMode mode, int idx,
   miopenEnableProfiling(mode == COMPOSED ?
                         handle.Get(idx) : handle.Get(), false);
 #endif
-  timer->Stop(layer);
+  timer->Stop(layer + "_" + std::to_string(idx));
 }
 
 } // namespace dnnmark
