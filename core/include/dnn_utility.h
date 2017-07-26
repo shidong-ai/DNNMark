@@ -934,10 +934,12 @@ inline void ProfilerStop(const Handle &handle, RunMode mode, int idx,
                          Timer *timer, const std::string &layer) {
 #ifdef NVIDIA_CUDNN
   cudaProfilerStop();
+  CUDA_CALL(cudaDeviceSynchronize());
 #endif
 #ifdef AMD_MIOPEN
   miopenEnableProfiling(mode == COMPOSED ?
                         handle.Get(idx) : handle.Get(), false);
+  HIP_CALL(hipDeviceSynchronize());
 #endif
   timer->Stop(layer + "_" + std::to_string(idx));
 }
