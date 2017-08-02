@@ -89,6 +89,12 @@ class Timer {
       LOG(FATAL) << "Layer to measure doesn't match";
   }
 
+  // Reset all the recorded value to 0
+  void Clear() {
+	  layer_table_.clear();
+	  timing_table_.clear();
+  }
+
   // Sum up all the recorded times and store the sum to vec_
   void SumRecords() {
     int index = 0;

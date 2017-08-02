@@ -75,7 +75,7 @@ class Layer {
     data_manager_ = DataManager<T>::GetInstance();
   }
   ~Layer() {
-    data_manager_->DataManager<T>::~DataManager(); 
+    // data_manager_->DataManager<T>::~DataManager();
   }
   DataDim *getInputDim() { return &input_dim_; }
   DataDim *getOutputDim() { return &output_dim_; }
