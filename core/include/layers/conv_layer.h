@@ -81,7 +81,7 @@ class ConvolutionLayer : public Layer<T> {
     Layer<T>::has_learnable_params_ = true;
   }
 
-  ~ConvoluationLayer() {
+  ~ConvolutionLayer() {
     // Free the workspace
     data_manager_->RemoveData(bwd_data_workspace_id_);
     data_manager_->RemoveData(bwd_filter_workspace_id_);

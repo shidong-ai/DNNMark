@@ -30,9 +30,9 @@ if(CUDA_FOUND)
   # COMPILE_RESULT_VAR is TRUE when compile succeeds
   # RUN_RESULT_VAR is zero when a GPU is found
   if(COMPILE_RESULT_VAR AND NOT RUN_RESULT_VAR)
-      set(CUDA_HAVE_GPU TRUE)
+    set(CUDA_HAVE_GPU TRUE)
   else()
-      set(CUDA_HAVE_GPU FALSE)
+    set(CUDA_HAVE_GPU FALSE)
   endif()
 endif()
 
@@ -136,6 +136,13 @@ elseif(HCC_FOUND)
     message(FATAL_ERROR "Path to MIOpen library not exists")
   endif()
 
+  if (EXISTS ${ROCBLAS_ROOT})
+    message(STATUS "ROCBLAS root path: " ${ROCBLAS_ROOT})
+    include_directories(${ROCBLAS_ROOT}/include)
+  else()
+	  message(FATAL_ERROR "Path to ROCBLAS library not exists")
+  endif()
+
   # Locate HIP to this project
   list(APPEND CMAKE_PREFIX_PATH ${ROCM_ROOT}/hcc ${ROCM_ROOT}/hip)
   find_package(hip REQUIRED PATHS ${ROCM_ROOT})
@@ -163,8 +170,13 @@ elseif(HCC_FOUND)
   file(GLOB_RECURSE DNNMARK_SOURCES RELATIVE ${CMAKE_SOURCE_DIR} core/src/*.cc)
   message(STATUS "DNNMark Source files: " ${DNNMARK_SOURCES})
 
+  # Find rocBLAS libraries
+  find_library(ROCBLAS_LIBRARY rocblas-hcc ${ROCBLAS_ROOT}/lib)
+
   # Find MIOpen libraries
   find_library(MIOPEN_LIBRARY MIOpen ${MIOPEN_ROOT}/lib)
+
+  message(${ROCBLAS_LIBRARY} ${MIOPEN_LIBRARY})
 
   # Find other libraries
   find_library(HIP_HCC hip_hcc /opt/rocm/hip/lib)
@@ -176,6 +188,7 @@ elseif(HCC_FOUND)
   add_library(${PROJECT_NAME} SHARED ${DNNMARK_SOURCES})
   add_dependencies(${PROJECT_NAME} ${MIOPEN_LIBRARY})
   target_link_libraries(${PROJECT_NAME} 
+                        ${ROCBLAS_LIBRARY}
                         ${MIOPEN_LIBRARY}
                         ${HIP_HCC}
                         ${GLOG_LIBRARY}
@@ -202,4 +215,3 @@ if (enable-benchmarking)
   add_subdirectory(${BENCHMARKS})
 
 endif()
-

@@ -22,5 +22,9 @@ then
 elif [ ${OPTION} = "HIP" ]
 then
   MIOPEN_PATH=/opt/rocm/miopen
-  CXX=/opt/rocm/hcc/bin/hcc cmake -DMIOPEN_ROOT=${MIOPEN_PATH} ..
+  ROCBLAS_PATH=/opt/rocm/rocblas
+  CXX=/opt/rocm/hcc/bin/hcc cmake \
+    -DMIOPEN_ROOT=${MIOPEN_PATH} \
+    -DROCBLAS_ROOT=${ROCBLAS_PATH} \
+    ..
 fi

@@ -47,16 +47,20 @@ void dnnmarkGEMM(const Handle &handle, RunMode mode, int idx,
                           c, ldc));
 #endif
 #ifdef AMD_MIOPEN
-  MIOPEN_CALL(miopenGemm(mode == COMPOSED ?
-                         handle.Get(idx) : handle.Get(),
-                         true,
-                         is_a_transpose, is_b_transpose,
-                         m, n, k,
-                         alpha,
-                         a, lda,
-                         b, ldb,
-                         beta,
-                         c, ldc));
+  rocblas_operation transa = is_a_transpose ? rocblas_operation_transpose :
+                             rocblas_operation_none; 
+  rocblas_operation transb = is_b_transpose ? rocblas_operation_transpose :
+                             rocblas_operation_none; 
+
+  ROCBLAS_CALL(rocblas_sgemm(mode == COMPOSED ?
+                             handle.GetBlas(idx) : handle.GetBlas(),
+                             transa, transb, 
+                             m, n, k, 
+                             alpha, 
+                             a, lda, 
+                             b, ldb, 
+                             beta, 
+                             c, ldc));
 #endif
 
 }
@@ -84,16 +88,20 @@ void dnnmarkGEMM(const Handle &handle, RunMode mode, int idx,
                           c, ldc));
 #endif
 #ifdef AMD_MIOPEN
-  MIOPEN_CALL(miopenGemm(mode == COMPOSED ?
-                         handle.Get(idx) : handle.Get(),
-                         true,
-                         is_a_transpose, is_b_transpose,
-                         m, n, k,
-                         alpha,
-                         a, lda,
-                         b, ldb,
-                         beta,
-                         c, ldc));
+  rocblas_operation transa = is_a_transpose ? rocblas_operation_transpose :
+                             rocblas_operation_none; 
+  rocblas_operation transb = is_b_transpose ? rocblas_operation_transpose :
+                             rocblas_operation_none; 
+
+  ROCBLAS_CALL(rocblas_dgemm(mode == COMPOSED ?
+                             handle.GetBlas(idx) : handle.GetBlas(),
+                             transa, transb, 
+                             m, n, k, 
+                             alpha, 
+                             a, lda, 
+                             b, ldb, 
+                             beta, 
+                             c, ldc));
 #endif
 }
 
