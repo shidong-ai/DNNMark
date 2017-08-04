@@ -98,6 +98,11 @@ class DNNMark {
   int Forward();
   int Backward();
 
+  int TearDown() {
+    layers_map_.clear();
+    return 0;
+  };
+
   Handle *GetHandle() { return &handle_; }
   Layer<T> *GetLayerByID(int layer_id) { return layers_map_[layer_id].get(); }
   Layer<T> *GetLayerByName(const std::string &name) {

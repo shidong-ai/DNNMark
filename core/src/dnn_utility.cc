@@ -35,8 +35,11 @@ Handle::Handle() {
 #endif
 #ifdef AMD_MIOPEN
   miopen_handles_ = new miopenHandle_t[1];
+  rocblas_handles_ = new rocblas_handle[1];
   MIOPEN_CALL(miopenCreate(&miopen_handles_[0]));
-  num_handles_ = 1;
+  ROCBLAS_CALL(rocblas_create_handle(&rocblas_handles_[0]));
+  num_miopen_handles_ = 1;
+  num_rocblas_handles_ = 1;
 #endif
 }
 
@@ -54,9 +57,13 @@ Handle::Handle(int num) {
 #endif
 #ifdef AMD_MIOPEN
   miopen_handles_ = new miopenHandle_t[num];
-  for (int i = 0; i < num; i++)
+  rocblas_handles_ = new rocblas_handle[num];
+  for (int i = 0; i < num; i++) {
     MIOPEN_CALL(miopenCreate(&miopen_handles_[i]));
-  num_handles_ = num;
+    ROCBLAS_CALL(rocblas_create_handle(&rocblas_handles_[i]));
+  }
+  num_miopen_handles_ = num;
+  num_rocblas_handles_ = num;
 #endif
 }
 
@@ -70,9 +77,14 @@ Handle::~Handle() {
   delete []blas_handles_;
 #endif
 #ifdef AMD_MIOPEN
-  for (int i = 0; i < num_handles_; i++)
+  for (int i = 0; i < num_miopen_handles_; i++) {
     MIOPEN_CALL(miopenDestroy(miopen_handles_[i]));
+  }
   delete []miopen_handles_;
+  for (int i = 0; i < num_rocblas_handles_; i++) {
+    ROCBLAS_CALL(rocblas_destroy_handle(rocblas_handles_[i]));
+  }
+  delete []rocblas_handles_;
 #endif
 }
 
@@ -85,8 +97,14 @@ cublasHandle_t Handle::GetBlas() const { return blas_handles_[0]; }
 cublasHandle_t Handle::GetBlas(int index) const { return blas_handles_[index]; }
 #endif
 #ifdef AMD_MIOPEN
-miopenHandle_t Handle::Get() const { return miopen_handles_[0]; }
-miopenHandle_t Handle::Get(int index) const { return miopen_handles_[index]; }
+miopenHandle_t Handle::GetMIOpen() const { return miopen_handles_[0]; }
+miopenHandle_t Handle::GetMIOpen(int index) const { 
+  return miopen_handles_[index]; 
+}
+rocblas_handle Handle::GetBlas() const { return rocblas_handles_[0]; }
+rocblas_handle Handle::GetBlas(int index) const {
+  return rocblas_handles_[index];
+}
 #endif
 
 Descriptor::Descriptor()

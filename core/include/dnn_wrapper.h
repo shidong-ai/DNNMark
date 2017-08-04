@@ -75,7 +75,7 @@ inline void dnnmarkConvolutionForward(const Handle &handle,
   ProfilerStart(handle, mode, idx, timer, "ConvFwd");
   MIOPEN_CALL(miopenConvolutionForward(
               mode == COMPOSED ?
-              handle.Get(idx) : handle.Get(),
+              handle.GetMIOpen(idx) : handle.GetMIOpen(),
               alpha,
               bottom_desc.Get(), x,
               conv_desc.GetFilter(), w,
@@ -128,7 +128,7 @@ inline void dnnmarkConvolutionBackwardData(const Handle &handle,
   ProfilerStart(handle, mode, idx, timer, "ConvBwdData");
   MIOPEN_CALL(miopenConvolutionBackwardData(
               mode == COMPOSED ?
-              handle.Get(idx) : handle.Get(),
+              handle.GetMIOpen(idx) : handle.GetMIOpen(),
               alpha,
               top_desc.Get(), dy,
               conv_desc.GetFilter(), w,
@@ -180,7 +180,7 @@ inline void dnnmarkConvolutionBackwardFilter(const Handle &handle,
   ProfilerStart(handle, mode, idx, timer, "ConvBwdFilter");
   MIOPEN_CALL(miopenConvolutionBackwardWeights(
               mode == COMPOSED ?
-              handle.Get(idx) : handle.Get(),
+              handle.GetMIOpen(idx) : handle.GetMIOpen(),
               alpha,
               top_desc.Get(), dy,
               bottom_desc.Get(), x,
@@ -220,7 +220,7 @@ inline void dnnmarkPoolingForward(const Handle &handle,
 #endif
 #ifdef AMD_MIOPEN
 	MIOPEN_CALL(miopenPoolingForward(
-		        mode == COMPOSED ? handle.Get(idx):handle.Get(),
+		        mode == COMPOSED ? handle.GetMIOpen(idx):handle.GetMIOpen(),
 		        pooling_desc.Get(), 
 		        alpha, 
 		        x_desc.Get(), x, 
@@ -259,7 +259,7 @@ inline void dnnmarkPoolingBackward(const Handle &handle,
 #endif
 #ifdef AMD_MIOPEN
 	MIOPEN_CALL(miopenPoolingBackward(
-				mode == COMPOSED ? handle.Get() : handle.Get(),
+				mode == COMPOSED ? handle.GetMIOpen() : handle.GetMIOpen(),
 				pooling_desc.Get(), 
 				alpha, 
 				y_desc.Get(), y, 
@@ -298,7 +298,7 @@ inline void dnnmarkActivationForward(const Handle &handle,
 #ifdef AMD_MIOPEN
   MIOPEN_CALL(miopenActivationForward(
               mode == COMPOSED ?
-              handle.Get(idx) : handle.Get(),
+              handle.GetMIOpen(idx) : handle.GetMIOpen(),
               activation_desc.Get(),
               alpha,
               bottom_desc.Get(), x,
@@ -334,7 +334,7 @@ inline void dnnmarkActivationBackward(const Handle &handle,
 #ifdef AMD_MIOPEN
   MIOPEN_CALL(miopenActivationBackward(
               mode == COMPOSED ?
-              handle.Get(idx) : handle.Get(),
+              handle.GetMIOpen(idx) : handle.GetMIOpen(),
               activation_desc.Get(),
               alpha,
               top_desc.Get(), y,
@@ -375,7 +375,7 @@ inline void dnnmarkLRNForward(const Handle &handle,
 #ifdef AMD_MIOPEN
   MIOPEN_CALL(miopenLRNForward(
               mode == COMPOSED ?
-              handle.Get(idx) : handle.Get(),
+              handle.GetMIOpen(idx) : handle.GetMIOpen(),
               lrn_desc.Get(),
               alpha,
               bottom_desc.Get(), x,
@@ -415,7 +415,7 @@ inline void dnnmarkLRNBackward(const Handle &handle,
 #ifdef AMD_MIOPEN
   MIOPEN_CALL(miopenLRNBackward(
               mode == COMPOSED ?
-              handle.Get(idx) : handle.Get(),
+              handle.GetMIOpen(idx) : handle.GetMIOpen(),
               lrn_desc.Get(),
               alpha,
               top_desc.Get(), y,
@@ -459,7 +459,7 @@ inline void dnnmarkSoftmaxForward(const Handle &handle,
 #ifdef AMD_MIOPEN
   MIOPEN_CALL(miopenSoftmaxForward(
               mode == COMPOSED ?
-              handle.Get(idx) : handle.Get(),
+              handle.GetMIOpen(idx) : handle.GetMIOpen(),
               alpha,
               bottom_desc.Get(), x,
               beta,
@@ -493,7 +493,7 @@ inline void dnnmarkSoftmaxBackward(const Handle &handle,
 #ifdef AMD_MIOPEN
   MIOPEN_CALL(miopenSoftmaxBackward(
              mode == COMPOSED ?
-             handle.Get(idx) : handle.Get(),
+             handle.GetMIOpen(idx) : handle.GetMIOpen(),
              alpha,
              top_desc.Get(), y,
              top_desc.Get(), dy,
@@ -546,7 +546,7 @@ inline void dnnmarkBatchNormalizationForwardTraining(
 #ifdef AMD_MIOPEN
   MIOPEN_CALL(miopenBatchNormalizationForwardTraining(
               mode == COMPOSED ?
-              handle.Get(idx) : handle.Get(),
+              handle.GetMIOpen(idx) : handle.GetMIOpen(),
               bn_param.mode_,
               alpha,
               beta,
@@ -603,7 +603,7 @@ inline void dnnmarkBatchNormalizationBackward(
 #ifdef AMD_MIOPEN
   MIOPEN_CALL(miopenBatchNormalizationBackward(
               mode == COMPOSED ?
-              handle.Get(idx) : handle.Get(),
+              handle.GetMIOpen(idx) : handle.GetMIOpen(),
               bn_param.mode_,
               alpha_data_diff,
               beta_data_diff,
@@ -647,7 +647,7 @@ inline void dnnmarkBypassForward(const Handle &handle,
 #ifdef AMD_MIOPEN
   MIOPEN_CALL(miopenActivationForward(
               mode == COMPOSED ?
-              handle.Get(idx) : handle.Get(),
+              handle.GetMIOpen(idx) : handle.GetMIOpen(),
               bypass_desc.Get(),
               alpha,
               bottom_desc.Get(), x,
@@ -681,7 +681,7 @@ inline void dnnmarkBypassBackward(const Handle &handle,
 #ifdef AMD_MIOPEN
   MIOPEN_CALL(miopenActivationBackward(
               mode == COMPOSED ?
-              handle.Get(idx) : handle.Get(),
+              handle.GetMIOpen(idx) : handle.GetMIOpen(),
               bypass_desc.Get(),
               alpha,
               top_desc.Get(), y,

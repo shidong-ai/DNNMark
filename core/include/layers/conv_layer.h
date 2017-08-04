@@ -1,17 +1,17 @@
 // The MIT License (MIT)
-// 
+//
 // Copyright (c) 2016 Northeastern University
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef CORE_INCLUDE_LAYERS_CONV_LAYER_H_ 
+#ifndef CORE_INCLUDE_LAYERS_CONV_LAYER_H_
 #define CORE_INCLUDE_LAYERS_CONV_LAYER_H_
 
 #include "dnn_layer.h"
@@ -37,7 +37,7 @@ class ConvolutionLayer : public Layer<T> {
   using Layer<T>::output_dim_;
   using Layer<T>::bottom_desc_;
   using Layer<T>::top_desc_;
-  using Layer<T>::data_manager_;  
+  using Layer<T>::data_manager_;
 
   using Layer<T>::num_bottoms_;
   using Layer<T>::bottoms_;
@@ -49,7 +49,7 @@ class ConvolutionLayer : public Layer<T> {
   using Layer<T>::tops_;
   using Layer<T>::top_chunk_ids_;
   using Layer<T>::top_diffs_;
-  using Layer<T>::top_diff_chunk_ids_; 
+  using Layer<T>::top_diff_chunk_ids_;
 
  private:
   ConvolutionParam conv_param_;
@@ -79,6 +79,13 @@ class ConvolutionLayer : public Layer<T> {
   : Layer<T>(p_dnnmark),
     conv_param_(), desc_(), conv_algo_() {
     Layer<T>::has_learnable_params_ = true;
+  }
+
+  ~ConvolutionLayer() {
+    // Free the workspace
+    data_manager_->RemoveData(bwd_data_workspace_id_);
+    data_manager_->RemoveData(bwd_filter_workspace_id_);
+    data_manager_->RemoveData(fwd_workspace_id_);
   }
 
   ConvolutionParam *getConvParam() { return &conv_param_; }
@@ -137,7 +144,7 @@ class ConvolutionLayer : public Layer<T> {
 
     // Fill the weight data
     weights_->Filler();
-  
+
     // Set convolution forward algorithm
     // Use default algorithm for now
 
@@ -214,10 +221,8 @@ class ConvolutionLayer : public Layer<T> {
                 DataType<T>::zero,
                 top_desc_, tops_[i]->Get());
     }
-
-    // Free the workspace
-    data_manager_->RemoveData(fwd_workspace_id_);
   }
+
   void BackwardPropagation() {
     if (p_dnnmark_->getRunMode() == STANDALONE ||
         !previous_layer_name_.compare("null")) {
@@ -260,10 +265,6 @@ class ConvolutionLayer : public Layer<T> {
                   bottom_desc_, bottoms_[i]->Get());
       }
     }
-
-    // Free the workspace
-    data_manager_->RemoveData(bwd_data_workspace_id_);
-    data_manager_->RemoveData(bwd_filter_workspace_id_);
   }
 
 };

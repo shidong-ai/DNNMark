@@ -31,6 +31,7 @@
 
 #ifdef AMD_MIOPEN
 #include <miopen/miopen.h>
+#include <rocblas.h>
 #endif
 
 #include "common.h"
@@ -60,14 +61,19 @@ class Handle {
 #ifdef AMD_MIOPEN
  private:
   miopenHandle_t *miopen_handles_;
-  int num_handles_;
+  rocblas_handle *rocblas_handles_;
+  int num_miopen_handles_;
+  int num_rocblas_handles_;
  public:
   Handle();
   Handle(int num);
   ~Handle();
-  miopenHandle_t Get() const;
-  miopenHandle_t Get(int index) const;
-  int num() const { return num_handles_; }
+  miopenHandle_t GetMIOpen() const;
+  miopenHandle_t GetMIOpen(int index) const;
+  rocblas_handle GetBlas() const;
+  rocblas_handle GetBlas(int index) const;
+  int num_miopen() const { return num_miopen_handles_; }
+  int num_blas() const { return num_rocblas_handles_; }
 #endif
 };
 
@@ -792,7 +798,7 @@ class ConvAlgo {
     int returned_algo_count;
     MIOPEN_CALL(miopenFindConvolutionForwardAlgorithm(
                 mode == COMPOSED ?
-                handle.Get(idx) : handle.Get(),
+                handle.GetMIOpen(idx) : handle.GetMIOpen(),
                 bottom_desc.Get(), x,
                 conv_desc.GetFilter(), w,
                 conv_desc.GetConv(),
@@ -821,7 +827,7 @@ class ConvAlgo {
     int returned_algo_count;
     MIOPEN_CALL(miopenFindConvolutionBackwardWeightsAlgorithm(
                 mode == COMPOSED ?
-                handle.Get(idx) : handle.Get(),
+                handle.GetMIOpen(idx) : handle.GetMIOpen(),
                 top_desc.Get(), dy,
                 bottom_desc.Get(), x,
                 conv_desc.GetConv(),
@@ -850,7 +856,7 @@ class ConvAlgo {
     int returned_algo_count;
     MIOPEN_CALL(miopenFindConvolutionBackwardDataAlgorithm(
                 mode == COMPOSED ?
-                handle.Get(idx) : handle.Get(),
+                handle.GetMIOpen(idx) : handle.GetMIOpen(),
                 top_desc.Get(), dy,
                 conv_desc.GetFilter(), w,
                 conv_desc.GetConv(),
@@ -874,7 +880,7 @@ class ConvAlgo {
                            size_t *workspace_size) {
     MIOPEN_CALL(miopenConvolutionForwardGetWorkSpaceSize(
                 mode == COMPOSED ?
-                handle.Get(idx) : handle.Get(),
+                handle.GetMIOpen(idx) : handle.GetMIOpen(),
                 conv_desc.GetFilter(),
                 bottom_desc.Get(),
                 conv_desc.GetConv(),
@@ -891,7 +897,7 @@ class ConvAlgo {
                                  size_t *workspace_size) {
     MIOPEN_CALL(miopenConvolutionBackwardWeightsGetWorkSpaceSize(
                 mode == COMPOSED ?
-                handle.Get(idx) : handle.Get(),
+                handle.GetMIOpen(idx) : handle.GetMIOpen(),
                 top_desc.Get(),
                 bottom_desc.Get(),
                 conv_desc.GetConv(),
@@ -908,7 +914,7 @@ class ConvAlgo {
                                size_t *workspace_size) {
     MIOPEN_CALL(miopenConvolutionBackwardDataGetWorkSpaceSize(
                 mode == COMPOSED ?
-                handle.Get(idx) : handle.Get(),
+                handle.GetMIOpen(idx) : handle.GetMIOpen(),
                 top_desc.Get(),
                 conv_desc.GetFilter(),
                 conv_desc.GetConv(),
@@ -926,7 +932,7 @@ inline void ProfilerStart(const Handle &handle, RunMode mode, int idx,
 #endif
 #ifdef AMD_MIOPEN
   miopenEnableProfiling(mode == COMPOSED ?
-                        handle.Get(idx) : handle.Get(), true);
+                        handle.GetMIOpen(idx) : handle.GetMIOpen(), true);
 #endif
   timer->Start(layer + "_" + std::to_string(idx));
 }
@@ -938,7 +944,7 @@ inline void ProfilerStop(const Handle &handle, RunMode mode, int idx,
 #endif
 #ifdef AMD_MIOPEN
   miopenEnableProfiling(mode == COMPOSED ?
-                        handle.Get(idx) : handle.Get(), false);
+                        handle.GetMIOpen(idx) : handle.GetMIOpen(), false);
   HIP_CALL(hipDeviceSynchronize());
 #endif
   timer->Stop(layer + "_" + std::to_string(idx));

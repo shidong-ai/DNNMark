@@ -101,6 +101,15 @@ do {\
   }\
 } while(0)\
 
+#define ROCBLAS_CALL(x) \
+do {\
+  rocblas_status ret = x;\
+  if (ret != rocblas_status_success) {\
+    std::cout << "ROCBLAS Error: " << ret << " at " << __FILE__ << __LINE__;\
+    exit(EXIT_FAILURE);\
+  }\
+} while(0)\
+
 #endif
 
 #define CONFIG_CHECK(x) \
