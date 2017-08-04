@@ -100,7 +100,7 @@ class DNNMark {
 
   int TearDown() {
     layers_map_.clear();
-	return 0;
+    return 0;
   };
 
   Handle *GetHandle() { return &handle_; }

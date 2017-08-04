@@ -140,7 +140,7 @@ elseif(HCC_FOUND)
     message(STATUS "ROCBLAS root path: " ${ROCBLAS_ROOT})
     include_directories(${ROCBLAS_ROOT}/include)
   else()
-	  message(FATAL_ERROR "Path to ROCBLAS library not exists")
+    message(FATAL_ERROR "Path to ROCBLAS library not exists")
   endif()
 
   # Locate HIP to this project
