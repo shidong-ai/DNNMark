@@ -40,6 +40,7 @@ endif()
 find_program(HCC_FOUND hcc)
 
 option (double-test "Make data type double" OFF)
+option (enable-cudnnv6 "Enable cuDNN version 6" OFF)
 
 # Build NICE library only with CUDA
 if (CUDA_FOUND)
@@ -67,12 +68,17 @@ if (CUDA_FOUND)
     message(FATAL_ERROR "Path to CuDNN library not exists")
   endif()
 
-  # Add deinition of C++11 stardard
-  add_definitions(-std=c++11)
-
   # Enable double data type
   if (double-test)
     add_definitions(-DDOUBLE_TEST)
+  endif()
+
+  # Add deinition of C++11 stardard
+  add_definitions(-std=c++11)
+
+  # Enable cuDNN v6
+  if (enable-cudnnv6)
+    add_definitions(-DCUDNNV6)
   endif()
   
   # Set path of DNNMark include files

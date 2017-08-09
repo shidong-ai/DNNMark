@@ -185,11 +185,19 @@ class ConvolutionDesc : public Descriptor {
   void Set(const ConvolutionParam &param, int num_channel) {
     if (!set_) {
 #ifdef NVIDIA_CUDNN
+#ifdef CUDNNV6
+      CUDNN_CALL(cudnnSetConvolution2dDescriptor(conv_desc_,
+                 param.pad_h_, param.pad_w_,
+                 param.stride_u_, param.stride_v_,
+                 param.upscale_x_, param.upscale_y_,
+                 param.mode_, DataType<T>::type));
+#else
       CUDNN_CALL(cudnnSetConvolution2dDescriptor(conv_desc_,
                  param.pad_h_, param.pad_w_,
                  param.stride_u_, param.stride_v_,
                  param.upscale_x_, param.upscale_y_,
                  param.mode_));
+#endif
 
       CUDNN_CALL(cudnnSetFilter4dDescriptor(filter_desc_,
                  DataType<T>::type, CUDNN_TENSOR_NCHW,
@@ -269,11 +277,19 @@ class PoolingDesc : public Descriptor {
   void Set(const PoolingParam &param) {
     if (!set_) {
 #ifdef NVIDIA_CUDNN
+#ifdef CUDNNV6
+      CUDNN_CALL(cudnnSetPooling2dDescriptor(pooling_desc_,
+                 param.mode_, CUDNN_PROPAGATE_NAN,
+                 param.kernel_size_h_, param.kernel_size_w_,
+                 param.pad_h_, param.pad_w_,
+                 param.stride_h_, param.stride_w_));
+#else
       CUDNN_CALL(cudnnSetPooling2dDescriptor_v4(pooling_desc_,
                  param.mode_, CUDNN_PROPAGATE_NAN,
                  param.kernel_size_h_, param.kernel_size_w_,
                  param.pad_h_, param.pad_w_,
                  param.stride_h_, param.stride_w_));
+#endif
 #endif
 #ifdef AMD_MIOPEN
       MIOPEN_CALL(miopenSet2dPoolingDescriptor(pooling_desc_,
