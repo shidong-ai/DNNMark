@@ -1,17 +1,17 @@
 // The MIT License (MIT)
-// 
+//
 // Copyright (c) 2016 Northeastern University
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef CORE_INCLUDE_LAYERS_CONV_LAYER_H_ 
+#ifndef CORE_INCLUDE_LAYERS_CONV_LAYER_H_
 #define CORE_INCLUDE_LAYERS_CONV_LAYER_H_
 
 #include "dnn_layer.h"
@@ -37,7 +37,7 @@ class ConvolutionLayer : public Layer<T> {
   using Layer<T>::output_dim_;
   using Layer<T>::bottom_desc_;
   using Layer<T>::top_desc_;
-  using Layer<T>::data_manager_;  
+  using Layer<T>::data_manager_;
 
   using Layer<T>::num_bottoms_;
   using Layer<T>::bottoms_;
@@ -49,7 +49,7 @@ class ConvolutionLayer : public Layer<T> {
   using Layer<T>::tops_;
   using Layer<T>::top_chunk_ids_;
   using Layer<T>::top_diffs_;
-  using Layer<T>::top_diff_chunk_ids_; 
+  using Layer<T>::top_diff_chunk_ids_;
 
  private:
   ConvolutionParam conv_param_;
@@ -64,20 +64,28 @@ class ConvolutionLayer : public Layer<T> {
   int weights_diff_chunk_id_;
 
   // Algorithm specific parameters
-  cudnnConvolutionFwdAlgo_t fwd_algo_;
-  cudnnConvolutionBwdFilterAlgo_t bwd_filter_algo_;
-  cudnnConvolutionBwdDataAlgo_t bwd_data_algo_;
+  ConvAlgo<T> conv_algo_;
   size_t fwd_workspace_size_;
   size_t bwd_data_workspace_size_;
   size_t bwd_filter_workspace_size_;
-  void *fwd_workspace_;
-  void *bwd_data_workspace_;
-  void *bwd_filter_workspace_;
+  Data<T> *fwd_workspace_;
+  int fwd_workspace_id_;
+  Data<T> *bwd_data_workspace_;
+  int bwd_data_workspace_id_;
+  Data<T> *bwd_filter_workspace_;
+  int bwd_filter_workspace_id_;
  public:
   ConvolutionLayer(DNNMark<T> *p_dnnmark)
   : Layer<T>(p_dnnmark),
-    conv_param_(), desc_() {
+    conv_param_(), desc_(), conv_algo_() {
     Layer<T>::has_learnable_params_ = true;
+  }
+
+  ~ConvolutionLayer() {
+    // Free the workspace
+    data_manager_->RemoveData(bwd_data_workspace_id_);
+    data_manager_->RemoveData(bwd_filter_workspace_id_);
+    data_manager_->RemoveData(fwd_workspace_id_);
   }
 
   ConvolutionParam *getConvParam() { return &conv_param_; }
@@ -137,82 +145,47 @@ class ConvolutionLayer : public Layer<T> {
     // Fill the weight data
     weights_->Filler();
 
-    // Set up convolution forward algorithm related parameters
-    CUDNN_CALL(cudnnGetConvolutionForwardAlgorithm(
-        p_dnnmark_->getRunMode() == COMPOSED ?
-        p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-        p_dnnmark_->GetHandle()->GetCudnn(),
-        bottom_desc_.Get(),
-        desc_.GetFilter(),
-        desc_.GetConv(),
-        top_desc_.Get(),
-        conv_param_.conv_fwd_pref_,
-        -1,
-        &fwd_algo_));
-  
-    CUDNN_CALL(cudnnGetConvolutionForwardWorkspaceSize(
-        p_dnnmark_->getRunMode() == COMPOSED ?
-        p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-        p_dnnmark_->GetHandle()->GetCudnn(),
-        bottom_desc_.Get(),
-        desc_.GetFilter(),
-        desc_.GetConv(),
-        top_desc_.Get(),
-        fwd_algo_,
-        &fwd_workspace_size_));
+    // Set convolution forward algorithm
+    // Use default algorithm for now
 
-    CUDA_CALL(cudaMalloc(&fwd_workspace_, fwd_workspace_size_));
+    // Allocate workspace
+    conv_algo_.GetFwdWorkspaceSize(*(p_dnnmark_->GetHandle()),
+                                   p_dnnmark_->getRunMode(), layer_id_,
+                                   bottom_desc_,
+                                   top_desc_,
+                                   desc_,
+                                   &fwd_workspace_size_);
+    fwd_workspace_id_ = data_manager_->CreateData(fwd_workspace_size_);
+    fwd_workspace_ = data_manager_->GetData(fwd_workspace_id_);
 
-    // Set up convolution backward algorithm related parameters
-    CUDNN_CALL(cudnnGetConvolutionBackwardFilterAlgorithm(
-        p_dnnmark_->getRunMode() == COMPOSED ?
-        p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-        p_dnnmark_->GetHandle()->GetCudnn(),
-        bottom_desc_.Get(),
-        top_desc_.Get(),
-        desc_.GetConv(),
-        desc_.GetFilter(),
-        conv_param_.conv_bwd_filter_pref_,
-        -1,
-        &bwd_filter_algo_));
-  
-    CUDNN_CALL(cudnnGetConvolutionBackwardFilterWorkspaceSize(
-        p_dnnmark_->getRunMode() == COMPOSED ?
-        p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-        p_dnnmark_->GetHandle()->GetCudnn(),
-        bottom_desc_.Get(),
-        top_desc_.Get(),
-        desc_.GetConv(),
-        desc_.GetFilter(),
-        bwd_filter_algo_,
-        &bwd_filter_workspace_size_));
+    // Set convolution backward filter/weights algorithm
+    // Use default algorithm for now
 
-    CUDA_CALL(cudaMalloc(&bwd_filter_workspace_, bwd_filter_workspace_size_));
+    // Allocate workspace
+    conv_algo_.GetBwdFilterWorkspaceSize(*(p_dnnmark_->GetHandle()),
+                                         p_dnnmark_->getRunMode(), layer_id_,
+                                         bottom_desc_,
+                                         top_desc_,
+                                         desc_,
+                                         &bwd_filter_workspace_size_);
+    bwd_filter_workspace_id_ = data_manager_->
+                               CreateData(bwd_filter_workspace_size_);
+    bwd_filter_workspace_ = data_manager_->GetData(bwd_filter_workspace_id_);
 
-    CUDNN_CALL(cudnnGetConvolutionBackwardDataAlgorithm(
-        p_dnnmark_->getRunMode() == COMPOSED ?
-        p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-        p_dnnmark_->GetHandle()->GetCudnn(),
-        desc_.GetFilter(),
-        top_desc_.Get(),
-        desc_.GetConv(),
-        bottom_desc_.Get(),
-        conv_param_.conv_bwd_data_pref_,
-        -1,
-        &bwd_data_algo_));
-  
-    CUDNN_CALL(cudnnGetConvolutionBackwardDataWorkspaceSize(
-        p_dnnmark_->getRunMode() == COMPOSED ?
-        p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-        p_dnnmark_->GetHandle()->GetCudnn(),
-        desc_.GetFilter(),
-        top_desc_.Get(),
-        desc_.GetConv(),
-        bottom_desc_.Get(),
-        bwd_data_algo_,
-        &bwd_data_workspace_size_));
+    // Set convolution backward data algorithm
+    // Use default algorithm for now
 
-    CUDA_CALL(cudaMalloc(&bwd_data_workspace_, bwd_data_workspace_size_));
+    // Allocate workspace
+    conv_algo_.GetBwdDataWorkspaceSize(*(p_dnnmark_->GetHandle()),
+                                       p_dnnmark_->getRunMode(), layer_id_,
+                                       bottom_desc_,
+                                       top_desc_,
+                                       desc_,
+                                       &bwd_data_workspace_size_);
+    bwd_data_workspace_id_ = data_manager_->
+                               CreateData(bwd_data_workspace_size_);
+    bwd_data_workspace_ = data_manager_->GetData(bwd_data_workspace_id_);
+
   }
 
   void ComputeOutputDim() {
@@ -235,26 +208,21 @@ class ConvolutionLayer : public Layer<T> {
       }
     }
     // Convolution forward computation
-    cudaProfilerStart();
     for (int i = 0; i < num_bottoms_; i++) {
-      CUDNN_CALL(cudnnConvolutionForward(
-                p_dnnmark_->getRunMode() == COMPOSED ?
-                p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-                p_dnnmark_->GetHandle()->GetCudnn(),
+      dnnmarkConvolutionForward(
+                *(p_dnnmark_->GetHandle()),
+                p_dnnmark_->getRunMode(), layer_id_,
+                p_dnnmark_->GetTimer(),
                 DataType<T>::one,
-                bottom_desc_.Get(), bottoms_[i]->Get(),
-                desc_.GetFilter(), weights_->Get(),
-                desc_.GetConv(),
-                fwd_algo_, fwd_workspace_, fwd_workspace_size_,
+                bottom_desc_, bottoms_[i]->Get(),
+                desc_, weights_->Get(),
+                &conv_algo_,
+                fwd_workspace_->Get(), fwd_workspace_size_,
                 DataType<T>::zero,
-                top_desc_.Get(), tops_[i]->Get()));
+                top_desc_, tops_[i]->Get());
     }
-    cudaProfilerStop();
-
-    // TODO: evaluate the necessity of freeing memory here
-    // Free the workspace
-    CUDA_CALL(cudaFree(fwd_workspace_));
   }
+
   void BackwardPropagation() {
     if (p_dnnmark_->getRunMode() == STANDALONE ||
         !previous_layer_name_.compare("null")) {
@@ -270,39 +238,33 @@ class ConvolutionLayer : public Layer<T> {
     }
 
     // Convolution forward computation
-    cudaProfilerStart();
     for (int i = 0; i < num_tops_; i++) {
-      CUDNN_CALL(cudnnConvolutionBackwardFilter(
-                p_dnnmark_->getRunMode() == COMPOSED ?
-                p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-                p_dnnmark_->GetHandle()->GetCudnn(),
-                DataType<T>::one,
-                bottom_desc_.Get(), bottoms_[i]->Get(),
-                top_desc_.Get(), top_diffs_[i]->Get(),
-                desc_.GetConv(),
-                bwd_filter_algo_,
-                bwd_filter_workspace_, bwd_filter_workspace_size_,
-                DataType<T>::zero,
-                desc_.GetFilter(), weights_diff_->Get()));
-      CUDNN_CALL(cudnnConvolutionBackwardData(
-                p_dnnmark_->getRunMode() == COMPOSED ?
-                p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-                p_dnnmark_->GetHandle()->GetCudnn(),
-                DataType<T>::one,
-                desc_.GetFilter(), weights_->Get(),
-                top_desc_.Get(), top_diffs_[i]->Get(),
-                desc_.GetConv(),
-                bwd_data_algo_,
-                bwd_data_workspace_, bwd_data_workspace_size_,
-                DataType<T>::zero,
-                bottom_desc_.Get(), bottoms_[i]->Get()));
+      if (conv_param_.propagation_) {
+        dnnmarkConvolutionBackwardFilter(
+                  *(p_dnnmark_->GetHandle()),
+                  p_dnnmark_->getRunMode(), layer_id_,
+                  p_dnnmark_->GetTimer(),
+                  DataType<T>::one,
+                  bottom_desc_, bottoms_[i]->Get(),
+                  top_desc_, top_diffs_[i]->Get(),
+                  desc_,
+                  &conv_algo_,
+                  bwd_filter_workspace_->Get(), bwd_filter_workspace_size_,
+                  DataType<T>::zero,
+                  weights_diff_->Get());
+        dnnmarkConvolutionBackwardData(
+                  *(p_dnnmark_->GetHandle()),
+                  p_dnnmark_->getRunMode(), layer_id_,
+                  p_dnnmark_->GetTimer(),
+                  DataType<T>::one,
+                  top_desc_, top_diffs_[i]->Get(),
+                  desc_, weights_->Get(),
+                  &conv_algo_,
+                  bwd_data_workspace_->Get(), bwd_data_workspace_size_,
+                  DataType<T>::zero,
+                  bottom_desc_, bottoms_[i]->Get());
+      }
     }
-    cudaProfilerStop();
-
-    // TODO: evaluate the necessity of freeing memory here
-    // Free the workspace
-    CUDA_CALL(cudaFree(bwd_data_workspace_));
-    CUDA_CALL(cudaFree(bwd_filter_workspace_));
   }
 
 };

@@ -20,15 +20,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef CORE_INCLUDE_GPU_UTILITY_H_
-#define CORE_INCLUDE_GPU_UTILITY_H_
+#ifndef CORE_INCLUDE_GEMM_H_
+#define CORE_INCLUDE_GEMM_H_
 
-#include <common.h>
+#include "common.h"
+#include "dnn_utility.h"
 
 namespace dnnmark {
 
 template <typename T>
-void DNNMarkGEMM(cublasHandle_t handle,
+void dnnmarkGEMM(const Handle &handle, RunMode mode, int idx,
                  bool is_a_transpose, bool is_b_transpose,
                  int m, int n, int k,
                  T *alpha,
@@ -39,5 +40,5 @@ void DNNMarkGEMM(cublasHandle_t handle,
 
 } // namespace dnnmark
 
-#endif // CORE_INCLUDE_GPU_UTILITY_H_
+#endif // CORE_INCLUDE_GEMM_H_
 

@@ -34,12 +34,14 @@ const void* DataType<float>::one =
     static_cast<void *>(&DataType<float>::oneval);
 const void* DataType<float>::zero =
     static_cast<void *>(&DataType<float>::zeroval);
+#ifdef NVIDIA_CUDNN
 double DataType<double>::oneval = 1.0;
 double DataType<double>::zeroval = 0.0;
 const void* DataType<double>::one =
     static_cast<void *>(&DataType<double>::oneval);
 const void* DataType<double>::zero =
     static_cast<void *>(&DataType<double>::zeroval);
+#endif
 
 } // namespace dnnmark
 

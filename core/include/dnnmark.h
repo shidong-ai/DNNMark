@@ -34,7 +34,9 @@
 
 #include "common.h"
 #include "utility.h"
-#include "gpu_utility.h"
+#include "timer.h"
+#include "gemm_wrapper.h"
+#include "dnn_wrapper.h"
 #include "dnn_config_keywords.h"
 #include "dnn_param.h"
 #include "dnn_utility.h"
@@ -75,6 +77,9 @@ class DNNMark {
   std::map<std::string, int> name_id_map_;
   int num_layers_added_;
 
+  // Timer
+  Timer timer_;
+
   // Private functions
   void SetLayerParams(LayerType layer_type,
                       int current_layer_id,
@@ -85,13 +90,18 @@ class DNNMark {
 
   DNNMark();
   DNNMark(int num_layers);
-  int ParseAllConfig(const std::string &config_file);
+  void ParseAllConfig(const std::string &config_file);
   int ParseGeneralConfig(const std::string &config_file);
   int ParseLayerConfig(const std::string &config_file);
   int Initialize();
   int RunAll();
   int Forward();
   int Backward();
+
+  int TearDown() {
+    layers_map_.clear();
+    return 0;
+  };
 
   Handle *GetHandle() { return &handle_; }
   Layer<T> *GetLayerByID(int layer_id) { return layers_map_[layer_id].get(); }
@@ -102,6 +112,8 @@ class DNNMark {
     return name_id_map_.find(name) != name_id_map_.end();
   }
   RunMode getRunMode() { return run_mode_; }
+
+  Timer *GetTimer() { return &timer_; }
 
 };
 

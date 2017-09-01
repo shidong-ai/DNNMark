@@ -1,17 +1,17 @@
 // The MIT License (MIT)
-// 
+//
 // Copyright (c) 2016 Northeastern University
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,10 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef CORE_INCLUDE_LAYERS_POOL_LAYER_H_ 
+#ifndef CORE_INCLUDE_LAYERS_POOL_LAYER_H_
 #define CORE_INCLUDE_LAYERS_POOL_LAYER_H_
 
 #include "dnn_layer.h"
+#include "dnn_wrapper.h"
 
 namespace dnnmark {
 
@@ -37,7 +38,7 @@ class PoolingLayer : public Layer<T> {
   using Layer<T>::output_dim_;
   using Layer<T>::bottom_desc_;
   using Layer<T>::top_desc_;
-  using Layer<T>::data_manager_;  
+  using Layer<T>::data_manager_;
 
   using Layer<T>::num_bottoms_;
   using Layer<T>::bottoms_;
@@ -57,11 +58,14 @@ class PoolingLayer : public Layer<T> {
   // Pooling specific descriptor
   PoolingDesc<T> desc_;
 
+  // Workspace
+  size_t workspace_size_;
+  Data<T> *workspace_;
+  int workspace_id_;
+
  public:
   PoolingLayer(DNNMark<T> *p_dnnmark)
-  : Layer<T>(p_dnnmark),
-    pool_param_(), desc_() {
-  }
+      : Layer<T>(p_dnnmark), pool_param_(), desc_() {}
 
   PoolingParam *getPoolParam() { return &pool_param_; }
 
@@ -73,8 +77,8 @@ class PoolingLayer : public Layer<T> {
     desc_.Set(pool_param_);
 
     // Set up pooling related data
-    if (input_dim_.n_ != 0 && input_dim_.c_ != 0 &&
-        input_dim_.h_ != 0 && input_dim_.w_ != 0) {
+    if (input_dim_.n_ != 0 && input_dim_.c_ != 0 && input_dim_.h_ != 0 &&
+        input_dim_.w_ != 0) {
       //
       // Standalone mode
       //
@@ -83,26 +87,25 @@ class PoolingLayer : public Layer<T> {
       ComputeOutputDim();
 
       // Set top tensor
-      top_desc_.Set(output_dim_.n_,
-                    output_dim_.c_,
-                    output_dim_.h_,
+      top_desc_.Set(output_dim_.n_, output_dim_.c_, output_dim_.h_,
                     output_dim_.w_);
 
       // Prepare top data
-      int top_size = output_dim_.n_ *
-                     output_dim_.c_ *
-                     output_dim_.h_ *
-                     output_dim_.w_;
+      int top_size =
+          output_dim_.n_ * output_dim_.c_ * output_dim_.h_ * output_dim_.w_;
       for (int i = 0; i < num_tops_; i++) {
-        top_chunk_ids_.push_back(
-          data_manager_->CreateData(top_size));
-        tops_.push_back(
-          data_manager_->GetData(top_chunk_ids_[i]));
-        top_diff_chunk_ids_.push_back(
-          data_manager_->CreateData(top_size));
-        top_diffs_.push_back(
-          data_manager_->GetData(top_diff_chunk_ids_[i]));
+        top_chunk_ids_.push_back(data_manager_->CreateData(top_size));
+        tops_.push_back(data_manager_->GetData(top_chunk_ids_[i]));
+        top_diff_chunk_ids_.push_back(data_manager_->CreateData(top_size));
+        top_diffs_.push_back(data_manager_->GetData(top_diff_chunk_ids_[i]));
       }
+
+	  // Allocate workspace
+	  desc_.GetWorkspaceSize(top_desc_, &workspace_size_);
+      if (workspace_size_ > 0) {
+		  workspace_id_ = data_manager_->CreateData(workspace_size_);
+		  workspace_ = data_manager_->GetData(workspace_id_);
+	  }
     }
   }
 
@@ -110,18 +113,24 @@ class PoolingLayer : public Layer<T> {
     // Courtesy of Caffe
     output_dim_.n_ = input_dim_.n_;
     output_dim_.c_ = input_dim_.c_;
-    output_dim_.h_ = static_cast<int>(ceil(static_cast<float>(
-      input_dim_.h_ + 2 * pool_param_.pad_h_ - 
-      pool_param_.kernel_size_h_) / pool_param_.stride_h_)) + 1;
-    output_dim_.w_ = static_cast<int>(ceil(static_cast<float>(
-      input_dim_.w_ + 2 * pool_param_.pad_w_ - 
-      pool_param_.kernel_size_w_) / pool_param_.stride_w_)) + 1;
+    output_dim_.h_ =
+        static_cast<int>(
+            ceil(static_cast<float>(input_dim_.h_ + 2 * pool_param_.pad_h_ -
+                                    pool_param_.kernel_size_h_) /
+                 pool_param_.stride_h_)) +
+        1;
+    output_dim_.w_ =
+        static_cast<int>(
+            ceil(static_cast<float>(input_dim_.w_ + 2 * pool_param_.pad_w_ -
+                                    pool_param_.kernel_size_w_) /
+                 pool_param_.stride_w_)) +
+        1;
     if (pool_param_.pad_h_ > 0 && pool_param_.pad_w_ > 0) {
-      if ((output_dim_.h_ - 1) * pool_param_.stride_h_ >= 
+      if ((output_dim_.h_ - 1) * pool_param_.stride_h_ >=
           input_dim_.h_ + pool_param_.pad_h_) {
         --output_dim_.h_;
       }
-      if ((output_dim_.w_ - 1) * pool_param_.stride_w_ >= 
+      if ((output_dim_.w_ - 1) * pool_param_.stride_w_ >=
           input_dim_.w_ + pool_param_.pad_w_) {
         --output_dim_.w_;
       }
@@ -138,25 +147,27 @@ class PoolingLayer : public Layer<T> {
     }
 
     // pooling forward computation
-    cudaProfilerStart();
+    ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_, p_dnnmark_->GetTimer(), "PoolFwd");
     for (int i = 0; i < num_bottoms_; i++) {
-      CUDNN_CALL(cudnnPoolingForward(
-             p_dnnmark_->getRunMode() == COMPOSED ?
-             p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-             p_dnnmark_->GetHandle()->GetCudnn(),
-             desc_.Get(),
-             DataType<T>::one, 
-             bottom_desc_.Get(), bottoms_[i]->Get(),
-             DataType<T>::zero,
-             top_desc_.Get(), tops_[i]->Get()));
+	  dnnmarkPoolingForward(*(p_dnnmark_->GetHandle()), 
+			  p_dnnmark_->getRunMode(), layer_id_, 
+			  desc_, 
+			  DataType<T>::one, 
+			  bottom_desc_, 
+			  bottoms_[i]->Get(),
+			  DataType<T>::zero, 
+			  top_desc_, 
+			  tops_[i]->Get(), 
+			  workspace_, workspace_size_);
     }
-    cudaProfilerStop();
-
+	ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_, p_dnnmark_->GetTimer(), "PoolFwd");
   }
+
   void BackwardPropagation() {
     if (p_dnnmark_->getRunMode() == STANDALONE ||
         !previous_layer_name_.compare("null")) {
-
       // Fill the top and top diff data
       for (int i = 0; i < num_tops_; i++) {
         tops_[i]->Filler();
@@ -169,27 +180,25 @@ class PoolingLayer : public Layer<T> {
     }
 
     // pooling backward computation
-    cudaProfilerStart();
+	ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_, p_dnnmark_->GetTimer(), "PoolBwd");
     for (int i = 0; i < num_tops_; i++) {
-      CUDNN_CALL(cudnnPoolingBackward(
-             p_dnnmark_->getRunMode() == COMPOSED ?
-             p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-             p_dnnmark_->GetHandle()->GetCudnn(),
-             desc_.Get(),
-             DataType<T>::one, 
-             top_desc_.Get(), tops_[i]->Get(),
-             top_desc_.Get(), top_diffs_[i]->Get(),
-             bottom_desc_.Get(),
-             bottoms_[i]->Get(),
-             DataType<T>::zero,
-             bottom_desc_.Get(),
-             bottom_diffs_[i]->Get()));
+      dnnmarkPoolingBackward(*(p_dnnmark_->GetHandle()), 
+			  p_dnnmark_->getRunMode(), layer_id_, 
+			  desc_, 
+			  DataType<T>::one, 
+			  top_desc_, tops_[i]->Get(), 
+			  top_desc_, top_diffs_[i]->Get(), 
+			  bottom_desc_, bottoms_[i]->Get(), 
+			  DataType<T>::zero, 
+			  bottom_desc_, bottom_diffs_[i]->Get(), 
+			  workspace_);
     }
-    cudaProfilerStop();
+	ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_, p_dnnmark_->GetTimer(), "PoolBwd");
   }
-
 };
 
-} // namespace dnnmark
+}  // namespace dnnmark
 
-#endif // CORE_INCLUDE_LAYERS_POOL_LAYER_H_
+#endif  // CORE_INCLUDE_LAYERS_POOL_LAYER_H_

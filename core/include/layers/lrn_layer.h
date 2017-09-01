@@ -57,10 +57,16 @@ class LRNLayer : public Layer<T> {
   // LRN specific descriptor
   LRNDesc<T> desc_;
 
+  // Workspace
+  size_t workspace_size_;
+  Data<T> *workspace_;
+  int workspace_id_;
+
  public:
   LRNLayer(DNNMark<T> *p_dnnmark)
   : Layer<T>(p_dnnmark),
     lrn_param_(), desc_() {
+    workspace_size_ = 0;
   }
 
   LRNParam *getLRNParam() { return &lrn_param_; }
@@ -104,6 +110,13 @@ class LRNLayer : public Layer<T> {
           data_manager_->GetData(top_diff_chunk_ids_[i]));
       }
     }
+
+    // Allocate workspace
+    desc_.GetWorkspaceSize(top_desc_, &workspace_size_);
+    if (workspace_size_ > 0) {
+      workspace_id_ = data_manager_->CreateData(workspace_size_);
+      workspace_ = data_manager_->GetData(workspace_id_);
+    }
   }
 
   void ComputeOutputDim() {
@@ -123,20 +136,21 @@ class LRNLayer : public Layer<T> {
     }
 
     // lrn forward computation
-    cudaProfilerStart();
+    ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_, p_dnnmark_->GetTimer(), "LrnFwd");
     for (int i = 0; i < num_bottoms_; i++) {
-      CUDNN_CALL(cudnnLRNCrossChannelForward(
-             p_dnnmark_->getRunMode() == COMPOSED ?
-             p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-             p_dnnmark_->GetHandle()->GetCudnn(),
-             desc_.Get(),
-             lrn_param_.mode_,
+      dnnmarkLRNForward(
+             *(p_dnnmark_->GetHandle()),
+             p_dnnmark_->getRunMode(), layer_id_,
+             desc_,
+             lrn_param_,
              DataType<T>::one, 
-             bottom_desc_.Get(), bottoms_[i]->Get(),
+             bottom_desc_, bottoms_[i]->Get(),
              DataType<T>::zero,
-             top_desc_.Get(), tops_[i]->Get()));
+             top_desc_, tops_[i]->Get(), workspace_);
     }
-    cudaProfilerStop();
+    ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_, p_dnnmark_->GetTimer(), "LrnFwd");
 
   }
   void BackwardPropagation() {
@@ -154,24 +168,24 @@ class LRNLayer : public Layer<T> {
     }
 
     // lrn backward computation
-    cudaProfilerStart();
+    ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_, p_dnnmark_->GetTimer(), "LrnBwd");
     for (int i = 0; i < num_tops_; i++) {
-      CUDNN_CALL(cudnnLRNCrossChannelBackward(
-             p_dnnmark_->getRunMode() == COMPOSED ?
-             p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-             p_dnnmark_->GetHandle()->GetCudnn(),
-             desc_.Get(),
-             lrn_param_.mode_,
+      dnnmarkLRNBackward(
+             *(p_dnnmark_->GetHandle()),
+             p_dnnmark_->getRunMode(), layer_id_,
+             desc_,
+             lrn_param_,
              DataType<T>::one, 
-             top_desc_.Get(), tops_[i]->Get(),
-             top_desc_.Get(), top_diffs_[i]->Get(),
-             bottom_desc_.Get(),
-             bottoms_[i]->Get(),
+             top_desc_, tops_[i]->Get(), top_diffs_[i]->Get(),
              DataType<T>::zero,
-             bottom_desc_.Get(),
-             bottom_diffs_[i]->Get()));
+             bottom_desc_,
+             bottoms_[i]->Get(),
+             bottom_diffs_[i]->Get(),
+             workspace_);
     }
-    cudaProfilerStop();
+    ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_, p_dnnmark_->GetTimer(), "LrnBwd");
   }
 
 };

@@ -25,15 +25,26 @@
 namespace dnnmark {
 
 Handle::Handle() {
+#ifdef NVIDIA_CUDNN
   cudnn_handles_ = new cudnnHandle_t[1];
   CUDNN_CALL(cudnnCreate(&cudnn_handles_[0]));
   blas_handles_ = new cublasHandle_t[1];
   CUBLAS_CALL(cublasCreate(&blas_handles_[0]));
   num_cudnn_handles_ = 1;
   num_blas_handles_ = 1;
+#endif
+#ifdef AMD_MIOPEN
+  miopen_handles_ = new miopenHandle_t[1];
+  rocblas_handles_ = new rocblas_handle[1];
+  MIOPEN_CALL(miopenCreate(&miopen_handles_[0]));
+  ROCBLAS_CALL(rocblas_create_handle(&rocblas_handles_[0]));
+  num_miopen_handles_ = 1;
+  num_rocblas_handles_ = 1;
+#endif
 }
 
 Handle::Handle(int num) {
+#ifdef NVIDIA_CUDNN
   cudnn_handles_ = new cudnnHandle_t[num];
   for (int i = 0; i < num; i++)
     CUDNN_CALL(cudnnCreate(&cudnn_handles_[i]));
@@ -43,21 +54,58 @@ Handle::Handle(int num) {
   for (int i = 0; i < num; i++)
     CUBLAS_CALL(cublasCreate(&blas_handles_[i]));
   num_blas_handles_ = num;
+#endif
+#ifdef AMD_MIOPEN
+  miopen_handles_ = new miopenHandle_t[num];
+  rocblas_handles_ = new rocblas_handle[num];
+  for (int i = 0; i < num; i++) {
+    MIOPEN_CALL(miopenCreate(&miopen_handles_[i]));
+    ROCBLAS_CALL(rocblas_create_handle(&rocblas_handles_[i]));
+  }
+  num_miopen_handles_ = num;
+  num_rocblas_handles_ = num;
+#endif
 }
 
 Handle::~Handle() {
+#ifdef NVIDIA_CUDNN
   for (int i = 0; i < num_cudnn_handles_; i++)
     CUDNN_CALL(cudnnDestroy(cudnn_handles_[i]));
   delete []cudnn_handles_;
   for (int i = 0; i < num_blas_handles_; i++)
     CUBLAS_CALL(cublasDestroy(blas_handles_[i]));
   delete []blas_handles_;
+#endif
+#ifdef AMD_MIOPEN
+  for (int i = 0; i < num_miopen_handles_; i++) {
+    MIOPEN_CALL(miopenDestroy(miopen_handles_[i]));
+  }
+  delete []miopen_handles_;
+  for (int i = 0; i < num_rocblas_handles_; i++) {
+    ROCBLAS_CALL(rocblas_destroy_handle(rocblas_handles_[i]));
+  }
+  delete []rocblas_handles_;
+#endif
 }
 
-cudnnHandle_t Handle::GetCudnn() { return cudnn_handles_[0]; }
-cudnnHandle_t Handle::GetCudnn(int index) { return cudnn_handles_[index]; }
-cublasHandle_t Handle::GetBlas() { return blas_handles_[0]; }
-cublasHandle_t Handle::GetBlas(int index) { return blas_handles_[index]; }
+#ifdef NVIDIA_CUDNN
+cudnnHandle_t Handle::GetCudnn() const { return cudnn_handles_[0]; }
+cudnnHandle_t Handle::GetCudnn(int index) const {
+  return cudnn_handles_[index];
+}
+cublasHandle_t Handle::GetBlas() const { return blas_handles_[0]; }
+cublasHandle_t Handle::GetBlas(int index) const { return blas_handles_[index]; }
+#endif
+#ifdef AMD_MIOPEN
+miopenHandle_t Handle::GetMIOpen() const { return miopen_handles_[0]; }
+miopenHandle_t Handle::GetMIOpen(int index) const { 
+  return miopen_handles_[index]; 
+}
+rocblas_handle Handle::GetBlas() const { return rocblas_handles_[0]; }
+rocblas_handle Handle::GetBlas(int index) const {
+  return rocblas_handles_[index];
+}
+#endif
 
 Descriptor::Descriptor()
 : set_(false) {}

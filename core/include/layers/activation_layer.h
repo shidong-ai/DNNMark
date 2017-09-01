@@ -123,19 +123,20 @@ class ActivationLayer : public Layer<T> {
     }
 
     // activationing forward computation
-    cudaProfilerStart();
+    ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_, p_dnnmark_->GetTimer(), "ActFwd");
     for (int i = 0; i < num_bottoms_; i++) {
-      CUDNN_CALL(cudnnActivationForward(
-             p_dnnmark_->getRunMode() == COMPOSED ?
-             p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-             p_dnnmark_->GetHandle()->GetCudnn(),
-             desc_.Get(),
+      dnnmarkActivationForward(
+             *(p_dnnmark_->GetHandle()),
+             p_dnnmark_->getRunMode(), layer_id_,
+             desc_,
              DataType<T>::one, 
-             bottom_desc_.Get(), bottoms_[i]->Get(),
+             bottom_desc_, bottoms_[i]->Get(),
              DataType<T>::zero,
-             top_desc_.Get(), tops_[i]->Get()));
+             top_desc_, tops_[i]->Get());
     }
-    cudaProfilerStop();
+    ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_, p_dnnmark_->GetTimer(), "ActFwd");
 
   }
   void BackwardPropagation() {
@@ -153,21 +154,20 @@ class ActivationLayer : public Layer<T> {
     }
 
     // activationing backward computation
-    cudaProfilerStart();
+    ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_, p_dnnmark_->GetTimer(), "ActBwd");
     for (int i = 0; i < num_bottoms_; i++) {
-      CUDNN_CALL(cudnnActivationBackward(
-             p_dnnmark_->getRunMode() == COMPOSED ?
-             p_dnnmark_->GetHandle()->GetCudnn(layer_id_):
-             p_dnnmark_->GetHandle()->GetCudnn(),
-             desc_.Get(),
-             DataType<T>::one, 
-             top_desc_.Get(), tops_[i]->Get(),
-             top_desc_.Get(), top_diffs_[i]->Get(),
-             bottom_desc_.Get(), bottoms_[i]->Get(),
+      dnnmarkActivationBackward(
+             *(p_dnnmark_->GetHandle()),
+             p_dnnmark_->getRunMode(), layer_id_,
+             desc_,
+             DataType<T>::one,
+             top_desc_, tops_[i]->Get(), top_diffs_[i]->Get(),
              DataType<T>::zero,
-             bottom_desc_.Get(), bottom_diffs_[i]->Get()));
+             bottom_desc_, bottoms_[i]->Get(), bottom_diffs_[i]->Get());
     }
-    cudaProfilerStop();
+    ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
+                  layer_id_, p_dnnmark_->GetTimer(), "ActBwd");
   }
 
 };

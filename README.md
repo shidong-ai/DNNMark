@@ -1,3 +1,7 @@
+# Announcement
+DNNMark is now supporting MIOpen. Right now DNNMark can run on both AMD and Nvidia platform.
+HCC, HIP, MIOpen and miopengemm are required in order to build MIOpen version of DNNMark.
+
 # DNNMark
 Configurable benchmark suite of Deep Neural Networks
 
@@ -36,11 +40,15 @@ DNNMark contains commonly-used DNN primitives and also provides an easy approach
 # Build and Usage
 
 ## OS, Library, and Software Prerequisite
-OS: Ubuntu
+OS: Ubuntu 16.04
 
 CUDA related library: CUDA tool kit v8.0; CuDNN v5.0
 
-Other Software: CMake; g++; gflags; glog
+Other Software: CMake v3.5.1; g++ v5.4.0
+
+Google libraries: gflags (sudo apt-get install libgflags-dev); glog(sudo apt-get install libgoogle-glog-dev)
+
+There is one known problem regarding gflags. Sometimes, the compile process complains that ‘gflags’ has not been declared. This could be related to the gflag version used. So the solution could be either downloading a latest one or changing the namespace name from 'gflags' to 'google'
 
 ## Build
 After you download and unzip the DNNMark, you should go to its root directory and edit `setup.sh` to set up path to cuDNN. And then run `./setup.sh`. This will create a build directory and run cmake automatically. To build the code, go to build directory `build` and run `make`

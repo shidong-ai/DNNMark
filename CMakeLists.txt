@@ -11,7 +11,7 @@ project(dnnmark)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 # Locate CUDA package 
-find_package(CUDA REQUIRED)
+find_package(CUDA)
 
 # Detect GPU device
 if(CUDA_FOUND)
@@ -30,13 +30,17 @@ if(CUDA_FOUND)
   # COMPILE_RESULT_VAR is TRUE when compile succeeds
   # RUN_RESULT_VAR is zero when a GPU is found
   if(COMPILE_RESULT_VAR AND NOT RUN_RESULT_VAR)
-      set(CUDA_HAVE_GPU TRUE)
+    set(CUDA_HAVE_GPU TRUE)
   else()
-      set(CUDA_HAVE_GPU FALSE)
+    set(CUDA_HAVE_GPU FALSE)
   endif()
 endif()
 
+# Detect HCC
+find_program(HCC_FOUND hcc)
+
 option (double-test "Make data type double" OFF)
+option (enable-cudnnv6 "Enable cuDNN version 6" OFF)
 
 # Build NICE library only with CUDA
 if (CUDA_FOUND)
@@ -44,6 +48,7 @@ if (CUDA_FOUND)
   # Print messge to indicate whether GPU device exists
   if (CUDA_HAVE_GPU)
     message(STATUS "GPU device exists")
+    add_definitions(-DNVIDIA_CUDNN)
   else()
     message(WARNING "GPU device does not exist")
   endif()
@@ -63,12 +68,17 @@ if (CUDA_FOUND)
     message(FATAL_ERROR "Path to CuDNN library not exists")
   endif()
 
-  # Add deinition of C++11 stardard
-  add_definitions(-std=c++11)
-
   # Enable double data type
   if (double-test)
     add_definitions(-DDOUBLE_TEST)
+  endif()
+
+  # Add deinition of C++11 stardard
+  add_definitions(-std=c++11)
+
+  # Enable cuDNN v6
+  if (enable-cudnnv6)
+    add_definitions(-DCUDNNV6)
   endif()
   
   # Set path of DNNMark include files
@@ -110,9 +120,92 @@ if (CUDA_FOUND)
                         ${GLOG_LIBRARY}
                         m)
 
+elseif(HCC_FOUND)
+
+  # Cover the include and linkage requirement here
+  execute_process(COMMAND hcc-config  --cxxflags 
+                  OUTPUT_VARIABLE HCC_COMPILE_FLAGS)
+  set(COMPILER_FLAGS "${COMPILER_FLAGS} ${HCC_COMPILE_FLAGS}")
+
+  execute_process(COMMAND hcc-config  --ldflags 
+                  OUTPUT_VARIABLE HCC_LINKER_FLAGS)
+  set(LINKER_FLAGS "${LINKER_FLAGS} ${HCC_LINKER_FLAGS}")
+
+  set(ROCM_ROOT /opt/rocm)
+  if (EXISTS ${MIOPEN_ROOT})
+    message(STATUS "MIOpen root path: " ${MIOPEN_ROOT})
+    include_directories(${MIOPEN_ROOT}/include)
+    include_directories(${MIOPEN_ROOT}/src/include)
+    include_directories(${MIOPEN_ROOT}/build/include)
+    include_directories(${ROCM_ROOT}/hip/include)
+  else()
+    message(FATAL_ERROR "Path to MIOpen library not exists")
+  endif()
+
+  if (EXISTS ${ROCBLAS_ROOT})
+    message(STATUS "ROCBLAS root path: " ${ROCBLAS_ROOT})
+    include_directories(${ROCBLAS_ROOT}/include)
+  else()
+    message(FATAL_ERROR "Path to ROCBLAS library not exists")
+  endif()
+
+  # Locate HIP to this project
+  list(APPEND CMAKE_PREFIX_PATH ${ROCM_ROOT}/hcc ${ROCM_ROOT}/hip)
+  find_package(hip REQUIRED PATHS ${ROCM_ROOT})
+
+  # Add a guard for AMD MIOpen
+  add_definitions(-DAMD_MIOPEN)
+
+  # Add deinition of C++11 stardard
+  add_definitions(-std=c++11 -Wno-attributes)
+
+  # Enable double data type
+  if (double-test)
+    add_definitions(-DDOUBLE_TEST)
+  endif()
+
+  # Set path of DNNMark include files
+  set(DNNMARK_INCLUDES ${CMAKE_SOURCE_DIR}/core/include)
+  include_directories(${DNNMARK_INCLUDES}) 
+  
+  # Set path of DNNMark layer files
+  set(DNNMARK_LAYERS ${DNNMARK_INCLUDES}/layers)
+  include_directories(${DNNMARK_LAYERS}) 
+  
+  # Set source files
+  file(GLOB_RECURSE DNNMARK_SOURCES RELATIVE ${CMAKE_SOURCE_DIR} core/src/*.cc)
+  message(STATUS "DNNMark Source files: " ${DNNMARK_SOURCES})
+
+  # Find rocBLAS libraries
+  find_library(ROCBLAS_LIBRARY rocblas-hcc ${ROCBLAS_ROOT}/lib)
+
+  # Find MIOpen libraries
+  find_library(MIOPEN_LIBRARY MIOpen ${MIOPEN_ROOT}/lib)
+
+  message(${ROCBLAS_LIBRARY} ${MIOPEN_LIBRARY})
+
+  # Find other libraries
+  find_library(HIP_HCC hip_hcc /opt/rocm/hip/lib)
+
+  # Find glog libraries
+  find_library(GLOG_LIBRARY glog)
+
+  # Add DNNMark library
+  add_library(${PROJECT_NAME} SHARED ${DNNMARK_SOURCES})
+  add_dependencies(${PROJECT_NAME} ${MIOPEN_LIBRARY})
+  target_link_libraries(${PROJECT_NAME} 
+                        ${ROCBLAS_LIBRARY}
+                        ${MIOPEN_LIBRARY}
+                        ${HIP_HCC}
+                        ${GLOG_LIBRARY}
+                        m)
+  set_target_properties(${PROJECT_NAME} PROPERTIES
+      COMPILE_FLAGS ${COMPILER_FLAGS}
+      LINK_FLAGS ${LINKER_FLAGS})
+
 else()
 
-  message(FATAL_ERROR "CUDA not exists")
+  message(FATAL_ERROR "CUDA or HCC not exists")
 
 endif()
 
@@ -128,4 +221,3 @@ if (enable-benchmarking)
   add_subdirectory(${BENCHMARKS})
 
 endif()
-
