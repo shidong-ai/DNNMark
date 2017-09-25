@@ -4,13 +4,14 @@
 WORK_DIR="$(pwd)"
 CONFIG_DIR=${WORK_DIR}/config/
 BENCHMARK_DIR=${WORK_DIR}/../build/benchmarks/
-RESULT_DIR=${WORK_DIR}/alexnet_results/
+RESULT_DIR=${WORK_DIR}/alexnet_results_kepler/
 if [ ! -d "${RESULT_DIR}" ]; then
   mkdir ${RESULT_DIR}
 fi
 
 BENCHMARK_LIST=( test_alexnet )
 PROFILER=nvprof
+ARCH=kepler
 
 for bm in ${BENCHMARK_LIST[@]}
 do
@@ -22,7 +23,7 @@ do
   do
     echo $config
     batch_size="$(echo $config | cut -d "." -f1 | cut -d "_" -f3)"
-    for pair in $(python ${WORK_DIR}/queryKernelDB.py ${batch_size})
+    for pair in $(python ${WORK_DIR}/queryKernelDB.py ${batch_size} ${ARCH})
     do
       kernel_name="$(echo ${pair} | cut -d "," -f1)"
       invocation_num="$(echo ${pair} | cut -d "," -f2)"
