@@ -79,6 +79,9 @@ class ConvolutionLayer : public Layer<T> {
   : Layer<T>(p_dnnmark),
     conv_param_(), desc_(), conv_algo_() {
     Layer<T>::has_learnable_params_ = true;
+    fwd_workspace_size_ = 0;
+    bwd_data_workspace_size_ = 0;
+    bwd_filter_workspace_size_ = 0;
   }
 
   ~ConvolutionLayer() {
