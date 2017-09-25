@@ -65,7 +65,9 @@ class PoolingLayer : public Layer<T> {
 
  public:
   PoolingLayer(DNNMark<T> *p_dnnmark)
-      : Layer<T>(p_dnnmark), pool_param_(), desc_() {}
+      : Layer<T>(p_dnnmark), pool_param_(), desc_() {
+    workspace_size_ = 0;
+  }
 
   PoolingParam *getPoolParam() { return &pool_param_; }
 
