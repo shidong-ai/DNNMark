@@ -14,7 +14,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 find_package(CUDA)
 
 # Detect GPU device
-if(CUDA_FOUND)
+if(CUDA_FOUND AND ${CUDA_ENABLE})
   try_run(RUN_RESULT_VAR COMPILE_RESULT_VAR
     ${CMAKE_BINARY_DIR} 
     ${CMAKE_SOURCE_DIR}/tools/has_cuda_gpu.c
@@ -43,7 +43,7 @@ option (double-test "Make data type double" OFF)
 option (enable-cudnnv6 "Enable cuDNN version 6" OFF)
 
 # Build NICE library only with CUDA
-if (CUDA_FOUND)
+if (CUDA_FOUND AND ${CUDA_ENABLE})
 
   # Print messge to indicate whether GPU device exists
   if (CUDA_HAVE_GPU)
@@ -120,7 +120,7 @@ if (CUDA_FOUND)
                         ${GLOG_LIBRARY}
                         m)
 
-elseif(HCC_FOUND)
+elseif(HCC_FOUND AND ${HCC_ENABLE})
 
   # Cover the include and linkage requirement here
   execute_process(COMMAND hcc-config  --cxxflags 
