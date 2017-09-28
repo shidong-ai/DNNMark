@@ -10,6 +10,10 @@ project(dnnmark)
 # Set path of sub-directory with other cmake file
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
+# Set 
+option (CUDA_ENABLE "Only run benchmark on Nvidia device" OFF)
+option (HCC_ENABLE "Only run benchmark on AMD device" OFF)
+
 # Locate CUDA package 
 find_package(CUDA)
 
