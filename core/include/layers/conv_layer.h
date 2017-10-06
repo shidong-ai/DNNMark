@@ -150,6 +150,7 @@ class ConvolutionLayer : public Layer<T> {
 
     // Set convolution forward algorithm
     // Use default algorithm for now
+    conv_algo_.SetFwdAlgo(conv_param_.algo_);
 
     // Allocate workspace
     conv_algo_.GetFwdWorkspaceSize(*(p_dnnmark_->GetHandle()),
@@ -163,6 +164,7 @@ class ConvolutionLayer : public Layer<T> {
 
     // Set convolution backward filter/weights algorithm
     // Use default algorithm for now
+    conv_algo_.SetBwdDataAlgo(conv_param_.algo_);
 
     // Allocate workspace
     conv_algo_.GetBwdFilterWorkspaceSize(*(p_dnnmark_->GetHandle()),
@@ -177,6 +179,7 @@ class ConvolutionLayer : public Layer<T> {
 
     // Set convolution backward data algorithm
     // Use default algorithm for now
+    conv_algo_.SetBwdDataAlgo(conv_param_.algo_);
 
     // Allocate workspace
     conv_algo_.GetBwdDataWorkspaceSize(*(p_dnnmark_->GetHandle()),
