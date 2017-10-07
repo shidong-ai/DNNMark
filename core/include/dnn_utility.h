@@ -609,6 +609,13 @@ class ConvAlgo {
     bwd_filter_algo_(CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0),
     bwd_data_algo_(CUDNN_CONVOLUTION_BWD_DATA_ALGO_0) {}
   
+  void SetFwdAlgo(std::string algo) {
+    if (!algo.compare("fft")) {
+      fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_FFT;
+    } else if (!algo.compare("winograd")) {
+      fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD;
+    }
+  }
   void SetFwdAlgo(cudnnConvolutionFwdAlgo_t fwd_algo) {
     fwd_algo_ = fwd_algo;
   }
@@ -652,6 +659,13 @@ class ConvAlgo {
   void SetBwdFilterAlgo(cudnnConvolutionBwdFilterAlgo_t bwd_filter_algo) {
     bwd_filter_algo_ = bwd_filter_algo;
   }
+  void SetBwdFilterAlgo(std::string algo) {
+    if (!algo.compare("fft")) {
+      bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT;
+    } else if (!algo.compare("winograd")) {
+      bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD;
+    }
+  }
   void SetBwdFilterAlgo(const Handle &handle, RunMode mode, int idx,
                         const DataTensor<T> &bottom_desc,
                         const DataTensor<T> &top_desc,
@@ -692,6 +706,13 @@ class ConvAlgo {
 
   void SetBwdDataAlgo(cudnnConvolutionBwdDataAlgo_t bwd_data_algo) {
     bwd_data_algo_ = bwd_data_algo;
+  }
+  void SetBwdDataAlgo(std::string algo) {
+    if (!algo.compare("fft")) {
+      bwd_data_algo_ = CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT;
+    } else if (!algo.compare("winograd")) {
+      bwd_data_algo_ = CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD;
+    }
   }
   void SetBwdDataAlgo(const Handle &handle, RunMode mode, int idx,
                       const DataTensor<T> &bottom_desc,
@@ -801,6 +822,8 @@ class ConvAlgo {
   void SetFwdAlgo(miopenConvFwdAlgorithm_t fwd_algo) {
     fwd_algo_ = fwd_algo;
   }
+  void SetFwdAlgo(std::string algo) {
+  }
   void FindFwdAlgo(const Handle &handle, RunMode mode, int idx,
                    const DataTensor<T> &bottom_desc,
                    const ConvolutionDesc<T> &conv_desc,
@@ -830,6 +853,8 @@ class ConvAlgo {
   void SetBwdFilterAlgo(miopenConvBwdWeightsAlgorithm_t bwd_filter_algo) {
     bwd_filter_algo_ = bwd_filter_algo;
   }
+  void SetBwdFilterAlgo(std::string algo) {
+  }
   void FindBwdFilterAlgo(const Handle &handle, RunMode mode, int idx,
                          const DataTensor<T> &bottom_desc,
                          const ConvolutionDesc<T> &conv_desc,
@@ -858,6 +883,8 @@ class ConvAlgo {
   }
   void SetBwdDataAlgo(miopenConvBwdDataAlgorithm_t bwd_data_algo) {
     bwd_data_algo_ = bwd_data_algo;
+  }
+  void SetBwdDataAlgo(std::string algo) {
   }
   void FindBwdDataAlgo(const Handle &handle, RunMode mode, int idx,
                        const DataTensor<T> &bottom_desc,
