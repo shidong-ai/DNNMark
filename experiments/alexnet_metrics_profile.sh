@@ -1,17 +1,32 @@
 #! /bin/bash
 
+if [ $# -eq 1 ]; then
+  echo "Archtecture:" $1
+else
+  echo "Usage: ./<script> <arch>"
+  exit
+fi
+
 # Setup directories
 WORK_DIR="$(pwd)"
 CONFIG_DIR=${WORK_DIR}/config/
 BENCHMARK_DIR=${WORK_DIR}/../build/benchmarks/
-RESULT_DIR=${WORK_DIR}/alexnet_results_kepler/
+ARCH=$1
+
+if [ $1 = "pascal" ]; then
+  TRACE_DIR=alexnet_results_pascal
+fi
+if [ $1 = "kepler" ]; then
+  TRACE_DIR=alexnet_results_kepler
+fi
+
+RESULT_DIR=${WORK_DIR}/${TRACE_DIR}/
 if [ ! -d "${RESULT_DIR}" ]; then
   mkdir ${RESULT_DIR}
 fi
 
 BENCHMARK_LIST=( test_alexnet )
 PROFILER=nvprof
-ARCH=kepler
 
 for bm in ${BENCHMARK_LIST[@]}
 do
