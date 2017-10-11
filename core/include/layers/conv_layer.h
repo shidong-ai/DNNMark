@@ -245,8 +245,7 @@ class ConvolutionLayer : public Layer<T> {
 
     // Convolution forward computation
     for (int i = 0; i < num_tops_; i++) {
-      if (conv_param_.propagation_) {
-        dnnmarkConvolutionBackwardFilter(
+      dnnmarkConvolutionBackwardFilter(
                   *(p_dnnmark_->GetHandle()),
                   p_dnnmark_->getRunMode(), layer_id_,
                   p_dnnmark_->GetTimer(),
@@ -258,6 +257,7 @@ class ConvolutionLayer : public Layer<T> {
                   bwd_filter_workspace_->Get(), bwd_filter_workspace_size_,
                   DataType<T>::zero,
                   weights_diff_->Get());
+      if (conv_param_.propagation_) {
         dnnmarkConvolutionBackwardData(
                   *(p_dnnmark_->GetHandle()),
                   p_dnnmark_->getRunMode(), layer_id_,
