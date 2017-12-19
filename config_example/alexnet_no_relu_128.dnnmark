@@ -18,14 +18,9 @@ conv_fwd_pref=fastest
 conv_bwd_filter_pref=fastest
 conv_bwd_data_pref=fastest
 
-[Activation]
-name=relu1
-previous_layer=conv1
-activation_mode=relu
-
 [LRN]
 name=lrn1
-previous_layer=relu1
+previous_layer=conv1
 lrn_mode=cross_channel_dim1
 local_size=5
 alpha=0.0001
@@ -52,14 +47,9 @@ conv_fwd_pref=fastest
 conv_bwd_filter_pref=fastest
 conv_bwd_data_pref=fastest
 
-[Activation]
-name=relu2
-previous_layer=conv2
-activation_mode=relu
-
 [LRN]
 name=lrn2
-previous_layer=relu2
+previous_layer=conv2
 lrn_mode=cross_channel_dim1
 local_size=5
 alpha=0.0001
@@ -86,14 +76,9 @@ conv_fwd_pref=fastest
 conv_bwd_filter_pref=fastest
 conv_bwd_data_pref=fastest
 
-[Activation]
-name=relu3
-previous_layer=conv3
-activation_mode=relu
-
 [Convolution]
 name=conv4
-previous_layer=relu3
+previous_layer=conv3
 conv_mode=cross_correlation
 num_output=384
 kernel_size=3
@@ -103,14 +88,9 @@ conv_fwd_pref=fastest
 conv_bwd_filter_pref=fastest
 conv_bwd_data_pref=fastest
 
-[Activation]
-name=relu4
-previous_layer=conv4
-activation_mode=relu
-
 [Convolution]
 name=conv5
-previous_layer=relu4
+previous_layer=conv4
 conv_mode=cross_correlation
 num_output=256
 kernel_size=3
@@ -120,14 +100,9 @@ conv_fwd_pref=fastest
 conv_bwd_filter_pref=fastest
 conv_bwd_data_pref=fastest
 
-[Activation]
-name=relu5
-previous_layer=conv5
-activation_mode=relu
-
 [Pooling]
 name=pool5
-previous_layer=relu5
+previous_layer=conv5
 pool_mode=max
 kernel_size=3
 pad=0
@@ -138,24 +113,14 @@ name=fc6
 previous_layer=pool5
 num_output=4096
 
-[Activation]
-name=relu6
-previous_layer=fc6
-activation_mode=relu
-
 [FullyConnected]
 name=fc7
-previous_layer=relu6
+previous_layer=fc6
 num_output=4096
-
-[Activation]
-name=relu7
-previous_layer=fc7
-activation_mode=relu
 
 [FullyConnected]
 name=fc8
-previous_layer=relu7
+previous_layer=fc7
 num_output=1000
 
 [Softmax]

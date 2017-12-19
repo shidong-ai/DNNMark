@@ -14,10 +14,10 @@ BENCHMARK_DIR=${WORK_DIR}/../build/benchmarks/
 ARCH=$1
 
 if [ $1 = "pascal" ]; then
-  TRACE_DIR=alexnet_results_pascal
+  TRACE_DIR=alexnet_metrics_pascal
 fi
 if [ $1 = "kepler" ]; then
-  TRACE_DIR=alexnet_results_kepler
+  TRACE_DIR=alexnet_metrics_kepler
 fi
 
 RESULT_DIR=${WORK_DIR}/${TRACE_DIR}/

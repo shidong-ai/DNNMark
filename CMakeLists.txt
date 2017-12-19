@@ -98,6 +98,7 @@ if (CUDA_FOUND AND ${CUDA_ENABLE})
   message(STATUS "DNNMark Source files: " ${DNNMARK_SOURCES})
 
   # Set NVCC flags  
+  #set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -Xptxas -dlcm=cg -dscm=cg -O3 -gencode arch=compute_50,code=sm_50)
   set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -O3 -gencode arch=compute_50,code=sm_50)
 
   # Find cuda libraries
