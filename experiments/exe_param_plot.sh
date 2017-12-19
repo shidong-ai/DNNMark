@@ -11,10 +11,10 @@ fi
 WORK_DIR="$(pwd)"
 ARCH=$1
 if [ $1 = "pascal" ]; then
-  TRACE_DIR=alexnet_gputrace_pascal
+  TRACE_DIR=results_alexnet_gputrace_pascal
 fi
 if [ $1 = "kepler" ]; then
-  TRACE_DIR=alexnet_gputrace_kepler
+  TRACE_DIR=results_alexnet_gputrace_kepler
 fi
 FIGURE_DIR=${WORK_DIR}/${TRACE_DIR}/figures/
 if [ ! -d "${FIGURE_DIR}" ]; then
