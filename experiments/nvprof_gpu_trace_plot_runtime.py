@@ -160,6 +160,7 @@ def Plot(batch_size_list, arch, figure_dir):
     runtime_fc_list.append(runtime_fc)
     runtime_nonlinear_list.append(runtime_nonlinear)
     runtime_other_list.append(runtime_other)
+  print "Arch:", arch
   for i in range(3):
     print "Batch size:", batch_size_list[i]
     print "Conv:", runtime_conv_list[i]/ (runtime_linear_list[i]+runtime_nonlinear_list[i]+runtime_other_list[i])
@@ -248,6 +249,51 @@ def Plot(batch_size_list, arch, figure_dir):
   fig.tight_layout()
   fig.savefig(os.getcwd()+'/figures/'+arch+'_runtime.pdf', format='pdf', bbox_inches='tight')
 
+
+def OutputRuntime2CSV(batch_size, arch):
+  f = arch+"-exetime-"+str(batch_size)+".csv"
+  writer = csv.writer(open(f, 'wb'))
+  for kernel_param in gpu_trace_dict[arch][batch_size]:
+    full_name = kernel_param.full_name
+    invocation_order = kernel_param.invocation_order
+    kernel = kernel_param.kernel_name
+    query_layer_name_str = "SELECT layername FROM "+table_name+" WHERE batchsize = "+batch_size+" AND fullname = '"+full_name+"' AND invocationorder = "+str(invocation_order)+" AND arch = '"+arch+"'"
+    c.execute(query_layer_name_str)
+    layer_name_from_sql = c.fetchall()
+    if len(layer_name_from_sql) == 0:
+      if "dgrad" not in kernel:
+        print "Illegal layers!!!"
+        print kernel
+        print batch_size
+        print invocation_order
+        print layer_name_from_sql
+        exit()
+      else:
+        continue
+    layer_name = layer_name_from_sql[0][0].encode("utf-8")
+
+    query_propagation_str = "SELECT propagation FROM "+table_name+" WHERE batchsize = "+batch_size+" AND fullname = '"+full_name+"' AND invocationorder = "+str(invocation_order)+" AND arch = '"+arch+"'"
+    c.execute(query_propagation_str)
+    propagation_from_sql = c.fetchall()
+    if len(propagation_from_sql) == 0:
+      if "dgrad" not in kernel:
+        print "Illegal layers!!!"
+        print kernel
+        print batch_size
+        print invocation_order
+        print layer_name_from_sql
+        exit()
+      else:
+        continue
+    propagation = propagation_from_sql[0][0].encode("utf-8")
+    row = []
+    if propagation == "Forward":
+      row.append(layer_name+"_fwd")
+    else:
+      row.append(layer_name+"_bwd")
+    row.append(kernel_param.duration)
+    writer.writerow(row)
+
 usage = "usage: %prog [command] [option1] arg1,arg2 [option2] arg1,arg2"
 def main():
   if len(sys.argv) == 1:
@@ -293,6 +339,8 @@ def main():
     exit()
 
   Plot(batchsize_list, arch, figure_dir)
+
+  OutputRuntime2CSV("128", arch)
 
 if __name__ == '__main__':
   main()

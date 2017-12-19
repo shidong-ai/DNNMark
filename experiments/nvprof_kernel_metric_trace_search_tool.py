@@ -359,7 +359,9 @@ def main():
                     help="arch", metavar="ARCH")
   parser.add_option("-n", "--batch-size", type="string", dest="batchsize",
                     help="Batch size seperated by coma", metavar="BATCH_SIZE")
-  parser.add_option("-l", "--layer", type="string", dest="layername",
+  parser.add_option("-l1", "--layer1", type="string", dest="layername1",
+                    help="Layer names seperated by coma", metavar="LAYER")
+  parser.add_option("-l2", "--layer2", type="string", dest="layername2",
                     help="Layer names seperated by coma", metavar="LAYER")
   parser.add_option("-k", "--kernels", type="string", dest="kernels",
                     help="Kernels name seperated by coma", metavar="KERNELS")
@@ -373,7 +375,8 @@ def main():
     print "Arguments parsing fail. Possible reason: space occurred between arguments"
     exit()
 
-  layer_list = []
+  layer_list_1 = []
+  layer_list_2 = []
   batchsize_list = []
   kernels_list = []
   metrics_list = []
@@ -393,9 +396,10 @@ def main():
   else:
     arch = options.arch
 
-  if options.layername != None:
-    layer_list = options.layername.split(",")
-  num_layers = len(layer_list)
+  if options.layername1 != None:
+    layer_list1 = options.layername1.split(",")
+  if options.layername2 != None:
+    layer_list2 = options.layername2.split(",")
   if options.batchsize != None:
     batchsize_list = options.batchsize.split(",")
   if options.kernels != None:
@@ -418,7 +422,7 @@ def main():
       print " Batch size INVALID!!!"
       exit()
     print "For batch size: ", b_size
-    for layer in layer_list:
+    for layer in layer_list1:
       if layer not in metric_trace_dict[b_size]:
         print "Layer name INVALID!!!"
         print layer
@@ -452,15 +456,14 @@ def main():
               value = metric_trace_dict[b_size][l][propagation][kernel][metric]
               print "     Metric: ", metric," ", value 
 
-  # Output metrics to CSV
-  #for batch_size in batchsize_list:
-  #  OutputMetrics2CSV(layer_list, batch_size, metrics_list, arch)
   # Plot
   for batch_size in batchsize_list:
     if "Stall" in title:
-      BarChartByLayerName(title, layer_list, batch_size, metrics_list, True, arch, figure_dir)
+      BarChartByLayerName(title, layer_list1, batch_size, metrics_list, True, arch, figure_dir)
     else:
-      BarChartByLayerName(title, layer_list, batch_size, metrics_list, False, arch, figure_dir)
+      BarChartByLayerName(title, layer_list1, batch_size, metrics_list, False, arch, figure_dir)
+  # Output metrics to CSV
+  OutputMetrics2CSV(layer_list2, "128", metrics_list, arch)
 
 if __name__ == '__main__':
   main()
