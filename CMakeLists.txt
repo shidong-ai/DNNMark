@@ -226,3 +226,11 @@ if (enable-benchmarking)
   add_subdirectory(${BENCHMARKS})
 
 endif()
+
+add_custom_target(artifact
+  COMMAND "${CMAKE_COMMAND}" 
+    -E chdir "${CMAKE_SOURCE_DIR}/experiments"
+    ./scheduler.sh
+  COMMENT "Run experiments in the artifact"
+  VERBATIM)
+
