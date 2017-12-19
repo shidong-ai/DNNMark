@@ -26,4 +26,6 @@ DEFINE_string(config, "",
     "The self defined DNN config file.");
 DEFINE_int32(debuginfo, 0,
     "The debug info switch to turn on/off debug information.");
+DEFINE_int32(warmup, 0,
+    "The warmup switch to turn on/off warmup phases");
 

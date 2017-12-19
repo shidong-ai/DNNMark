@@ -12,11 +12,13 @@ int main(int argc, char **argv) {
   DNNMark<TestType> dnnmark(21);
   dnnmark.ParseAllConfig(FLAGS_config);
 
-  // Warm up
   dnnmark.Initialize();
-  for (int i = 0; i < 5; i++) {
-    dnnmark.Forward();
-    dnnmark.Backward();
+  // Warm up
+  if (FLAGS_warmup) {
+    for (int i = 0; i < 5; i++) {
+      dnnmark.Forward();
+      dnnmark.Backward();
+    }
   }
   dnnmark.GetTimer()->Clear();
 
