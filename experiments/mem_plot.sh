@@ -42,16 +42,16 @@ fi
 for bs in ${BATCH_SIZE_LIST[@]}
 do
   SCRIPT=${WORK_DIR}/nvprof_kernel_metric_trace_search_tool.py
-  ${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t CacheHitRate -l1 ${LAYERS1} -l2 ${LAYERS2} -n ${bs} -m ${CACHE_HIT_RATE_METRICS}
+  ${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t CacheHitRate --layer1 ${LAYERS1} --layer2 ${LAYERS2} -n ${bs} -m ${CACHE_HIT_RATE_METRICS}
 
-  ${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t MemTransaction1 -l1 ${LAYERS1} -l2 ${LAYERS2} -n ${bs} -m ${MEM_TRAN1_METRICS}
+  ${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t MemTransaction1 --layer1 ${LAYERS1} --layer2 ${LAYERS2} -n ${bs} -m ${MEM_TRAN1_METRICS}
 
-  ${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t MemThroughput1 -l1 ${LAYERS1} -l2 ${LAYERS2} -n ${bs} -m ${MEM_THROUGH1_METRICS}
+  ${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t MemThroughput1 --layer1 ${LAYERS1} --layer2 ${LAYERS2} -n ${bs} -m ${MEM_THROUGH1_METRICS}
 
-  ${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t MemTransaction2 -l1 ${LAYERS1} -l2 ${LAYERS2} -n ${bs} -m l2_read_transactions,l2_write_transactions,dram_read_transactions,dram_write_transactions
-  ${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t MemThroughput2 -l1 ${LAYERS1} -l2 ${LAYERS2} -n ${bs} -m l2_read_throughput,l2_write_throughput,dram_read_throughput,dram_write_throughput
+  ${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t MemTransaction2 --layer1 ${LAYERS1} --layer2 ${LAYERS2} -n ${bs} -m l2_read_transactions,l2_write_transactions,dram_read_transactions,dram_write_transactions
+  ${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t MemThroughput2 --layer1 ${LAYERS1} --layer2 ${LAYERS2} -n ${bs} -m l2_read_throughput,l2_write_throughput,dram_read_throughput,dram_write_throughput
 
-  ${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t MemUtilization -l1 ${LAYERS1} -l2 ${LAYERS2} -n ${bs} -m ${MEM_UTIL_METRICS}
+  ${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t MemUtilization --layer1 ${LAYERS1} --layer2 ${LAYERS2} -n ${bs} -m ${MEM_UTIL_METRICS}
 
 done
 

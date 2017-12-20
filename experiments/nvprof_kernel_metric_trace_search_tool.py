@@ -359,9 +359,9 @@ def main():
                     help="arch", metavar="ARCH")
   parser.add_option("-n", "--batch-size", type="string", dest="batchsize",
                     help="Batch size seperated by coma", metavar="BATCH_SIZE")
-  parser.add_option("-l1", "--layer1", type="string", dest="layername1",
+  parser.add_option("--layer1", type="string", dest="layername1",
                     help="Layer names seperated by coma", metavar="LAYER")
-  parser.add_option("-l2", "--layer2", type="string", dest="layername2",
+  parser.add_option("--layer2", type="string", dest="layername2",
                     help="Layer names seperated by coma", metavar="LAYER")
   parser.add_option("-k", "--kernels", type="string", dest="kernels",
                     help="Kernels name seperated by coma", metavar="KERNELS")

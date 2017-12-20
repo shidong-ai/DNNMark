@@ -37,16 +37,15 @@ fi
 for bs in ${BATCH_SIZE_LIST[@]}
 do
   SCRIPT=${WORK_DIR}/nvprof_kernel_metric_trace_search_tool.py
-  #${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t CuUtilization  -l ${LAYERS} -n ${bs} -m ${FU_UTIL_METRICS},ldst_fu_utilization,cf_fu_utilization,tex_fu_utilization
+  ${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t CuUtilization --layer1 ${LAYERS1} --layer2 ${LAYERS2} -n ${bs} -m ${FU_UTIL_METRICS},ldst_fu_utilization,cf_fu_utilization,tex_fu_utilization
   #${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t IPC  -l ${LAYERS} -n ${bs} -m ${IPC_METRICS}
   #${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t ReplayRate  -l ${LAYERS} -n ${bs} -m inst_replay_overhead
 
   #${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t Efficiency -l ${LAYERS} -n ${bs} -m issue_slot_utilization,flop_sp_efficiency
 
-  ${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t StallReason -l1 ${LAYERS1} -l2 ${LAYERS2} -n ${bs} -m stall_inst_fetch,stall_exec_dependency,stall_memory_dependency,stall_texture,stall_sync,stall_other,stall_pipe_busy,stall_constant_memory_dependency,stall_memory_throttle,stall_not_selected
+  ${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t StallReason --layer1 ${LAYERS1} --layer2 ${LAYERS2} -n ${bs} -m stall_inst_fetch,stall_exec_dependency,stall_memory_dependency,stall_texture,stall_sync,stall_other,stall_pipe_busy,stall_constant_memory_dependency,stall_memory_throttle,stall_not_selected
 
-  #${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t FlopCountSP -l ${LAYERS} -n ${bs} -m inst_fp_32
-  #${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t FlopCountSP -l ${LAYERS} -n ${bs} -m ldst_executed
+  ${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t FlopCountSP --layer1 ${LAYERS1} --layer2 ${LAYERS2} -n ${bs} -m inst_fp_32
 
 done
 
