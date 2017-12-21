@@ -27,7 +27,7 @@ BATCH_SIZE_LIST=( 128 )
 PROFILER=nvprof
 LAYERS1=conv2,relu2,lrn2,pool2,fc6,softmax
 LAYERS2=conv1,relu1,lrn1,pool1,conv2,relu2,lrn2,pool2,conv3,relu3,conv4,relu4,conv5,relu5,pool5,fc6,relu6,fc7,relu7,fc8,softmax
-if [ "${TRACE_DIR}" == "alexnet_results_pascal_l1_enable" ]; then
+if [ "${ARCH}" == "pascal" ]; then
   CACHE_HIT_RATE_METRICS=tex_cache_hit_rate,l2_tex_read_hit_rate,l2_tex_write_hit_rate
   MEM_TRAN1_METRICS=tex_cache_transactions,shared_load_transactions,shared_store_transactions,l2_tex_read_transactions,l2_tex_write_transactions
   MEM_THROUGH1_METRICS=tex_cache_throughput,shared_load_throughput,shared_store_throughput,l2_tex_read_throughput,l2_tex_write_throughput

@@ -25,7 +25,7 @@ BATCH_SIZE_LIST=( 128 )
 PROFILER=nvprof
 LAYERS1=conv2,relu2,lrn2,pool2,fc6,softmax
 LAYERS2=conv1,relu1,lrn1,pool1,conv2,relu2,lrn2,pool2,conv3,relu3,conv4,relu4,conv5,relu5,pool5,fc6,relu6,fc7,relu7,fc8,softmax
-if [ "${TRACE_DIR}" == "alexnet_results_pascal" ]; then
+if [ "${ARCH}" == "pascal" ]; then
   IPC_METRICS=executed_ipc
   FU_UTIL_METRICS=single_precision_fu_utilization,special_fu_utilization
 else
