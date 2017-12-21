@@ -18,7 +18,7 @@ cd ${BUILD_DIR}
 if [ ${OPTION} = "CUDA" ]
 then
   CUDNN_PATH=${HOME}/cudnnv6
-  cmake -DCUDA_ENABLE=ON -DCUDNN_ROOT=${CUDNN_PATH} -Denable-cudnnv6=ON ..
+  cmake -DCUDA_ENABLE=ON -DCUDNN_ROOT=${CUDNN_PATH} -Denable-cudnnv6=ON -Denable-l1-bypass=OFF ..
 elif [ ${OPTION} = "HIP" ]
 then
   MIOPEN_PATH=/opt/rocm/miopen

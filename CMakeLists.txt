@@ -98,8 +98,11 @@ if (CUDA_FOUND AND ${CUDA_ENABLE})
   message(STATUS "DNNMark Source files: " ${DNNMARK_SOURCES})
 
   # Set NVCC flags  
-  #set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -Xptxas -dlcm=cg -dscm=cg -O3 -gencode arch=compute_50,code=sm_50)
-  set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -O3 -gencode arch=compute_50,code=sm_50)
+  if (enable-l1-bypass)
+    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -Xptxas -dlcm=cg -dscm=cg -O3 -gencode arch=compute_61,code=sm_61)
+  else()
+    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -Xptxas -dlcm=ca -dscm=ca -O3 -gencode arch=compute_61,code=sm_61)
+  endif()
 
   # Find cuda libraries
   find_library(CUDNN_LIBRARY cudnn ${CUDNN_ROOT}/lib64)
