@@ -20,7 +20,7 @@ for kf in kepler_trace_list:
   k_metric_name = kf[0:-4].split('-')[1]
   for pf in pascal_trace_list:
     p_metric_name = pf[0:-4].split('-')[1]
-    if k_metric_name in p_metric_name or k_metric_name == p_metric_name or p_metric_name in k_metric_name:
+    if k_metric_name in p_metric_name or k_metric_name == p_metric_name or p_metric_name in k_metric_name or (k_metric_name == "alu_fu_utilization" and p_metric_name == "single_precision_fu_utilization"):
       p_reader = csv.reader(open(pf, 'rb'))
       output_name = "comparison-"+k_metric_name+".csv"
       o_writer = csv.writer(open(output_name, 'wb'))
