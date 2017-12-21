@@ -217,17 +217,21 @@ def BarChartByLayerName(title, layer_list, batch_size, metrics_list, stacked, ar
 
     if stacked:
       num_metrics = 1
+      multiplier = 1.5
     else:
       num_metrics = len(metrics_dict[propagation])
+      multiplier = 2
 
-    index = np.arange(n_groups) * 2 * num_metrics * bar_width
+    index = np.arange(n_groups) * multiplier * num_metrics * bar_width
 
     i = 0
-    matplotlib.rc('font', size=50)
     if "Stall" in title:
-      fig = plt.figure(figsize=(50, 10))
+      matplotlib.rc('font', size=40)
+      fig = plt.figure(figsize=(60, 10))
     else:
+      matplotlib.rc('font', size=50)
       fig = plt.figure(figsize=(40, 10))
+
     ax = fig.add_subplot(111)
     bottom_list = [0] * n_groups
     for metric in metrics_dict[propagation]:
@@ -288,10 +292,13 @@ def BarChartByLayerName(title, layer_list, batch_size, metrics_list, stacked, ar
       ax.yaxis.grid()
     else:
       ax.grid(False)
-    ax.set_xticks(index + bar_width * (num_metrics-1) / 2)
     #ax.set_xticklabels(layer_list[len(layer_list)-len(metrics_dict[kernel][metric]):])
-    #ax.set_xticklabels(xtick_name[propagation], rotation='45', ha='right')
-    ax.set_xticklabels(xtick_name[propagation])
+    if "Stall" not in title:
+      ax.set_xticks(index + bar_width * (num_metrics-1) / 2)
+      ax.set_xticklabels(xtick_name[propagation])
+    else:
+      ax.set_xticks(index + bar_width / 2)
+      ax.set_xticklabels(xtick_name[propagation], rotation='45', ha='right')
     #ax.legend(bbox_to_anchor=(1.05, 1), loc=2,
     #           ncol=1, borderaxespad=0.)
     if "Stall" not in title:

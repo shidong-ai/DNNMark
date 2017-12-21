@@ -43,7 +43,7 @@ do
 
   #${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t Efficiency -l ${LAYERS} -n ${bs} -m issue_slot_utilization,flop_sp_efficiency
 
-  ${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t StallReason --layer1 ${LAYERS1} --layer2 ${LAYERS2} -n ${bs} -m stall_inst_fetch,stall_exec_dependency,stall_memory_dependency,stall_texture,stall_sync,stall_other,stall_pipe_busy,stall_constant_memory_dependency,stall_memory_throttle,stall_not_selected
+  ${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t StallReason --layer1 ${LAYERS2} --layer2 ${LAYERS2} -n ${bs} -m stall_inst_fetch,stall_exec_dependency,stall_memory_dependency,stall_texture,stall_sync,stall_other,stall_pipe_busy,stall_constant_memory_dependency,stall_memory_throttle,stall_not_selected
 
   ${SCRIPT} -a ${ARCH} -d ${TRACE_DIR} -t FlopCountSP --layer1 ${LAYERS1} --layer2 ${LAYERS2} -n ${bs} -m inst_fp_32
 
