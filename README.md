@@ -1,3 +1,38 @@
+# ICPE 2018 Artifact
+
+## Benchmark
+
+The DNNMark is the essential part of the paper "Characterizing the Microarchitectural 
+Implications of Convolutional Neural Network (CNN) Execution on GPUs". It is the benchmark
+we use to characterize the micro-architectural implications of one CNN model. In this code repository,
+it has two major parts to provide an automating reproducing of the results in the paper.
+One is the benchmark itself, another is a set of automation tools that conduct the 
+experiments and analyze the results after the profiling.
+
+## Automation Details
+
+Other than the preliminary instructions from the step-by-step-instructions.txt within the same
+artifact. In this section, we describe the detailed steps of the automating process.
+
+As mentioned in the instructions documentation, to start the automating process, one should run
+"make artifact" in the "build" directory after the prerequisite steps for building the benchmark.
+In this step, several steps are carried out sequentially. We listed these steps below:
+
+* Profiling is started for obtaining GPU-related traces, such as kernel execution time, grid size, block size and so on
+* Profiling is started for obtaining kernel performance counters using the information from the relational database
+* Analytical tools are called to parse the traces, populate new traces for comparison, and generate plots
+  * In this step, selected metrics are extracted to generated desired plots
+
+## Tools
+The tools for are located in "experiments" directory. There are many tools together constructing the
+database-backed trace tracking system mentioned in the paper. The only step we did not include in the 
+automation is the database construction. That's because this step is not necessary in reproducing the
+results and it requires some manual modification of the table.
+Another set of tools is the comparison tool in the same directory. These tools are used to generate 
+comparison plots using traces in a pre-defined format.
+
+==========================================================================================
+
 # Announcement
 DNNMark is now supporting MIOpen. Right now DNNMark can run on both AMD and Nvidia platform.
 HCC, HIP, MIOpen and miopengemm are required in order to build MIOpen version of DNNMark.
