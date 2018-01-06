@@ -2,33 +2,38 @@
 
 ## Benchmark
 
-The DNNMark is the essential part of the paper "Characterizing the Microarchitectural 
+The DNNMark is the essential contribution of the paper "Characterizing the Microarchitectural 
 Implications of Convolutional Neural Network (CNN) Execution on GPUs". It is the benchmark
-we use to characterize the micro-architectural implications of one CNN model. In this code repository,
-it has two major parts to provide an automating reproducing of the results in the paper.
-One is the benchmark itself, another is a set of automation tools that conduct the 
+we use to characterize the micro-architectural implications of a single CNN
+model. This code repository
+is divided into two major parts, providing an automated method to reproduce the results in the paper.
+The first part includes the benchmark itself, and the second is a set of
+automation tools that run the 
 experiments and analyze the results after the profiling.
 
 ## Automation Details
 
-Other than the preliminary instructions from the step-by-step-instructions.txt within the same
-artifact. In this section, we describe the detailed steps of the automating process.
+In addition to the preliminary instructions provided in the
+step-by-step-instructions.txt file within the same
+artifact, we support automation. In this section, we describe the detailed steps of the automation process.
 
-As mentioned in the instructions documentation, to start the automating process, one should run
-"make artifact" in the "build" directory after the prerequisite steps for building the benchmark.
-In this step, several steps are carried out sequentially. We listed these steps below:
+As mentioned in the documentation, to start the automation process, one should run
+"make artifact" in the "build" directory after completing the prerequisite steps for building the benchmark.
+During this process, several steps are carried out sequentially. We listed these steps below:
 
-* Profiling is started for obtaining GPU-related traces, such as kernel execution time, grid size, block size and so on
-* Profiling is started for obtaining kernel performance counters using the information from the relational database
-* Analytical tools are called to parse the traces, populate new traces for comparison, and generate plots
-  * In this step, selected metrics are extracted to generated desired plots
+* Profiling is started to gather GPU-related traces, such as kernel execution time, grid size, block size and etc..
+* Profiling is started to obtain kernel performance counters using the information from the relational database.
+* Analytical tools are called to parse the traces, populating new traces for comparison, and generating plots.
+  * In this step, selected metrics are extracted to generated desired plots.
 
 ## Tools
-The tools for are located in "experiments" directory. There are many tools together constructing the
+The tools are located in the "experiments" directory. There are many tools
+that work together to construct the
 database-backed trace tracking system mentioned in the paper. The only step we did not include in the 
-automation is the database construction. That's because this step is not necessary in reproducing the
+automation process is the database construction. That is because this step is
+not necessary to reproduce the
 results and it requires some manual modification of the table.
-Another set of tools is the comparison tool in the same directory. These tools are used to generate 
+Another set of tools is the comparison tool, located in the same directory. These tools are used to generate 
 comparison plots using traces in a pre-defined format.
 
 ==========================================================================================
