@@ -147,7 +147,7 @@ inline void SetupConvParam(const std::string &var, const std::string &val,
 #ifdef AMD_MIOPEN
         conv_param->mode_ = miopenConvolution;
 #endif
-#ifdef MIOPEN
+#ifdef AMD_MIOPEN
       else if (!val.compare("transpose"))
         conv_param->mode_ = miopenTranspose;
 #endif
