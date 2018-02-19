@@ -143,16 +143,19 @@ inline void SetupConvParam(const std::string &var, const std::string &val,
 #ifdef AMD_MIOPEN
         conv_param->mode_ = miopenConvolution;
 #endif
-#ifdef NVIDIA_CUDNN
       else if (!val.compare("cross_correlation"))
+#ifdef NVIDIA_CUDNN
         conv_param->mode_ = CUDNN_CROSS_CORRELATION;
 #endif
-#ifdef MIOPEN
+#ifdef AMD_MIOPEN
+        conv_param->mode_ = miopenConvolution;
+#endif
+#ifdef AMD_MIOPEN
       else if (!val.compare("transpose"))
         conv_param->mode_ = miopenTranspose;
 #endif
       else
-        LOG(FATAL) << "Invalid conv mode" << std::endl;
+        LOG(FATAL) << "Invalid conv mode: " << val << std::endl;
     } else if (!var.compare("num_output")) {
       conv_param->output_num_ = atoi(val.c_str());
     } else if (!var.compare("kernel_size")) {
