@@ -152,7 +152,7 @@ inline void SetupConvParam(const std::string &var, const std::string &val,
         conv_param->mode_ = miopenTranspose;
 #endif
       else
-        LOG(FATAL) << "Invalid conv mode" << std::endl;
+        LOG(FATAL) << "Invalid conv mode: " << val << std::endl;
     } else if (!var.compare("num_output")) {
       conv_param->output_num_ = atoi(val.c_str());
     } else if (!var.compare("kernel_size")) {
