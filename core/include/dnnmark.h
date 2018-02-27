@@ -99,6 +99,7 @@ class DNNMark {
   int Backward();
 
   int TearDown() {
+    DataManager<T>::GetInstance()->DataManager<T>::~DataManager();
     layers_map_.clear();
     return 0;
   };

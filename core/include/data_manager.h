@@ -51,12 +51,14 @@ class Data {
   }
   ~Data() {
     LOG(INFO) << "Free Data chunk of size " << size_;
+    if (size_ > 0) {
 #ifdef NVIDIA_CUDNN
-    CUDA_CALL(cudaFree(gpu_ptr_));
+      CUDA_CALL(cudaFree(gpu_ptr_));
 #endif
 #ifdef AMD_MIOPEN
-    HIP_CALL(hipFree(gpu_ptr_));
+      HIP_CALL(hipFree(gpu_ptr_));
 #endif
+    }
   }
   void Filler() {
     png_ = PseudoNumGenerator::GetInstance();

@@ -74,6 +74,9 @@ class ConvolutionLayer : public Layer<T> {
   int bwd_data_workspace_id_;
   Data<T> *bwd_filter_workspace_;
   int bwd_filter_workspace_id_;
+  bool has_fwd_workspace_;
+  bool has_bwd_data_workspace_;
+  bool has_bwd_filter_workspace_;
  public:
   ConvolutionLayer(DNNMark<T> *p_dnnmark)
   : Layer<T>(p_dnnmark),
@@ -82,13 +85,25 @@ class ConvolutionLayer : public Layer<T> {
     fwd_workspace_size_ = 0;
     bwd_data_workspace_size_ = 0;
     bwd_filter_workspace_size_ = 0;
+    has_fwd_workspace_ = false;
+    has_bwd_data_workspace_ = false;
+    has_bwd_filter_workspace_ = false;
   }
 
   ~ConvolutionLayer() {
     // Free the workspace
-    data_manager_->RemoveData(bwd_data_workspace_id_);
-    data_manager_->RemoveData(bwd_filter_workspace_id_);
-    data_manager_->RemoveData(fwd_workspace_id_);
+    if (has_fwd_workspace_) {
+      data_manager_->RemoveData(fwd_workspace_id_);
+      has_fwd_workspace_ = false;
+    }
+    if (has_bwd_data_workspace_) {
+      data_manager_->RemoveData(bwd_data_workspace_id_);
+      has_bwd_data_workspace_ = false;
+    }
+    if (has_bwd_filter_workspace_) {
+      data_manager_->RemoveData(bwd_filter_workspace_id_);
+      has_bwd_filter_workspace_ = false;
+    }
   }
 
   ConvolutionParam *getConvParam() { return &conv_param_; }
@@ -159,12 +174,15 @@ class ConvolutionLayer : public Layer<T> {
                                    top_desc_,
                                    desc_,
                                    &fwd_workspace_size_);
-    fwd_workspace_id_ = data_manager_->CreateData(fwd_workspace_size_);
-    fwd_workspace_ = data_manager_->GetData(fwd_workspace_id_);
+    if (fwd_workspace_size_ > 0) {
+      fwd_workspace_id_ = data_manager_->CreateData(fwd_workspace_size_);
+      fwd_workspace_ = data_manager_->GetData(fwd_workspace_id_);
+      has_fwd_workspace_ = true;
+    } 
 
     // Set convolution backward filter/weights algorithm
     // Use default algorithm for now
-    conv_algo_.SetBwdDataAlgo(conv_param_.algo_);
+    conv_algo_.SetBwdFilterAlgo(conv_param_.algo_);
 
     // Allocate workspace
     conv_algo_.GetBwdFilterWorkspaceSize(*(p_dnnmark_->GetHandle()),
@@ -173,9 +191,12 @@ class ConvolutionLayer : public Layer<T> {
                                          top_desc_,
                                          desc_,
                                          &bwd_filter_workspace_size_);
-    bwd_filter_workspace_id_ = data_manager_->
-                               CreateData(bwd_filter_workspace_size_);
-    bwd_filter_workspace_ = data_manager_->GetData(bwd_filter_workspace_id_);
+    if (bwd_filter_workspace_size_ > 0) {
+      bwd_filter_workspace_id_ = data_manager_->
+                                 CreateData(bwd_filter_workspace_size_);
+      bwd_filter_workspace_ = data_manager_->GetData(bwd_filter_workspace_id_);
+      has_bwd_filter_workspace_ = true;
+    }
 
     // Set convolution backward data algorithm
     // Use default algorithm for now
@@ -188,9 +209,12 @@ class ConvolutionLayer : public Layer<T> {
                                        top_desc_,
                                        desc_,
                                        &bwd_data_workspace_size_);
-    bwd_data_workspace_id_ = data_manager_->
-                               CreateData(bwd_data_workspace_size_);
-    bwd_data_workspace_ = data_manager_->GetData(bwd_data_workspace_id_);
+    if (bwd_data_workspace_size_ > 0) {
+      bwd_data_workspace_id_ = data_manager_->
+                                 CreateData(bwd_data_workspace_size_);
+      bwd_data_workspace_ = data_manager_->GetData(bwd_data_workspace_id_);
+      has_bwd_data_workspace_ = true;
+    }
 
   }
 
@@ -223,7 +247,8 @@ class ConvolutionLayer : public Layer<T> {
                 bottom_desc_, bottoms_[i]->Get(),
                 desc_, weights_->Get(),
                 &conv_algo_,
-                fwd_workspace_->Get(), fwd_workspace_size_,
+                has_fwd_workspace_? fwd_workspace_->Get() : nullptr,
+                fwd_workspace_size_,
                 DataType<T>::zero,
                 top_desc_, tops_[i]->Get());
     }
@@ -254,7 +279,8 @@ class ConvolutionLayer : public Layer<T> {
                   top_desc_, top_diffs_[i]->Get(),
                   desc_,
                   &conv_algo_,
-                  bwd_filter_workspace_->Get(), bwd_filter_workspace_size_,
+                  has_bwd_filter_workspace_? bwd_filter_workspace_->Get() : nullptr,
+                  bwd_filter_workspace_size_,
                   DataType<T>::zero,
                   weights_diff_->Get());
       if (conv_param_.propagation_) {
@@ -266,7 +292,8 @@ class ConvolutionLayer : public Layer<T> {
                   top_desc_, top_diffs_[i]->Get(),
                   desc_, weights_->Get(),
                   &conv_algo_,
-                  bwd_data_workspace_->Get(), bwd_data_workspace_size_,
+                  has_bwd_data_workspace_? bwd_data_workspace_->Get() : nullptr,
+                  bwd_data_workspace_size_,
                   DataType<T>::zero,
                   bottom_desc_, bottoms_[i]->Get());
       }
