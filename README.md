@@ -2,6 +2,9 @@
 DNNMark is now supporting MIOpen. Right now DNNMark can run on both AMD and Nvidia platform.
 HCC, HIP, MIOpen and miopengemm are required in order to build MIOpen version of DNNMark.
 
+# Publication
+[1] Shi Dong and David Kaeli. 2017. DNNMark: A Deep Neural Network Benchmark Suite for GPUs. In Proceedings of the General Purpose GPUs (GPGPU-10). ACM, New York, NY, USA, 63-72.
+
 # DNNMark
 Configurable benchmark suite of Deep Neural Networks
 
