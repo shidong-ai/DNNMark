@@ -58,6 +58,7 @@ After you download and unzip the DNNMark, you should go to its root directory an
 
 ## Usage
 To run the benchmarks that have been built, go to the directory `build` and you will see a directory `benchmarks`. Go inside and select the benchmark you want to run. Run command `./[name of benchmark] -config [path to config file] -debuginfo [1 or 0]` to execute the benchmark
+If you want to include warm up phase in the benchmark, one suggestion is that you mannually add it in the source code and use `-warmup [1 or 0]` to toggle the usage of the warm up phase. You can find one example the test_alexnet benchmark.
 
 # For Contributors
 1. Fork the repository to your own remote repository.
