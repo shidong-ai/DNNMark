@@ -99,7 +99,7 @@ class Timer {
   void SumRecords() {
     int index = 0;
     for (auto const &i : layer_table_) {
-      LOG(INFO) << i << ": " << timing_table_[index];
+      LOG(INFO) << i << ": " << timing_table_[index] << "ms";
       total_time_ += timing_table_[index];
       index++;
     }
