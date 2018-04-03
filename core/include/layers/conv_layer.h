@@ -118,9 +118,6 @@ class ConvolutionLayer : public Layer<T> {
     // Set up convolution related data
     if (input_dim_.n_ != 0 && input_dim_.c_ != 0 &&
         input_dim_.h_ != 0 && input_dim_.w_ != 0) {
-      //
-      // Standalone mode
-      //
 
       // Compute dimension of output data
       ComputeOutputDim();

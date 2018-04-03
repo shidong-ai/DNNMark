@@ -176,6 +176,16 @@ enum LayerType {
   BYPASS
 };
 
+// Loss type
+enum LossType {
+  CROSS_ENTROPY = 1
+};
+
+// SolverType
+enum SolverType {
+  SGD = 1
+};
+
 } // namespace dnnmark
 
 #endif // CORE_INCLUDE_COMMON_H_

@@ -5,6 +5,9 @@
 .project
 .cproject
 .settings
+*.txt
+*.html
+*.bin
 
 ####################
 # Unfavorable dir #
