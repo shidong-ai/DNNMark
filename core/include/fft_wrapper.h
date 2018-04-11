@@ -20,29 +20,25 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef CORE_INCLUDE_GEMM_H_
-#define CORE_INCLUDE_GEMM_H_
+#ifndef CORE_INCLUDE_FFT_H_
+#define CORE_INCLUDE_FFT_H_
 
 #include "common.h"
-#include "dnn_utility.h"
+#include "fft_utility.h"
 
 namespace dnnmark {
 
+template <typename T1, typename T2>
+void dnnmarkFFT(const FFTPlan &plan, const T1 *input, T2 *output);
 template <typename T>
-void dnnmarkGEMM(const Handle &handle, RunMode mode, int idx,
-                 bool is_a_transpose, bool is_b_transpose,
-                 int m, int n, int k,
-                 T *alpha,
-                 T *a, int lda,
-                 T *b, int ldb,
-                 T *beta,
-                 T *c, int ldc);
+void dnnmarkFFT(const FFTPlan &plan, const T *input, T *output);
 
-
+template <typename T1, typename T2>
+void dnnmarkIFFT(const FFTPlan &plan, const T2 *input, T1 *output);
 template <typename T>
-void dnnmarkHadamardProduct();
+void dnnmarkIFFT(const FFTPlan &plan, const T *input, T *output);
 
 } // namespace dnnmark
 
-#endif // CORE_INCLUDE_GEMM_H_
+#endif // CORE_INCLUDE_FFT_H_
 

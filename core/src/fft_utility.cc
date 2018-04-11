@@ -20,29 +20,45 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef CORE_INCLUDE_GEMM_H_
-#define CORE_INCLUDE_GEMM_H_
-
-#include "common.h"
-#include "dnn_utility.h"
+#include "fft_utility.h"
 
 namespace dnnmark {
 
-template <typename T>
-void dnnmarkGEMM(const Handle &handle, RunMode mode, int idx,
-                 bool is_a_transpose, bool is_b_transpose,
-                 int m, int n, int k,
-                 T *alpha,
-                 T *a, int lda,
-                 T *b, int ldb,
-                 T *beta,
-                 T *c, int ldc);
 
 
-template <typename T>
-void dnnmarkHadamardProduct();
+FFTPlan::FFTPlan() {
+#ifdef NVIDIA_CUDNN
+  CUFFT_CALL(cufftCreate(&plan_));
+#endif
+#ifdef AMD_MIOPEN
+#endif
+}
+
+FFTPlan::~FFTPlan() {
+#ifdef NVIDIA_CUDNN
+  CUFFT_CALL(cufftDestroy(plan_));
+#endif
+#ifdef AMD_MIOPEN
+#endif
+}
+
+#ifdef NVIDIA_CUDNN
+int SetPlan(FFTPlanType plan_type, int nx, FFTType type, int batch) {
+  int workspace_size = 0;
+  switch (plan_type) {
+    case FFT_1D:
+      CUFFT_CALL(cufftMakePlan1d(plan_, nx, type, batch, &workspace_size));
+      break;
+    default:
+      LOG(FATAL) << "FFT plan type NOT supported";
+  }
+
+  return workspace_size;
+}
+cufftHandle GetPlan() const { return plan_ }
+#endif
+#ifdef AMD_MIOPEN
+#endif
+
 
 } // namespace dnnmark
-
-#endif // CORE_INCLUDE_GEMM_H_
-

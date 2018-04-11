@@ -58,7 +58,7 @@ class CirculantFullyConnectedLayer : public Layer<T> {
   // Weights related
   int num_rows_weights_;
   int num_cols_weights_;
-  int circulant_block_size_;
+  int block_size_;
   int num_circulant_blocks_row_;
   int num_circulant_blocks_col_;
 
@@ -84,9 +84,6 @@ class CirculantFullyConnectedLayer : public Layer<T> {
     // Set up fcing related data
     if (input_dim_.n_ != 0 && input_dim_.c_ != 0 &&
         input_dim_.h_ != 0 && input_dim_.w_ != 0) {
-      //
-      // Standalone mode
-      //
 
       // Compute dimension of output data
       ComputeOutputDim();
@@ -119,7 +116,14 @@ class CirculantFullyConnectedLayer : public Layer<T> {
                            input_dim_.h_ *
                            input_dim_.w_;
     num_cols_weights_ = fc_param_.output_num_;
-    int weights_size = num_rows_weights_ * num_cols_weights_;
+
+    // Input dimension limitation
+    if (num_rows_weights_ % block_size_ != 0 || num_cols_weights_ % block_size_) {
+      LOG(FATAL) << "Input is not compatible with block size"
+    }
+    num_circulant_blocks_row_ = num_rows_weights_ / block_size_;
+    num_circulant_blocks_col_ = num_cols_weights_ / block_size_;
+    int weights_size = num_circulant_blocks_rows_ * num_circulant_blocks_col_ * block_size_;
     weights_chunk_id_ = data_manager_->CreateData(weights_size);
     weights_ = data_manager_->GetData(weights_chunk_id_);
     weights_diff_chunk_id_ =
@@ -149,30 +153,11 @@ class CirculantFullyConnectedLayer : public Layer<T> {
       }
     }
 
-    // Prepare CuBLAS parameters
-    int M = fc_param_.output_num_;
-    int N = input_dim_.n_;;
-    int K = num_rows_weights_;
-    int lda = K;
-    int ldb = K;
-    int ldc = M;
-    bool is_a_transpose = true;
-    bool is_b_transpose = false;
 
     // Fully connected forward computation
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_, p_dnnmark_->GetTimer(), "FcFwd");
     for (int i = 0; i < num_bottoms_; i++) {
-      // Y = T(W) * X                                                               
-      dnnmarkGEMM(*(p_dnnmark_->GetHandle()),
-                  p_dnnmark_->getRunMode(), layer_id_,
-                  is_a_transpose, is_b_transpose,
-                  M, N, K,
-                  &scale_alpha_,
-                  weights_->Get(), lda,
-                  bottoms_[i]->Get(), ldb,
-                  &scale_beta_,
-                  tops_[i]->Get(), ldc);
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_, p_dnnmark_->GetTimer(), "FcFwd");

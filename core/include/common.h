@@ -31,6 +31,8 @@
 #include <curand.h>
 #include <cudnn.h>
 #include <cublas_v2.h>
+#include <cufft.h>
+#include <cufftXt.h>
 #endif
 
 #ifdef AMD_MIOPEN
@@ -73,7 +75,15 @@ do {\
 #define CUBLAS_CALL(x) \
 do {\
   if((x) != CUBLAS_STATUS_SUCCESS) {\
-    std::cout << "CUDNN Error at " << __FILE__ << __LINE__;\
+    std::cout << "CUBLAS Error at " << __FILE__ << __LINE__;\
+    exit(EXIT_FAILURE);\
+  }\
+} while(0)\
+
+#define CUFFT_CALL(x) \
+do {\
+  if((x) != CUFFT_SUCCESS) {\
+    std::cout << "CUFFT Error at " << __FILE__ << __LINE__;\
     exit(EXIT_FAILURE);\
   }\
 } while(0)\
@@ -126,6 +136,14 @@ do {\
 #define TestType float
 #endif
 
+#ifdef NVIDIA_CUDNN
+#define Real float
+#define RealD double
+#define ComplexD cuDoubleComplex
+#define Complex cuComplex
+#endif
+
+
 // Code courtesy of Caffe
 template <typename T>
 class DataType;
@@ -141,14 +159,14 @@ template <> class DataType<float>  {
   static const void *one, *zero;
 };
 
-#ifdef NVIDIA_CUDNN
 template <> class DataType<double> {
  public:
+#ifdef NVIDIA_CUDNN
   static const cudnnDataType_t type = CUDNN_DATA_DOUBLE;
+#endif
   static double oneval, zeroval;
   static const void *one, *zero;
 };
-#endif
 
 // Min epsilon for BN
 #define BN_MIN_EPSILON 1e-5
