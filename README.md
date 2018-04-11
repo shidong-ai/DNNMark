@@ -3,11 +3,11 @@ DNNMark is now supporting MIOpen. Right now DNNMark can run on both AMD and Nvid
 HCC, HIP, MIOpen and miopengemm are required in order to build MIOpen version of DNNMark.
 
 # Publications
-[1] Shi Dong and David Kaeli. 2017. DNNMark: A Deep Neural Network Benchmark Suite for GPUs. In Proceedings of the General Purpose GPUs (GPGPU-10). ACM, New York, NY, USA, 63-72.
+[1] Shi Dong and David Kaeli. 2017. *DNNMark: A Deep Neural Network Benchmark Suite for GPUs*. In Proceedings of the General Purpose GPUs (GPGPU-10). ACM, New York, NY, USA, 63-72.
 
-[2] Shi Dong, Xiang Gong, Yifan Sun, Trinayan Baruah, and David Kaeli. 2018. Characterizing the Microarchitectural Implications of a Convolutional Neural Network (CNN) Execution on GPUs. In Proceedings of the 2018 ACM/SPEC International Conference on Performance Engineering (ICPE '18). ACM, New York, NY, USA, 96-106. DOI: https://doi.org/10.1145/3184407.3184423
+[2] Shi Dong, Xiang Gong, Yifan Sun, Trinayan Baruah, and David Kaeli. 2018. *Characterizing the Microarchitectural Implications of a Convolutional Neural Network (CNN) Execution on GPUs*. In Proceedings of the 2018 ACM/SPEC International Conference on Performance Engineering (ICPE '18). ACM, New York, NY, USA, 96-106. DOI: https://doi.org/10.1145/3184407.3184423
 
-[3] Yifan Sun, Saoni Mukherjee, Trinayan Baruah, Shi Dong, Julian Gutierrez, Prannoy Mohan, David Kaeli. 2018. Evaluating Performance Tradeoffs on the Radeon Open Compute Platform. ISPASS 2018
+[3] Yifan Sun, Saoni Mukherjee, Trinayan Baruah, Shi Dong, Julian Gutierrez, Prannoy Mohan, David Kaeli. 2018. *Evaluating Performance Tradeoffs on the Radeon Open Compute Platform*. ISPASS 2018
 
 # DNNMark
 Configurable benchmark suite of Deep Neural Networks
