@@ -104,6 +104,7 @@ if (CUDA_FOUND AND ${CUDA_ENABLE})
   find_library(CUDNN_LIBRARY cudnn ${CUDNN_ROOT}/lib64)
   find_library(CUDA_BLAS_LIBRARY cublas HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib64)
   find_library(CUDA_RAND_LIBRARY curand HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib64)
+  find_library(CUDA_FFT_LIBRARY cufft HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib64)
 
   # Find glog library
   find_library(GLOG_LIBRARY glog)
@@ -114,12 +115,14 @@ if (CUDA_FOUND AND ${CUDA_ENABLE})
   add_dependencies(${PROJECT_NAME} ${CUDNN_LIBRARY})
   add_dependencies(${PROJECT_NAME} ${CUDA_BLAS_LIBRARY})
   add_dependencies(${PROJECT_NAME} ${CUDA_RAND_LIBRARY})
+  add_dependencies(${PROJECT_NAME} ${CUDA_FFT_LIBRARY})
   add_dependencies(${PROJECT_NAME} ${CUDA_LIBRARIES})
   add_dependencies(${PROJECT_NAME} ${GLOG_LIBRARY})
   target_link_libraries(${PROJECT_NAME} 
                         ${CUDNN_LIBRARY}
                         ${CUDA_BLAS_LIBRARY}
                         ${CUDA_RAND_LIBRARY} 
+                        ${CUDA_FFT_LIBRARY} 
                         ${CUDA_LIBRARIES}
                         ${GLOG_LIBRARY}
                         m)

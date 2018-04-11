@@ -29,23 +29,23 @@ namespace dnnmark {
 //
 
 template <>
-void dnnmarkFFT(const FFTPlan &plan, const Real *input, Complex *output) {
-  CUFFT_CALL(cufftExecR2C(plan, input, output));
+void dnnmarkFFT(const FFTPlan &plan, Real *input, Complex *output) {
+  CUFFT_CALL(cufftExecR2C(plan.Get(), input, output));
 }
 
 template <>
-void dnnmarkFFT(const FFTPlan &plan, const Complex *input, Complex *output) {
-  CUFFT_CALL(cufftExecC2C(plan, input, output, FFT));
+void dnnmarkFFT(const FFTPlan &plan, Complex *input, Complex *output) {
+  CUFFT_CALL(cufftExecC2C(plan.Get(), input, output, FFT));
 }
 
 template <>
-void dnnmarkFFT(const FFTPlan &plan, const RealD *input, ComplexD *output) {
-  CUFFT_CALL(cufftExecD2Z(plan, input, output));
+void dnnmarkFFT(const FFTPlan &plan, RealD *input, ComplexD *output) {
+  CUFFT_CALL(cufftExecD2Z(plan.Get(), input, output));
 }
 
 template <>
-void dnnmarkFFT(const FFTPlan &plan, const ComplexD *input, ComplexD *output) {
-  CUFFT_CALL(cufftExecZ2Z(plan, input, output, FFT));
+void dnnmarkFFT(const FFTPlan &plan, ComplexD *input, ComplexD *output) {
+  CUFFT_CALL(cufftExecZ2Z(plan.Get(), input, output, FFT));
 }
 
 //
@@ -53,23 +53,23 @@ void dnnmarkFFT(const FFTPlan &plan, const ComplexD *input, ComplexD *output) {
 //
 
 template <>
-void dnnmarkIFFT(const FFTPlan &plan, const Complex *input, Real *output) {
-  CUFFT_CALL(cufftExecC2R(plan, input, output));
+void dnnmarkIFFT(const FFTPlan &plan, Complex *input, Real *output) {
+  CUFFT_CALL(cufftExecC2R(plan.Get(), input, output));
 }
 
 template <>
-void dnnmarkIFFT(const FFTPlan &plan, const Complex *input, Complex *output) {
-  CUFFT_CALL(cufftExecC2C(plan, input, output, IFFT));
+void dnnmarkIFFT(const FFTPlan &plan, Complex *input, Complex *output) {
+  CUFFT_CALL(cufftExecC2C(plan.Get(), input, output, IFFT));
 }
 
 template <>
-void dnnmarkIFFT(const FFTPlan &plan, const ComplexD *input, RealD *output) {
-  CUFFT_CALL(cufftExecZ2D(plan, input, output));
+void dnnmarkIFFT(const FFTPlan &plan, ComplexD *input, RealD *output) {
+  CUFFT_CALL(cufftExecZ2D(plan.Get(), input, output));
 }
 
 template <>
-void dnnmarkIFFT(const FFTPlan &plan, const ComplexD *input, ComplexD *output) {
-  CUFFT_CALL(cufftExecZ2Z(plan, input, output, IFFT));
+void dnnmarkIFFT(const FFTPlan &plan, ComplexD *input, ComplexD *output) {
+  CUFFT_CALL(cufftExecZ2Z(plan.Get(), input, output, IFFT));
 }
 
 } // namespace dnnmark

@@ -24,8 +24,6 @@
 
 namespace dnnmark {
 
-
-
 FFTPlan::FFTPlan() {
 #ifdef NVIDIA_CUDNN
   CUFFT_CALL(cufftCreate(&plan_));
@@ -43,11 +41,11 @@ FFTPlan::~FFTPlan() {
 }
 
 #ifdef NVIDIA_CUDNN
-int SetPlan(FFTPlanType plan_type, int nx, FFTType type, int batch) {
-  int workspace_size = 0;
+size_t FFTPlan::Set(FFTPlanType plan_type, int nx, FFTType type, int batch) {
+  size_t workspace_size = 0;
   switch (plan_type) {
     case FFT_1D:
-      CUFFT_CALL(cufftMakePlan1d(plan_, nx, type, batch, &workspace_size));
+      CUFFT_CALL(cufftMakePlan1d(plan_, nx, (cufftType_t)type, batch, &workspace_size));
       break;
     default:
       LOG(FATAL) << "FFT plan type NOT supported";
@@ -55,7 +53,7 @@ int SetPlan(FFTPlanType plan_type, int nx, FFTType type, int batch) {
 
   return workspace_size;
 }
-cufftHandle GetPlan() const { return plan_ }
+cufftHandle FFTPlan::Get() const { return plan_; }
 #endif
 #ifdef AMD_MIOPEN
 #endif

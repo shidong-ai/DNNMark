@@ -29,14 +29,14 @@
 namespace dnnmark {
 
 template <typename T1, typename T2>
-void dnnmarkFFT(const FFTPlan &plan, const T1 *input, T2 *output);
+void dnnmarkFFT(const FFTPlan &plan, T1 *input, T2 *output);
 template <typename T>
-void dnnmarkFFT(const FFTPlan &plan, const T *input, T *output);
-
+void dnnmarkFFT(const FFTPlan &plan, T *input, T *output);
+//
 template <typename T1, typename T2>
-void dnnmarkIFFT(const FFTPlan &plan, const T2 *input, T1 *output);
+void dnnmarkIFFT(const FFTPlan &plan, T2 *input, T1 *output);
 template <typename T>
-void dnnmarkIFFT(const FFTPlan &plan, const T *input, T *output);
+void dnnmarkIFFT(const FFTPlan &plan, T *input, T *output);
 
 } // namespace dnnmark
 

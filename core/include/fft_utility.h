@@ -51,8 +51,8 @@ enum FFTPlanType {
 
 enum FFTDirction {
 #ifdef NVIDIA_CUDNN
-  FFT = cuFFTFORWARD,
-  IFFT = cuFFTINVERSE
+  FFT = CUFFT_FORWARD,
+  IFFT = CUFFT_INVERSE
 #endif
 };
 
@@ -64,9 +64,9 @@ class FFTPlan {
  public:
   FFTPlan();
   ~FFTPlan();
-  int SetPlan(FFTPlanType plan_type, int nx, FFTType type, int batch);
+  size_t Set(FFTPlanType plan_type, int nx, FFTType type, int batch);
 #ifdef NVIDIA_CUDNN
-  cufftHandle GetPlan() const;
+  cufftHandle Get() const;
 #endif
 #ifdef AMD_MIOPEN
 #endif
