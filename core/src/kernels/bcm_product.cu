@@ -20,25 +20,33 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef CORE_INCLUDE_FFT_H_
-#define CORE_INCLUDE_FFT_H_
-
-#include "common.h"
-#include "fft_utility.h"
+#include "kernels.h"
 
 namespace dnnmark {
 
-template <typename T1, typename T2>
-void dnnmarkFFT(const FFTPlan &plan, T1 *input, T2 *output);
 template <typename T>
-void dnnmarkFFT(const FFTPlan &plan, T *input, T *output);
+__global__ void BCMProduct(T *fft_w, T *fft_x, T *y) {
+  // Dimension of W after FFT is p * q * k (k is floor(n/2)+1)
+  // Dimension of X after FFT is n * q * k (k is floor(n/2)+1)
+  // Dimension of Y is n * p * q * k (k is floor(n/2)+1)
+  int n = gridDim.z;
+  int p = gridDim.y;
+  int q = gridDim.x;
+  int k = blockDim.x;
+  int k_idx = threadIdx.x;
+  int q_idx = blockIdx.x;
+  int p_idx = blockIdx.y;
+  int n_idx = blockIdx.z;
+  int w_idx = p_idx * q * k + q_idx * k + k_idx;
+  int x_idx = n_idx * q * k + q_idx * k + k_idx;
+  int y_idx = n_idx * p * q * k + p_idx * q * k + q_idx * k + k_idx;
 
-template <typename T1, typename T2>
-void dnnmarkIFFT(const FFTPlan &plan, T2 *input, T1 *output);
-template <typename T>
-void dnnmarkIFFT(const FFTPlan &plan, T *input, T *output);
+  y[y_idx] = fft_w[w_idx] * fft_x[x_idx];
 
-} // namespace dnnmark
+}
 
-#endif // CORE_INCLUDE_FFT_H_
+template __global__ void BCMProduct(float *fft_w, float *fft_x, float *y);
+template __global__ void BCMProduct(double *fft_w, double *fft_x, double *y);
 
+
+}

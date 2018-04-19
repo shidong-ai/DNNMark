@@ -20,25 +20,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef CORE_INCLUDE_FFT_H_
-#define CORE_INCLUDE_FFT_H_
-
-#include "common.h"
-#include "fft_utility.h"
+#include "kernels.h"
 
 namespace dnnmark {
 
-template <typename T1, typename T2>
-void dnnmarkFFT(const FFTPlan &plan, T1 *input, T2 *output);
 template <typename T>
-void dnnmarkFFT(const FFTPlan &plan, T *input, T *output);
+__global__ void BCMSum(T *x, T *y, int q, int k) {
+  // Dimension of X is n * p * q * k (k is floor(n/2)+1)
+  // Dimension of Y is n * q * k (k is floor(n/2)+1)
+  int y_idx = blockIdx.x * blockDim.x + threadIdx.x;
+  y[y_idx] = 0;
+  for (int i = 0; i < q; i++) {
+    int x_idx = blockIdx.x * blockDim.x + i * k + threadIdx.x;
+    y[y_idx] += x[x_idx];
+  }
 
-template <typename T1, typename T2>
-void dnnmarkIFFT(const FFTPlan &plan, T2 *input, T1 *output);
-template <typename T>
-void dnnmarkIFFT(const FFTPlan &plan, T *input, T *output);
+}
 
-} // namespace dnnmark
+template __global__ void BCMSum(float *x, float *y, int q, int k);
+template __global__ void BCMSum(double *x, double *y, int q, int k);
 
-#endif // CORE_INCLUDE_FFT_H_
-
+}

@@ -20,25 +20,21 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef CORE_INCLUDE_FFT_H_
-#define CORE_INCLUDE_FFT_H_
+#ifndef CORE_INCLUDE_KERNELS_H_
+#define CORE_INCLUDE_KERNELS_H_
+
+#include <cuda_runtime.h>
 
 #include "common.h"
-#include "fft_utility.h"
 
 namespace dnnmark {
 
-template <typename T1, typename T2>
-void dnnmarkFFT(const FFTPlan &plan, T1 *input, T2 *output);
 template <typename T>
-void dnnmarkFFT(const FFTPlan &plan, T *input, T *output);
+__global__ void BCMProduct(T *fft_w, T *fft_x, T *y);
 
-template <typename T1, typename T2>
-void dnnmarkIFFT(const FFTPlan &plan, T2 *input, T1 *output);
 template <typename T>
-void dnnmarkIFFT(const FFTPlan &plan, T *input, T *output);
+__global__ void BCMSum(T *x, T *y, int q, int k);
 
-} // namespace dnnmark
+}
 
-#endif // CORE_INCLUDE_FFT_H_
-
+#endif // CORE_INCLUDE_KERNELS_H_

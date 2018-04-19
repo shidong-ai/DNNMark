@@ -94,7 +94,7 @@ if (CUDA_FOUND AND ${CUDA_ENABLE})
   include_directories(${DNNMARK_LAYERS}) 
   
   # Set source files
-  file(GLOB_RECURSE DNNMARK_SOURCES RELATIVE ${CMAKE_SOURCE_DIR} core/src/*.cc)
+  file(GLOB_RECURSE DNNMARK_SOURCES RELATIVE ${CMAKE_SOURCE_DIR} core/src/*.cc core/src/*.cu)
   message(STATUS "DNNMark Source files: " ${DNNMARK_SOURCES})
 
   # Set NVCC flags  
