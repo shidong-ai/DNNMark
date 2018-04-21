@@ -24,20 +24,19 @@
 
 namespace dnnmark {
 
-template <typename T>
-__global__ void BCMSum(T *x, T *y, int q, int k) {
+template <>
+__global__ void BCMSum(Complex *x, Complex *y, int q, int k) {
   // Dimension of X is n * p * q * k (k is floor(n/2)+1)
   // Dimension of Y is n * q * k (k is floor(n/2)+1)
   int y_idx = blockIdx.x * blockDim.x + threadIdx.x;
-  y[y_idx] = 0;
+  y[y_idx].x = 0;
+  y[y_idx].y = 0;
   for (int i = 0; i < q; i++) {
     int x_idx = blockIdx.x * blockDim.x + i * k + threadIdx.x;
-    y[y_idx] += x[x_idx];
+    y[y_idx].x += x[x_idx].x;
+    y[y_idx].y += x[x_idx].y;
   }
 
 }
-
-template __global__ void BCMSum(float *x, float *y, int q, int k);
-template __global__ void BCMSum(double *x, double *y, int q, int k);
 
 }

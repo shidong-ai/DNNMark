@@ -24,7 +24,8 @@
 #define CORE_INCLUDE_LAYERS_FC_LAYER_H_
 
 #include "dnn_layer.h"
-#include "fc_layer.h"
+#include "fft_utility.h"
+#include "fft_wrapper.h"
 
 namespace dnnmark {
 
@@ -58,9 +59,16 @@ class CirculantFullyConnectedLayer : public Layer<T> {
   // Weights related
   int num_rows_weights_;
   int num_cols_weights_;
-  int block_size_;
-  int num_circulant_blocks_row_;
-  int num_circulant_blocks_col_;
+
+  // Use notation in the BCM paper
+  int k_; // block size
+  int p_; // number of blocks row-wise
+  int q_; // number of blocks column-wise
+
+  // FFT plans
+  FFTPlan w_plan_;
+  FFTPlan x_plan_;
+  FFTPlan ifft_plan_;
 
   // Layer weights
   Data<T> *weights_;
@@ -68,10 +76,21 @@ class CirculantFullyConnectedLayer : public Layer<T> {
   Data<T> *weights_diff_;
   int weights_diff_chunk_id_;
 
+  // Intermediate memory
+  Data<T> *fft_w_;
+  int fft_w_chunk_id_;
+  Data<T> *fft_x_;
+  int fft_x_chunk_id_;
+  Data<T> *product_y_;
+  int product_y_chunk_id_;
+  Data<T> *sum_y_;
+  int sum_y_chunk_id_;
+
  public:
   CirculantConnectedLayer(DNNMark<T> *p_dnnmark)
   : Layer<T>(p_dnnmark),
-    fc_param_() {
+    fc_param_(),
+    w_plan_(), x_plan_(), ifft_plan_() {
     Layer<T>::has_learnable_params_ = true;
   }
 
@@ -118,12 +137,22 @@ class CirculantFullyConnectedLayer : public Layer<T> {
     num_cols_weights_ = fc_param_.output_num_;
 
     // Input dimension limitation
-    if (num_rows_weights_ % block_size_ != 0 || num_cols_weights_ % block_size_) {
+    if (num_rows_weights_ % k_ != 0 || num_cols_weights_ % k_) {
       LOG(FATAL) << "Input is not compatible with block size"
     }
-    num_circulant_blocks_row_ = num_rows_weights_ / block_size_;
-    num_circulant_blocks_col_ = num_cols_weights_ / block_size_;
-    int weights_size = num_circulant_blocks_rows_ * num_circulant_blocks_col_ * block_size_;
+
+    // The dimension of block circulant method
+    int n = output_dim_.n_;
+    p_ = num_rows_weights_ / k_;
+    q_ = num_cols_weights_ / k_;
+
+    // Set the plans
+    w_plan_.Set(FFT_1D, k_, R2C, p_ * q_);
+    x_plan_.Set(FFT_1D, k_, R2C, n * q_);
+    ifft_plan_.Set(FFT_1D, k_, C2R, n* p_);
+
+    // Create weight data
+    int weights_size = p_ * q_ * k_;
     weights_chunk_id_ = data_manager_->CreateData(weights_size);
     weights_ = data_manager_->GetData(weights_chunk_id_);
     weights_diff_chunk_id_ =
@@ -133,8 +162,22 @@ class CirculantFullyConnectedLayer : public Layer<T> {
     // Fill the weight data
     weights_->Filler();
 
-    scale_alpha_ = (T)1.0;
-    scale_beta_ = (T)0.0;
+    // Intermediate memory generation
+    // Complex data requires doubling the memory
+    int fft_k_ = k_ / 2 + 1;
+    int fft_w_size = p_ * q_ * fft_k_;
+    fft_w_chunk_id_ = data_manager_->CreateData(fft_w_size * 2);
+    fft_w_ = data_manager_->GetData(fft_w_chunk_id);
+    int fft_x_size = n * q_ * fft_k_;
+    fft_x_chunk_id_ = data_manager_->CreateData(fft_x_size * 2);
+    fft_x_ = data_manager_->GetData(fft_x_chunk_id);
+    int product_y_size = n * p_ * q_ * fft_k_;
+    product_y_chunk_id_ = data_manager_->CreateData(product_y_size * 2);
+    product_y_ = data_manager_->GetData(product_y_chunk_id);
+    int sum_y_size = n * p_ * fft_k_;
+    sum_y_chunk_id_ = data_manager_->CreateData(sum_y_size * 2);
+    sum_y_ = data_manager_->GetData(sum_y_chunk_id);
+
   }
 
   void ComputeOutputDim() {
@@ -158,6 +201,10 @@ class CirculantFullyConnectedLayer : public Layer<T> {
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_, p_dnnmark_->GetTimer(), "FcFwd");
     for (int i = 0; i < num_bottoms_; i++) {
+      dnnmarkFFT(w_plan_.Get(), bottoms_[i]->Get(), (Complex *)fft_w_->Get());
+      dnnmarkFFT(w_plan_.Get(), bottoms_[i]->Get(), (Complex *)fft_x_->Get());
+      CUDA_CALL(cudaDeviceSynchronize);
+
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_, p_dnnmark_->GetTimer(), "FcFwd");

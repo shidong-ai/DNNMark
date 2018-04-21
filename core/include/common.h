@@ -132,17 +132,17 @@ do {\
 
 #ifdef DOUBLE_TEST
 #define TestType double
+#ifdef NVIDIA_CUDNN
+#define Real double
+#define Complex cuDoubleComplex
+#endif
 #else
 #define TestType float
-#endif
-
 #ifdef NVIDIA_CUDNN
 #define Real float
-#define RealD double
-#define ComplexD cuDoubleComplex
 #define Complex cuComplex
 #endif
-
+#endif
 
 // Code courtesy of Caffe
 template <typename T>

@@ -24,8 +24,8 @@
 
 namespace dnnmark {
 
-template <typename T>
-__global__ void BCMProduct(T *fft_w, T *fft_x, T *y) {
+template <>
+__global__ void BCMProduct(Complex *fft_w, Complex *fft_x, Complex *y) {
   // Dimension of W after FFT is p * q * k (k is floor(n/2)+1)
   // Dimension of X after FFT is n * q * k (k is floor(n/2)+1)
   // Dimension of Y is n * p * q * k (k is floor(n/2)+1)
@@ -41,12 +41,11 @@ __global__ void BCMProduct(T *fft_w, T *fft_x, T *y) {
   int x_idx = n_idx * q * k + q_idx * k + k_idx;
   int y_idx = n_idx * p * q * k + p_idx * q * k + q_idx * k + k_idx;
 
-  y[y_idx] = fft_w[w_idx] * fft_x[x_idx];
+  y[y_idx].x = fft_w[w_idx].x * fft_x[x_idx].x -
+               fft_w[w_idx].y * fft_x[x_idx].y;
+  y[y_idx].y = fft_w[w_idx].x * fft_x[x_idx].y +
+               fft_w[w_idx].y * fft_x[x_idx].x;
 
 }
-
-template __global__ void BCMProduct(float *fft_w, float *fft_x, float *y);
-template __global__ void BCMProduct(double *fft_w, double *fft_x, double *y);
-
 
 }

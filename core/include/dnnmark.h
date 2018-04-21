@@ -49,6 +49,7 @@
 #include "conv_layer.h"
 #include "dropout_layer.h"
 #include "fc_layer.h"
+#include "circulant_fc_layer.h"
 #include "lrn_layer.h"
 #include "pool_layer.h"
 #include "softmax_layer.h"
