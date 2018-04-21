@@ -61,6 +61,7 @@ class CirculantFullyConnectedLayer : public Layer<T> {
   int num_cols_weights_;
 
   // Use notation in the BCM paper
+  int n_; // batch size
   int k_; // block size
   int p_; // number of blocks row-wise
   int q_; // number of blocks column-wise
@@ -142,14 +143,14 @@ class CirculantFullyConnectedLayer : public Layer<T> {
     }
 
     // The dimension of block circulant method
-    int n = output_dim_.n_;
+    n_ = output_dim_.n_;
     p_ = num_rows_weights_ / k_;
     q_ = num_cols_weights_ / k_;
 
     // Set the plans
     w_plan_.Set(FFT_1D, k_, R2C, p_ * q_);
-    x_plan_.Set(FFT_1D, k_, R2C, n * q_);
-    ifft_plan_.Set(FFT_1D, k_, C2R, n* p_);
+    x_plan_.Set(FFT_1D, k_, R2C, n_ * q_);
+    ifft_plan_.Set(FFT_1D, k_, C2R, n_ * p_);
 
     // Create weight data
     int weights_size = p_ * q_ * k_;
@@ -168,13 +169,13 @@ class CirculantFullyConnectedLayer : public Layer<T> {
     int fft_w_size = p_ * q_ * fft_k_;
     fft_w_chunk_id_ = data_manager_->CreateData(fft_w_size * 2);
     fft_w_ = data_manager_->GetData(fft_w_chunk_id);
-    int fft_x_size = n * q_ * fft_k_;
+    int fft_x_size = n_ * q_ * fft_k_;
     fft_x_chunk_id_ = data_manager_->CreateData(fft_x_size * 2);
     fft_x_ = data_manager_->GetData(fft_x_chunk_id);
-    int product_y_size = n * p_ * q_ * fft_k_;
+    int product_y_size = n_ * p_ * q_ * fft_k_;
     product_y_chunk_id_ = data_manager_->CreateData(product_y_size * 2);
     product_y_ = data_manager_->GetData(product_y_chunk_id);
-    int sum_y_size = n * p_ * fft_k_;
+    int sum_y_size = n_ * p_ * fft_k_;
     sum_y_chunk_id_ = data_manager_->CreateData(sum_y_size * 2);
     sum_y_ = data_manager_->GetData(sum_y_chunk_id);
 
@@ -199,15 +200,32 @@ class CirculantFullyConnectedLayer : public Layer<T> {
 
     // Fully connected forward computation
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_, p_dnnmark_->GetTimer(), "FcFwd");
+                  layer_id_, p_dnnmark_->GetTimer(), "BCMFcFwd");
     for (int i = 0; i < num_bottoms_; i++) {
-      dnnmarkFFT(w_plan_.Get(), bottoms_[i]->Get(), (Complex *)fft_w_->Get());
-      dnnmarkFFT(w_plan_.Get(), bottoms_[i]->Get(), (Complex *)fft_x_->Get());
+      dnnmarkFFT(w_plan_.Get(), weights_[i]->Get(), (Complex *)fft_w_->Get());
+      dnnmarkFFT(x_plan_.Get(), bottoms_[i]->Get(), (Complex *)fft_x_->Get());
       CUDA_CALL(cudaDeviceSynchronize);
 
+      // Specify the kernel dimensions
+      dim3 block_dim(k_, 1 , 1);
+      dim3 grid_dim(q_, p_, n_);
+      BCMProduct<Complex><<<grid_dim, block_dim>>>((Complex *)fft_w_->Get(),
+                                                   (Complex *)fft_x_->Get(),
+                                                   (Complex *)product_y_->Get());
+      CUDA_CALL(cudaDeviceSynchronize);
+
+      grid_dim.x = n_ * p_;
+      grid_dim.y = 1;
+      grid_dim.z = 1;
+      BCMSum<Complex><<<grid_dim, block_dim>>>((Complex *)product_y_->Get(),
+                                               (Complex *)sum_y_->Get());
+      CUDA_CALL(cudaDeviceSynchronize);
+
+      dnnmarkIFFT(ifft_plan_.Get(), (Complex *)sum_y_->Get(), tops_[i]->Get());
+      
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_, p_dnnmark_->GetTimer(), "FcFwd");
+                  layer_id_, p_dnnmark_->GetTimer(), "BCMFcFwd");
 
   }
 
