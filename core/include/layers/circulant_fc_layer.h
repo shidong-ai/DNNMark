@@ -20,12 +20,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef CORE_INCLUDE_LAYERS_FC_LAYER_H_ 
-#define CORE_INCLUDE_LAYERS_FC_LAYER_H_
+#ifndef CORE_INCLUDE_LAYERS_CIRCULANT_FC_LAYER_H_ 
+#define CORE_INCLUDE_LAYERS_CIRCULATN_FC_LAYER_H_
 
 #include "dnn_layer.h"
 #include "fft_utility.h"
 #include "fft_wrapper.h"
+#include "kernels.h"
 
 namespace dnnmark {
 
@@ -88,7 +89,7 @@ class CirculantFullyConnectedLayer : public Layer<T> {
   int sum_y_chunk_id_;
 
  public:
-  CirculantConnectedLayer(DNNMark<T> *p_dnnmark)
+  CirculantFullyConnectedLayer(DNNMark<T> *p_dnnmark)
   : Layer<T>(p_dnnmark),
     fc_param_(),
     w_plan_(), x_plan_(), ifft_plan_() {
@@ -139,7 +140,7 @@ class CirculantFullyConnectedLayer : public Layer<T> {
 
     // Input dimension limitation
     if (num_rows_weights_ % k_ != 0 || num_cols_weights_ % k_) {
-      LOG(FATAL) << "Input is not compatible with block size"
+      LOG(FATAL) << "Input is not compatible with block size";
     }
 
     // The dimension of block circulant method
@@ -168,16 +169,16 @@ class CirculantFullyConnectedLayer : public Layer<T> {
     int fft_k_ = k_ / 2 + 1;
     int fft_w_size = p_ * q_ * fft_k_;
     fft_w_chunk_id_ = data_manager_->CreateData(fft_w_size * 2);
-    fft_w_ = data_manager_->GetData(fft_w_chunk_id);
+    fft_w_ = data_manager_->GetData(fft_w_chunk_id_);
     int fft_x_size = n_ * q_ * fft_k_;
     fft_x_chunk_id_ = data_manager_->CreateData(fft_x_size * 2);
-    fft_x_ = data_manager_->GetData(fft_x_chunk_id);
+    fft_x_ = data_manager_->GetData(fft_x_chunk_id_);
     int product_y_size = n_ * p_ * q_ * fft_k_;
     product_y_chunk_id_ = data_manager_->CreateData(product_y_size * 2);
-    product_y_ = data_manager_->GetData(product_y_chunk_id);
+    product_y_ = data_manager_->GetData(product_y_chunk_id_);
     int sum_y_size = n_ * p_ * fft_k_;
     sum_y_chunk_id_ = data_manager_->CreateData(sum_y_size * 2);
-    sum_y_ = data_manager_->GetData(sum_y_chunk_id);
+    sum_y_ = data_manager_->GetData(sum_y_chunk_id_);
 
   }
 
@@ -202,26 +203,29 @@ class CirculantFullyConnectedLayer : public Layer<T> {
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_, p_dnnmark_->GetTimer(), "BCMFcFwd");
     for (int i = 0; i < num_bottoms_; i++) {
-      dnnmarkFFT(w_plan_.Get(), weights_[i]->Get(), (Complex *)fft_w_->Get());
-      dnnmarkFFT(x_plan_.Get(), bottoms_[i]->Get(), (Complex *)fft_x_->Get());
-      CUDA_CALL(cudaDeviceSynchronize);
+      dnnmarkFFT(w_plan_, weights_->Get(), (Complex *)fft_w_->Get());
+      dnnmarkFFT(x_plan_, bottoms_[i]->Get(), (Complex *)fft_x_->Get());
+      CUDA_CALL(cudaDeviceSynchronize());
 
       // Specify the kernel dimensions
       dim3 block_dim(k_, 1 , 1);
       dim3 grid_dim(q_, p_, n_);
-      BCMProduct<Complex><<<grid_dim, block_dim>>>((Complex *)fft_w_->Get(),
-                                                   (Complex *)fft_x_->Get(),
-                                                   (Complex *)product_y_->Get());
-      CUDA_CALL(cudaDeviceSynchronize);
+      BCMProduct((Complex *)fft_w_->Get(),
+                 (Complex *)fft_x_->Get(),
+                 (Complex *)product_y_->Get(),
+                 n_, p_, q_, k_);
+      CUDA_CALL(cudaDeviceSynchronize());
 
       grid_dim.x = n_ * p_;
       grid_dim.y = 1;
       grid_dim.z = 1;
-      BCMSum<Complex><<<grid_dim, block_dim>>>((Complex *)product_y_->Get(),
-                                               (Complex *)sum_y_->Get());
-      CUDA_CALL(cudaDeviceSynchronize);
+      BCMSum((Complex *)product_y_->Get(),
+             (Complex *)sum_y_->Get(),
+             n_, p_, q_, k_);
+      CUDA_CALL(cudaDeviceSynchronize());
 
-      dnnmarkIFFT(ifft_plan_.Get(), (Complex *)sum_y_->Get(), tops_[i]->Get());
+      dnnmarkIFFT(ifft_plan_, (Complex *)sum_y_->Get(), tops_[i]->Get());
+      CUDA_CALL(cudaDeviceSynchronize());
       
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
@@ -243,57 +247,20 @@ class CirculantFullyConnectedLayer : public Layer<T> {
       }
     }
 
-    // Prepare CuBLAS parameters for calculating d(W)
-    int M = num_rows_weights_; 
-    int N = fc_param_.output_num_;
-    int K = input_dim_.n_;
-    int lda = M;
-    int ldb = N;
-    int ldc = M;
-    bool is_a_transpose = false;
-    bool is_b_transpose = true;
-
     // Fully connected backward weights computation
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_, p_dnnmark_->GetTimer(), "FcBwdFilter");
     for (int i = 0; i < num_tops_; i++) {
-      // d(W) = X * T(d(Y))
-      dnnmarkGEMM(*(p_dnnmark_->GetHandle()),
-                  p_dnnmark_->getRunMode(), layer_id_,
-                  is_a_transpose, is_b_transpose,
-                  M, N, K,
-                  &scale_alpha_,
-                  bottoms_[i]->Get(), lda,
-                  top_diffs_[i]->Get(), ldb,
-                  &scale_beta_,
-                  weights_diff_->Get(), ldc);
+
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_, p_dnnmark_->GetTimer(), "FcBwdFilter");
-
-    M = num_rows_weights_;
-    N = input_dim_.n_;
-    K = fc_param_.output_num_;
-    lda = M;
-    ldb = K;
-    ldc = M;
-    is_a_transpose = false;
-    is_b_transpose = false;
 
     // Fully connected backward data computation
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_, p_dnnmark_->GetTimer(), "FcBwdData");
     for (int i = 0; i < num_tops_; i++) {
-      // d(X) = W * d(Y)
-      dnnmarkGEMM(*(p_dnnmark_->GetHandle()),
-                  p_dnnmark_->getRunMode(), layer_id_,
-                  is_a_transpose, is_b_transpose,
-                  M, N, K,
-                  &scale_alpha_,
-                  weights_->Get(), lda,
-                  top_diffs_[i]->Get(), ldb,
-                  &scale_beta_,
-                  bottom_diffs_[i]->Get(), ldc);
+
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_, p_dnnmark_->GetTimer(), "FcBwdData");
@@ -303,4 +270,4 @@ class CirculantFullyConnectedLayer : public Layer<T> {
 
 } // namespace dnnmark
 
-#endif // CORE_INCLUDE_LAYERS_FC_LAYER_H_
+#endif // CORE_INCLUDE_CIRCULANT_LAYERS_FC_LAYER_H_

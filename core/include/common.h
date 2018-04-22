@@ -188,6 +188,7 @@ enum LayerType {
   LRN,
   ACTIVATION,
   FC,
+  BCM_FC,
   SOFTMAX,
   BN,
   DROPOUT,

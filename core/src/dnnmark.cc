@@ -27,6 +27,8 @@
 #include <miopen/miopen.h>
 #endif
 
+#include <iostream>
+
 #include "dnnmark.h"
 
 namespace dnnmark {
@@ -128,6 +130,19 @@ void DNNMark<T>::SetLayerParams(LayerType layer_type,
       SetupFcParam(var, val, fc_param);
       break;
     } // End of case FC
+    case BCM_FC: {
+      // Obtain the data dimension and parameters variable within layer class
+      input_dim = std::dynamic_pointer_cast<CirculantFullyConnectedLayer<T>>
+                  (layers_map_[current_layer_id])->getInputDim();
+      fc_param = std::dynamic_pointer_cast<CirculantFullyConnectedLayer<T>>
+                 (layers_map_[current_layer_id])->getFullyConnectedParam();
+
+      if(isKeywordExist(var, data_config_keywords))
+        break;
+
+      SetupFcParam(var, val, fc_param);
+      break;
+    } // End of case BCM_FC
     case SOFTMAX: {
       // Obtain the data dimension and parameters variable within layer class
       input_dim = std::dynamic_pointer_cast<SoftmaxLayer<T>>
@@ -317,6 +332,9 @@ int DNNMark<T>::ParseLayerConfig(const std::string &config_file) {
       else if (layer_type == FC)
         layers_map_.emplace(current_layer_id,
           std::make_shared<FullyConnectedLayer<T>>(this));
+      else if (layer_type == BCM_FC)
+        layers_map_.emplace(current_layer_id,
+          std::make_shared<CirculantFullyConnectedLayer<T>>(this));
       else if (layer_type == SOFTMAX)
         layers_map_.emplace(current_layer_id,
           std::make_shared<SoftmaxLayer<T>>(this));
@@ -377,6 +395,10 @@ int DNNMark<T>::Initialize() {
       LOG(INFO) << "DNNMark: Setup parameters of Fully Connected layer";
       std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)->Setup();
     }
+    if (it->second->getLayerType() == BCM_FC) {
+      LOG(INFO) << "DNNMark: Setup parameters of Fully Connected layer";
+      std::dynamic_pointer_cast<CirculantFullyConnectedLayer<T>>(it->second)->Setup();
+    }
     if (it->second->getLayerType() == SOFTMAX) {
       LOG(INFO) << "DNNMark: Setup parameters of Softmax layer";
       std::dynamic_pointer_cast<SoftmaxLayer<T>>(it->second)->Setup();
@@ -428,6 +450,12 @@ int DNNMark<T>::RunAll() {
       std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)
         ->ForwardPropagation();
       std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)
+        ->BackwardPropagation();
+    }
+    if (it->second->getLayerType() == BCM_FC) {
+      std::dynamic_pointer_cast<CirculantFullyConnectedLayer<T>>(it->second)
+        ->ForwardPropagation();
+      std::dynamic_pointer_cast<CirculantFullyConnectedLayer<T>>(it->second)
         ->BackwardPropagation();
     }
     if (it->second->getLayerType() == SOFTMAX) {
@@ -491,6 +519,12 @@ int DNNMark<T>::Forward() {
         ->ForwardPropagation();
       LOG(INFO) << "DNNMark: Running FullyConnected forward: FINISHED";
     }
+    if (it->second->getLayerType() == BCM_FC) {
+      LOG(INFO) << "DNNMark: Running BCM FullyConnected forward: STARTED";
+      std::dynamic_pointer_cast<CirculantFullyConnectedLayer<T>>(it->second)
+        ->ForwardPropagation();
+      LOG(INFO) << "DNNMark: Running BCM FullyConnected forward: FINISHED";
+    }
     if (it->second->getLayerType() == SOFTMAX) {
       LOG(INFO) << "DNNMark: Running Softmax forward: STARTED";
       std::dynamic_pointer_cast<SoftmaxLayer<T>>(it->second)
@@ -551,6 +585,12 @@ int DNNMark<T>::Backward() {
       std::dynamic_pointer_cast<FullyConnectedLayer<T>>(it->second)
         ->BackwardPropagation();
       LOG(INFO) << "DNNMark: Running FullyConnected backward: FINISHED";
+    }
+    if (it->second->getLayerType() == BCM_FC) {
+      LOG(INFO) << "DNNMark: Running BCM FullyConnected backward: STARTED";
+      std::dynamic_pointer_cast<CirculantFullyConnectedLayer<T>>(it->second)
+        ->BackwardPropagation();
+      LOG(INFO) << "DNNMark: Running BCM FullyConnected backward: FINISHED";
     }
     if (it->second->getLayerType() == SOFTMAX) {
       LOG(INFO) << "DNNMark: Running Softmax backward: STARTED";

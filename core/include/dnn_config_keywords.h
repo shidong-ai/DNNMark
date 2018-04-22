@@ -39,6 +39,7 @@ const std::vector<std::string> layer_section_keywords = {
   "[LRN]",
   "[Activation]",
   "[FullyConnected]",
+  "[CBMFullyConnected]",
   "[Softmax]",
   "[BatchNorm]",
   "[Dropout]",
@@ -110,7 +111,8 @@ const std::vector<std::string> activation_config_keywords = {
 
 // FC layer keywords
 const std::vector<std::string> fc_config_keywords = {
-  "num_output"
+  "num_output",
+  "block_size"
 };
 
 // Softmax layer keywords

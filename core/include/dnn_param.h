@@ -449,8 +449,9 @@ inline void SetupActivationParam(const std::string &var, const std::string &val,
 
 struct FullyConnectedParam {
   int output_num_;
+  int block_size_;
   FullyConnectedParam()
-  : output_num_(4096) {}
+  : output_num_(4096), block_size_(32) {}
 };
 
 inline void SetupFcParam(const std::string &var, const std::string &val,
@@ -459,6 +460,9 @@ inline void SetupFcParam(const std::string &var, const std::string &val,
   if(isKeywordExist(var, fc_config_keywords)) {
     if (!var.compare("num_output")) {
       fc_param->output_num_ = atoi(val.c_str());
+    }
+    if (!var.compare("block_size")) {
+      fc_param->block_size_ = atoi(val.c_str());
     }
   } else {
     LOG(FATAL) << var << ": Keywords not exists" << std::endl;

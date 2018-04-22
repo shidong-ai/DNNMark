@@ -1,0 +1,11 @@
+[DNNMark]
+run_mode=standalone
+
+[CBMFullyConnected]
+name=relu1
+n=10
+c=512
+h=1
+w=1
+num_output=4096
+block_size=32

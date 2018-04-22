@@ -24,8 +24,7 @@
 
 namespace dnnmark {
 
-template <>
-__global__ void BCMSum(Complex *x, Complex *y, int q, int k) {
+__global__ void BCMSumKernel(Complex *x, Complex *y, int q, int k) {
   // Dimension of X is n * p * q * k (k is floor(n/2)+1)
   // Dimension of Y is n * q * k (k is floor(n/2)+1)
   int y_idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -37,6 +36,12 @@ __global__ void BCMSum(Complex *x, Complex *y, int q, int k) {
     y[y_idx].y += x[x_idx].y;
   }
 
+}
+
+void BCMSum(Complex *x, Complex *y, int n, int p, int q, int k) {
+  dim3 block_dim(k, 1 , 1);
+  dim3 grid_dim(n * p, 1, 1);
+  BCMSumKernel<<<grid_dim, block_dim>>>(x, y, q, k);
 }
 
 }

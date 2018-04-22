@@ -62,10 +62,11 @@ const std::map<std::string, LayerType> layer_type_map = {
 {layer_section_keywords[2], LRN},
 {layer_section_keywords[3], ACTIVATION},
 {layer_section_keywords[4], FC},
-{layer_section_keywords[5], SOFTMAX},
-{layer_section_keywords[6], BN},
-{layer_section_keywords[7], DROPOUT},
-{layer_section_keywords[8], BYPASS}
+{layer_section_keywords[5], BCM_FC},
+{layer_section_keywords[6], SOFTMAX},
+{layer_section_keywords[7], BN},
+{layer_section_keywords[8], DROPOUT},
+{layer_section_keywords[9], BYPASS}
 };
 
 template <typename T>

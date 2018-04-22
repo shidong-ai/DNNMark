@@ -29,11 +29,11 @@
 
 namespace dnnmark {
 
-template <typename T>
-__global__ void BCMProduct(T *fft_w, T *fft_x, T *y);
+void BCMProduct(Complex *fft_w, Complex *fft_x, Complex *y,
+                int n, int p, int q, int k);
 
-template <typename T>
-__global__ void BCMSum(T *x, T *y, int q, int k);
+void BCMSum(Complex *x, Complex *y,
+            int n, int p, int q, int k);
 
 }
 

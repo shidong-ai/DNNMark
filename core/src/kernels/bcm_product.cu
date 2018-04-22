@@ -24,8 +24,7 @@
 
 namespace dnnmark {
 
-template <>
-__global__ void BCMProduct(Complex *fft_w, Complex *fft_x, Complex *y) {
+__global__ void BCMProductKernel(Complex *fft_w, Complex *fft_x, Complex *y) {
   // Dimension of W after FFT is p * q * k (k is floor(n/2)+1)
   // Dimension of X after FFT is n * q * k (k is floor(n/2)+1)
   // Dimension of Y is n * p * q * k (k is floor(n/2)+1)
@@ -46,6 +45,13 @@ __global__ void BCMProduct(Complex *fft_w, Complex *fft_x, Complex *y) {
   y[y_idx].y = fft_w[w_idx].x * fft_x[x_idx].y +
                fft_w[w_idx].y * fft_x[x_idx].x;
 
+}
+
+void BCMProduct(Complex *fft_w, Complex *fft_x, Complex *y,
+                int n, int p, int q, int k) {
+  dim3 block_dim(k, 1 , 1);
+  dim3 grid_dim(q, p, n);
+  BCMProductKernel<<<grid_dim, block_dim>>>(fft_w, fft_x, y);
 }
 
 }
