@@ -138,6 +138,7 @@ class CirculantFullyConnectedLayer : public Layer<T> {
                            input_dim_.w_;
     num_cols_weights_ = fc_param_.output_num_;
 
+    k_ = fc_param_.block_size_;
     // Input dimension limitation
     if (num_rows_weights_ % k_ != 0 || num_cols_weights_ % k_) {
       LOG(FATAL) << "Input is not compatible with block size";
@@ -147,6 +148,10 @@ class CirculantFullyConnectedLayer : public Layer<T> {
     n_ = output_dim_.n_;
     p_ = num_rows_weights_ / k_;
     q_ = num_cols_weights_ / k_;
+    LOG(INFO) << "N: " << n_;
+    LOG(INFO) << "P: " << p_;
+    LOG(INFO) << "Q: " << q_;
+    LOG(INFO) << "K: " << k_;
 
     // Set the plans
     w_plan_.Set(FFT_1D, k_, R2C, p_ * q_);
