@@ -3,7 +3,7 @@ run_mode=standalone
 
 [CBMFullyConnected]
 name=relu1
-n=10
+n=100
 c=8192
 h=1
 w=1

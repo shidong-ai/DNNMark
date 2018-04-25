@@ -21,6 +21,8 @@
 // SOFTWARE.
 
 #include "kernels.h"
+#include <stdio.h>
+#include <iostream>
 
 namespace dnnmark {
 

@@ -98,10 +98,12 @@ if (CUDA_FOUND AND ${CUDA_ENABLE})
   message(STATUS "DNNMark Source files: " ${DNNMARK_SOURCES})
 
   # Set NVCC flags  
-  set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -O3 -gencode arch=compute_50,code=sm_50)
+  #set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -O3 -gencode arch=compute_50,code=sm_50)
+  set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -O3)
 
   # Find cuda libraries
   find_library(CUDNN_LIBRARY cudnn ${CUDNN_ROOT}/lib64)
+  find_library(CUDA_RT_LIBRARY cudart HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib64)
   find_library(CUDA_BLAS_LIBRARY cublas HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib64)
   find_library(CUDA_RAND_LIBRARY curand HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib64)
   find_library(CUDA_FFT_LIBRARY cufft HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib64)
@@ -120,6 +122,7 @@ if (CUDA_FOUND AND ${CUDA_ENABLE})
   add_dependencies(${PROJECT_NAME} ${GLOG_LIBRARY})
   target_link_libraries(${PROJECT_NAME} 
                         ${CUDNN_LIBRARY}
+                        ${CUDA_RT_LIBRARY}
                         ${CUDA_BLAS_LIBRARY}
                         ${CUDA_RAND_LIBRARY} 
                         ${CUDA_FFT_LIBRARY} 

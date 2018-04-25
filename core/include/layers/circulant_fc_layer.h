@@ -66,6 +66,7 @@ class CirculantFullyConnectedLayer : public Layer<T> {
   int k_; // block size
   int p_; // number of blocks row-wise
   int q_; // number of blocks column-wise
+  int fft_k_; // number of block size after fft
 
   // FFT plans
   FFTPlan w_plan_;
@@ -171,7 +172,7 @@ class CirculantFullyConnectedLayer : public Layer<T> {
 
     // Intermediate memory generation
     // Complex data requires doubling the memory
-    int fft_k_ = k_ / 2 + 1;
+    fft_k_ = k_ / 2 + 1;
     int fft_w_size = p_ * q_ * fft_k_;
     fft_w_chunk_id_ = data_manager_->CreateData(fft_w_size * 2);
     fft_w_ = data_manager_->GetData(fft_w_chunk_id_);
@@ -212,25 +213,18 @@ class CirculantFullyConnectedLayer : public Layer<T> {
       dnnmarkFFT(x_plan_, bottoms_[i]->Get(), (Complex *)fft_x_->Get());
       CUDA_CALL(cudaDeviceSynchronize());
 
-      // Specify the kernel dimensions
-      dim3 block_dim(k_, 1 , 1);
-      dim3 grid_dim(q_, p_, n_);
       BCMProduct((Complex *)fft_w_->Get(),
                  (Complex *)fft_x_->Get(),
                  (Complex *)product_y_->Get(),
-                 n_, p_, q_, k_);
+                 n_, p_, q_, fft_k_);
       CUDA_CALL(cudaDeviceSynchronize());
 
-      grid_dim.x = n_ * p_;
-      grid_dim.y = 1;
-      grid_dim.z = 1;
       BCMSum((Complex *)product_y_->Get(),
              (Complex *)sum_y_->Get(),
-             n_, p_, q_, k_);
+             n_, p_, q_, fft_k_);
       CUDA_CALL(cudaDeviceSynchronize());
 
       dnnmarkIFFT(ifft_plan_, (Complex *)sum_y_->Get(), tops_[i]->Get());
-      CUDA_CALL(cudaDeviceSynchronize());
       
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
