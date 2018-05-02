@@ -61,6 +61,9 @@ class CirculantFullyConnectedLayer : public Layer<T> {
   int num_rows_weights_;
   int num_cols_weights_;
 
+  // Swap sum and IFFT
+  bool swap_;
+
   // Use notation in the BCM paper
   int n_; // batch size
   int k_; // block size
@@ -72,6 +75,7 @@ class CirculantFullyConnectedLayer : public Layer<T> {
   FFTPlan w_plan_;
   FFTPlan x_plan_;
   FFTPlan y_plan_;
+  FFTPlan ifft_plan_;
   FFTPlan ifft_forward_plan_;
   FFTPlan ifft_backward_weight_plan_;
   FFTPlan ifft_backward_data_plan_;
@@ -91,6 +95,8 @@ class CirculantFullyConnectedLayer : public Layer<T> {
   int fft_y_chunk_id_;
   Data<T> *product_;
   int product_chunk_id_;
+  Data<T> *sum_;
+  int sum_chunk_id_;
   Data<T> *sum_forward_;
   int sum_forward_chunk_id_;
   Data<T> *sum_backward_weight_;
@@ -103,10 +109,14 @@ class CirculantFullyConnectedLayer : public Layer<T> {
   : Layer<T>(p_dnnmark),
     fc_param_(),
     w_plan_(), x_plan_(), y_plan_(),
+    ifft_plan_(),
     ifft_forward_plan_(),
     ifft_backward_weight_plan_(),
     ifft_backward_data_plan_() {
     Layer<T>::has_learnable_params_ = true;
+
+    // Optimized implementation
+    swap_ = true;
   }
 
   FullyConnectedParam *getFullyConnectedParam() { return &fc_param_; }
@@ -170,9 +180,13 @@ class CirculantFullyConnectedLayer : public Layer<T> {
     w_plan_.Set(FFT_1D, k_, R2C, p_ * q_);
     x_plan_.Set(FFT_1D, k_, R2C, n_ * q_);
     y_plan_.Set(FFT_1D, k_, R2C, n_ * p_);
-    ifft_forward_plan_.Set(FFT_1D, k_, C2R, n_ * p_);
-    ifft_backward_weight_plan_.Set(FFT_1D, k_, C2R, p_ * q_);
-    ifft_backward_data_plan_.Set(FFT_1D, k_, C2R, n_ * q_);
+    if (swap_) {
+      ifft_forward_plan_.Set(FFT_1D, k_, C2R, n_ * p_);
+      ifft_backward_weight_plan_.Set(FFT_1D, k_, C2R, p_ * q_);
+      ifft_backward_data_plan_.Set(FFT_1D, k_, C2R, n_ * q_);
+    } else {
+      ifft_plan_.Set(FFT_1D, k_, C2R, n_ * p_ * q_);
+    }
 
     // Create weight data
     int weights_size = p_ * q_ * k_;
@@ -205,20 +219,30 @@ class CirculantFullyConnectedLayer : public Layer<T> {
     product_chunk_id_ = data_manager_->CreateData(product_size * 2);
     product_ = data_manager_->GetData(product_chunk_id_);
 
-    int sum_forward_size = n_ * p_ * fft_k_;
-    sum_forward_chunk_id_ = data_manager_->CreateData(sum_forward_size * 2);
-    sum_forward_ = data_manager_->GetData(sum_forward_chunk_id_);
+    int sum_k;
+    if (swap_) {
+      sum_k = fft_k_ * 2;
+      int sum_forward_size = n_ * p_ * sum_k;
+      sum_forward_chunk_id_ = data_manager_->CreateData(sum_forward_size);
+      sum_forward_ = data_manager_->GetData(sum_forward_chunk_id_);
 
-    int sum_backward_weight_size = p_ * q_ * fft_k_;
-    sum_backward_weight_chunk_id_ = 
-      data_manager_->CreateData(sum_backward_weight_size * 2);
-    sum_backward_weight_ =
-      data_manager_->GetData(sum_backward_weight_chunk_id_);
+      int sum_backward_weight_size = p_ * q_ * sum_k;
+      sum_backward_weight_chunk_id_ = 
+        data_manager_->CreateData(sum_backward_weight_size);
+      sum_backward_weight_ =
+        data_manager_->GetData(sum_backward_weight_chunk_id_);
 
-    int sum_backward_data_size = n_ * q_ * fft_k_;
-    sum_backward_data_chunk_id_ =
-      data_manager_->CreateData(sum_backward_data_size * 2);
-    sum_backward_data_ = data_manager_->GetData(sum_backward_data_chunk_id_);
+      int sum_backward_data_size = n_ * q_ * sum_k;
+      sum_backward_data_chunk_id_ =
+        data_manager_->CreateData(sum_backward_data_size);
+      sum_backward_data_ = data_manager_->GetData(sum_backward_data_chunk_id_);
+    } else {
+      sum_k = k_;
+      int sum_size = n_ * p_ * q_ * sum_k;
+      sum_chunk_id_ = data_manager_->CreateData(sum_size);
+      sum_ = data_manager_->GetData(sum_chunk_id_);
+    }
+
   }
 
   void ComputeOutputDim() {
@@ -252,13 +276,21 @@ class CirculantFullyConnectedLayer : public Layer<T> {
                  n_, p_, q_, fft_k_);
       CUDA_CALL(cudaDeviceSynchronize());
 
-      // This is the implementation of after swap of IFFT and sum
-      BCMSumForward((Complex *)product_->Get(),
-             (Complex *)sum_forward_->Get(),
-             n_, p_, q_, fft_k_);
-      CUDA_CALL(cudaDeviceSynchronize());
+      if (swap_) {
+        // This is the implementation of after swap of IFFT and sum
+        BCMSumForward((Complex *)product_->Get(),
+               (Complex *)sum_forward_->Get(),
+               n_, p_, q_, fft_k_);
+        CUDA_CALL(cudaDeviceSynchronize());
 
-      dnnmarkIFFT(ifft_forward_plan_, (Complex *)sum_forward_->Get(), tops_[i]->Get());
+        dnnmarkIFFT(ifft_forward_plan_, (Complex *)sum_forward_->Get(), tops_[i]->Get());
+      } else {
+        // This is the original implementation
+        dnnmarkIFFT(ifft_plan_, (Complex *)product_->Get(), sum_->Get());
+        CUDA_CALL(cudaDeviceSynchronize());
+        BCMSumForward(sum_->Get(), tops_[i]->Get(),
+               n_, p_, q_, k_);
+      }
       
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
@@ -293,14 +325,22 @@ class CirculantFullyConnectedLayer : public Layer<T> {
                  n_, p_, q_, fft_k_);
       CUDA_CALL(cudaDeviceSynchronize());
 
-      // This is the implementation of after swap of IFFT and sum
-      BCMSumBackwardWeight((Complex *)product_->Get(),
-             (Complex *)sum_backward_weight_->Get(),
-             n_, p_, q_, fft_k_);
-      CUDA_CALL(cudaDeviceSynchronize());
+      if (swap_) {
+        // This is the implementation of after swap of IFFT and sum
+        BCMSumBackwardWeight((Complex *)product_->Get(),
+               (Complex *)sum_backward_weight_->Get(),
+               n_, p_, q_, fft_k_);
+        CUDA_CALL(cudaDeviceSynchronize());
 
-      dnnmarkIFFT(ifft_backward_weight_plan_,
-        (Complex *)sum_backward_weight_->Get(), weights_diff_->Get());
+        dnnmarkIFFT(ifft_backward_weight_plan_,
+          (Complex *)sum_backward_weight_->Get(), weights_diff_->Get());
+      } else {
+        // This is the original implementation
+        dnnmarkIFFT(ifft_plan_, (Complex *)product_->Get(), sum_->Get());
+        CUDA_CALL(cudaDeviceSynchronize());
+        BCMSumBackwardWeight(sum_->Get(), tops_[i]->Get(),
+               n_, p_, q_, k_);
+      }
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_, p_dnnmark_->GetTimer(), "BCMFcBwdFilter");
@@ -320,14 +360,22 @@ class CirculantFullyConnectedLayer : public Layer<T> {
                  n_, p_, q_, fft_k_);
       CUDA_CALL(cudaDeviceSynchronize());
 
-      // This is the implementation of after swap of IFFT and sum
-      BCMSumBackwardData((Complex *)product_->Get(),
-             (Complex *)sum_backward_data_->Get(),
-             n_, p_, q_, fft_k_);
-      CUDA_CALL(cudaDeviceSynchronize());
+      if (swap_) {
+        // This is the implementation of after swap of IFFT and sum
+        BCMSumBackwardData((Complex *)product_->Get(),
+               (Complex *)sum_backward_data_->Get(),
+               n_, p_, q_, fft_k_);
+        CUDA_CALL(cudaDeviceSynchronize());
 
-      dnnmarkIFFT(ifft_backward_data_plan_,
-        (Complex *)sum_backward_data_->Get(), bottom_diffs_[i]->Get());
+        dnnmarkIFFT(ifft_backward_data_plan_,
+          (Complex *)sum_backward_data_->Get(), bottom_diffs_[i]->Get());
+      } else {
+        // This is the original implementation
+        dnnmarkIFFT(ifft_plan_, (Complex *)product_->Get(), sum_->Get());
+        CUDA_CALL(cudaDeviceSynchronize());
+        BCMSumBackwardData(sum_->Get(), tops_[i]->Get(),
+               n_, p_, q_, k_);
+      }
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_, p_dnnmark_->GetTimer(), "FcBwdData");

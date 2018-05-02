@@ -75,7 +75,7 @@ __global__ void BCMProductBackwardWeightKernel(Complex *fft_dy,
 
   dw[dw_idx].x = fft_dy[dy_idx].x * fft_x[x_idx].x -
                fft_dy[dy_idx].y * fft_x[x_idx].y;
-  dw[dw_idx].y = fft_dy[dy_idx].x * fft_x[x_idx].y +
+  dw[dw_idx].y = fft_dy[dy_idx].x * (0 - fft_x[x_idx].y) -
                fft_dy[dy_idx].y * fft_x[x_idx].x;
 
 }
@@ -106,7 +106,7 @@ __global__ void BCMProductBackwardDataKernel(Complex *fft_dy,
 
   dx[dx_idx].x = fft_dy[dy_idx].x * fft_w[w_idx].x -
                fft_dy[dy_idx].y * fft_w[w_idx].y;
-  dx[dx_idx].y = fft_dy[dy_idx].x * fft_w[w_idx].y +
+  dx[dx_idx].y = fft_dy[dy_idx].x * (0 - fft_w[w_idx].y) -
                fft_dy[dy_idx].y * fft_w[w_idx].x;
 
 }
