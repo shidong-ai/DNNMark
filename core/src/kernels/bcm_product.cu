@@ -26,7 +26,7 @@
 
 namespace dnnmark {
 
-__global__ void BCMProductKernel(Complex *fft_w, Complex *fft_x, Complex *y) {
+__global__ void BCMProductForwardKernel(Complex *fft_w, Complex *fft_x, Complex *y) {
   // Dimension of W after FFT is p * q * k (k is floor(n/2)+1)
   // Dimension of X after FFT is n * q * k (k is floor(n/2)+1)
   // Dimension of Y is n * p * q * k (k is floor(n/2)+1)
@@ -49,11 +49,42 @@ __global__ void BCMProductKernel(Complex *fft_w, Complex *fft_x, Complex *y) {
 
 }
 
-void BCMProduct(Complex *fft_w, Complex *fft_x, Complex *y,
+void BCMProductForward(Complex *fft_w, Complex *fft_x, Complex *y,
                 int n, int p, int q, int k) {
-  dim3 block_dim(k, 1 , 1);
+  dim3 block_dim(k, 1, 1);
   dim3 grid_dim(q, p, n);
-  BCMProductKernel<<<grid_dim, block_dim>>>(fft_w, fft_x, y);
+  BCMProductForwardKernel<<<grid_dim, block_dim>>>(fft_w, fft_x, y);
+}
+
+__global__ void BCMProductBackwardWeightKernel(Complex *fft_dy,
+                                               Complex *fft_x, Complex *dw) {
+  // Dimension of dY after FFT is n * p * k (k is floor(n/2)+1)
+  // Dimension of X after FFT is n * q * k (k is floor(n/2)+1)
+  // Dimension of dW after this kernel is n * p * q * k (k is floor(n/2)+1)
+  int n = gridDim.z;
+  int p = gridDim.y;
+  int q = gridDim.x;
+  int k = blockDim.x;
+  int k_idx = threadIdx.x;
+  int q_idx = blockIdx.x;
+  int p_idx = blockIdx.y;
+  int n_idx = blockIdx.z;
+  int dy_idx = n_idx * p * k + p_idx * k + k_idx;
+  int x_idx = n_idx * q * k + q_idx * k + k_idx;
+  int dw_idx = n_idx * p * q * k + p_idx * q * k + q_idx * k + k_idx;
+
+  dw[dw_idx].x = fft_dy[dy_idx].x * fft_x[x_idx].x -
+               fft_dy[dy_idx].y * fft_x[x_idx].y;
+  dw[dw_idx].y = fft_dy[dy_idx].x * fft_x[x_idx].y +
+               fft_dy[dy_idx].y * fft_x[x_idx].x;
+
+}
+
+void BCMProductBackwardWeight(Complex *fft_dy, Complex *fft_x, Complex *dw,
+                int n, int p, int q, int k) {
+  dim3 block_dim(k, 1, 1);
+  dim3 grid_dim(q, p, n);
+  BCMProductBackwardWeightKernel<<<grid_dim, block_dim>>>(fft_dy, fft_x, dw);
 }
 
 }

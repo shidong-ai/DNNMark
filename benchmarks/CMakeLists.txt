@@ -10,6 +10,7 @@ set(SUBDIRECTORIES
   test_fwd_fc
   test_bwd_fc
   test_fwd_bcmfc
+  test_bwd_bcmfc
   test_fwd_softmax
   test_bwd_softmax
   test_fwd_bn

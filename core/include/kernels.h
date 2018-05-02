@@ -29,12 +29,21 @@
 
 namespace dnnmark {
 
-void BCMProduct(Complex *fft_w, Complex *fft_x, Complex *y,
+void BCMProductForward(Complex *fft_w, Complex *fft_x, Complex *y,
                 int n, int p, int q, int k);
 
-void BCMSum(Complex *x, Complex *y,
+void BCMSumForward(Real *x, Real *y,
+            int n, int p, int q, int k);
+void BCMSumForward(Complex *x, Complex *y,
             int n, int p, int q, int k);
 
+void BCMProductBackwardWeight(Complex *fft_dy, Complex *fft_x, Complex *dw,
+                int n, int p, int q, int k);
+
+void BCMSumBackwardWeight(Real *x, Real *y,
+            int n, int p, int q, int k);
+void BCMSumBackwardWeight(Complex *x, Complex *y,
+            int n, int p, int q, int k);
 }
 
 #endif // CORE_INCLUDE_KERNELS_H_
