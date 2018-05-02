@@ -87,4 +87,35 @@ void BCMProductBackwardWeight(Complex *fft_dy, Complex *fft_x, Complex *dw,
   BCMProductBackwardWeightKernel<<<grid_dim, block_dim>>>(fft_dy, fft_x, dw);
 }
 
+__global__ void BCMProductBackwardDataKernel(Complex *fft_dy,
+                                             Complex *fft_w, Complex *dx) {
+  // Dimension of dY after FFT is n * p * k (k is floor(n/2)+1)
+  // Dimension of W after FFT is p * q * k (k is floor(n/2)+1)
+  // Dimension of dX after this kernel is n * p * q * k (k is floor(n/2)+1)
+  int n = gridDim.z;
+  int p = gridDim.y;
+  int q = gridDim.x;
+  int k = blockDim.x;
+  int k_idx = threadIdx.x;
+  int q_idx = blockIdx.x;
+  int p_idx = blockIdx.y;
+  int n_idx = blockIdx.z;
+  int dy_idx = n_idx * p * k + p_idx * k + k_idx;
+  int w_idx = p_idx * q * k + q_idx * k + k_idx;
+  int dx_idx = n_idx * p * q * k + p_idx * q * k + q_idx * k + k_idx;
+
+  dx[dx_idx].x = fft_dy[dy_idx].x * fft_w[w_idx].x -
+               fft_dy[dy_idx].y * fft_w[w_idx].y;
+  dx[dx_idx].y = fft_dy[dy_idx].x * fft_w[w_idx].y +
+               fft_dy[dy_idx].y * fft_w[w_idx].x;
+
+}
+
+void BCMProductBackwardData(Complex *fft_dy, Complex *fft_w, Complex *dx,
+                int n, int p, int q, int k) {
+  dim3 block_dim(k, 1, 1);
+  dim3 grid_dim(q, p, n);
+  BCMProductBackwardDataKernel<<<grid_dim, block_dim>>>(fft_dy, fft_w, dx);
+}
+
 }

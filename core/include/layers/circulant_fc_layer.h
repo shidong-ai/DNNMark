@@ -172,6 +172,7 @@ class CirculantFullyConnectedLayer : public Layer<T> {
     y_plan_.Set(FFT_1D, k_, R2C, n_ * p_);
     ifft_forward_plan_.Set(FFT_1D, k_, C2R, n_ * p_);
     ifft_backward_weight_plan_.Set(FFT_1D, k_, C2R, p_ * q_);
+    ifft_backward_data_plan_.Set(FFT_1D, k_, C2R, n_ * q_);
 
     // Create weight data
     int weights_size = p_ * q_ * k_;
@@ -308,7 +309,25 @@ class CirculantFullyConnectedLayer : public Layer<T> {
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_, p_dnnmark_->GetTimer(), "FcBwdData");
     for (int i = 0; i < num_tops_; i++) {
+      // The FFT for dy can be saved
+      dnnmarkFFT(y_plan_, top_diffs_[i]->Get(), (Complex *)fft_y_->Get());
+      dnnmarkFFT(w_plan_, weights_->Get(), (Complex *)fft_w_->Get());
+      CUDA_CALL(cudaDeviceSynchronize());
 
+      BCMProductBackwardData((Complex *)fft_y_->Get(),
+                 (Complex *)fft_w_->Get(),
+                 (Complex *)product_->Get(),
+                 n_, p_, q_, fft_k_);
+      CUDA_CALL(cudaDeviceSynchronize());
+
+      // This is the implementation of after swap of IFFT and sum
+      BCMSumBackwardData((Complex *)product_->Get(),
+             (Complex *)sum_backward_data_->Get(),
+             n_, p_, q_, fft_k_);
+      CUDA_CALL(cudaDeviceSynchronize());
+
+      dnnmarkIFFT(ifft_backward_data_plan_,
+        (Complex *)sum_backward_data_->Get(), bottom_diffs_[i]->Get());
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_, p_dnnmark_->GetTimer(), "FcBwdData");

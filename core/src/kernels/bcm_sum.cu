@@ -24,14 +24,15 @@
 
 namespace dnnmark {
 
-__global__ void BCMSumForwardKernel(Real *x, Real *y, int q, int k) {
+__global__ void BCMSumForwardKernel(Real *x, Real *y, int q) {
   // Dimension of X is n * p * q * k
   // Dimension of Y is n * q * k
   // Sum over q
-  int y_idx = blockIdx.x * blockDim.x + threadIdx.x;
+  int k = blockDim.x;
+  int y_idx = blockIdx.x * k + threadIdx.x;
   y[y_idx] = 0;
   for (int i = 0; i < q; i++) {
-    int x_idx = blockIdx.x * blockDim.x + i * k + threadIdx.x;
+    int x_idx = blockIdx.x * q * k + i * k + threadIdx.x;
     y[y_idx] += x[x_idx];
   }
 
@@ -40,18 +41,19 @@ __global__ void BCMSumForwardKernel(Real *x, Real *y, int q, int k) {
 void BCMSumForward(Real *x, Real *y, int n, int p, int q, int k) {
   dim3 block_dim(k, 1 , 1);
   dim3 grid_dim(n * p, 1, 1);
-  BCMSumForwardKernel<<<grid_dim, block_dim>>>(x, y, q, k);
+  BCMSumForwardKernel<<<grid_dim, block_dim>>>(x, y, q);
 }
 
-__global__ void BCMSumForwardKernel(Complex *x, Complex *y, int q, int k) {
+__global__ void BCMSumForwardKernel(Complex *x, Complex *y, int q) {
   // Dimension of X is n * p * q * k (k is floor(n/2)+1)
   // Dimension of Y is n * q * k (k is floor(n/2)+1)
   // Sum over q
-  int y_idx = blockIdx.x * blockDim.x + threadIdx.x;
+  int k = blockDim.x;
+  int y_idx = blockIdx.x * k + threadIdx.x;
   y[y_idx].x = 0;
   y[y_idx].y = 0;
   for (int i = 0; i < q; i++) {
-    int x_idx = blockIdx.x * blockDim.x + i * k + threadIdx.x;
+    int x_idx = blockIdx.x * q * k + i * k + threadIdx.x;
     y[y_idx].x += x[x_idx].x;
     y[y_idx].y += x[x_idx].y;
   }
@@ -61,7 +63,7 @@ __global__ void BCMSumForwardKernel(Complex *x, Complex *y, int q, int k) {
 void BCMSumForward(Complex *x, Complex *y, int n, int p, int q, int k) {
   dim3 block_dim(k, 1 , 1);
   dim3 grid_dim(n * p, 1, 1);
-  BCMSumForwardKernel<<<grid_dim, block_dim>>>(x, y, q, k);
+  BCMSumForwardKernel<<<grid_dim, block_dim>>>(x, y, q);
 }
 
 __global__ void BCMSumBackwardWeightKernel(Real *x, Real *y, int n) {
@@ -72,7 +74,7 @@ __global__ void BCMSumBackwardWeightKernel(Real *x, Real *y, int n) {
   int y_idx = blockIdx.x * k + threadIdx.x;
   y[y_idx] = 0;
   for (int i = 0; i < n; i++) {
-    int x_idx = i * gridDim.x + blockIdx.x * k + threadIdx.x;
+    int x_idx = i * gridDim.x * k + blockIdx.x * k + threadIdx.x;
     y[y_idx] += x[x_idx];
   }
 
@@ -86,14 +88,14 @@ void BCMSumBackwardWeight(Real *x, Real *y, int n, int p, int q, int k) {
 
 __global__ void BCMSumBackwardWeightKernel(Complex *x, Complex *y, int n) {
   // Dimension of X is n * p * q * k (k is floor(n/2)+1)
-  // Dimension of Y is n * q * k (k is floor(n/2)+1)
+  // Dimension of Y is p * q * k (k is floor(n/2)+1)
   // Sum over n
   int k = blockDim.x;
   int y_idx = blockIdx.x * k + threadIdx.x;
   y[y_idx].x = 0;
   y[y_idx].y = 0;
   for (int i = 0; i < n; i++) {
-    int x_idx = i * gridDim.x + blockIdx.x * k + threadIdx.x;
+    int x_idx = i * gridDim.x * k + blockIdx.x * k + threadIdx.x;
     y[y_idx].x += x[x_idx].x;
     y[y_idx].y += x[x_idx].y;
   }
@@ -103,6 +105,51 @@ void BCMSumBackwardWeight(Complex *x, Complex *y, int n, int p, int q, int k) {
   dim3 block_dim(k, 1 , 1);
   dim3 grid_dim(p * q, 1, 1);
   BCMSumBackwardWeightKernel<<<grid_dim, block_dim>>>(x, y, n);
+}
+
+__global__ void BCMSumBackwardDataKernel(Real *x, Real *y, int p, int q) {
+  // Dimension of X is n * p * q * k
+  // Dimension of Y is n * q * k
+  // Sum over p
+  int k = blockDim.x;
+  int y_idx = blockIdx.x * k + threadIdx.x;
+  y[y_idx] = 0;
+  int n_idx = blockIdx.x / q;
+  int q_idx = blockIdx.x % q;
+  for (int i = 0; i < p; i++) {
+    int x_idx = n_idx * p * q * k + i * q * k + q_idx * k + threadIdx.x;
+    y[y_idx] += x[x_idx];
+  }
+
+}
+
+void BCMSumBackwardData(Real *x, Real *y, int n, int p, int q, int k) {
+  dim3 block_dim(k, 1 , 1);
+  dim3 grid_dim(n * q, 1, 1);
+  BCMSumBackwardDataKernel<<<grid_dim, block_dim>>>(x, y, p, q);
+}
+
+__global__ void BCMSumBackwardDataKernel(Complex *x, Complex *y, int p, int q) {
+  // Dimension of X is n * p * q * k (k is floor(n/2)+1)
+  // Dimension of Y is n * q * k (k is floor(n/2)+1)
+  // Sum over p
+  int k = blockDim.x;
+  int y_idx = blockIdx.x * k + threadIdx.x;
+  y[y_idx].x = 0;
+  y[y_idx].y = 0;
+  int n_idx = blockIdx.x / q;
+  int q_idx = blockIdx.x % q;
+  for (int i = 0; i < p; i++) {
+    int x_idx = n_idx * p * q * k + i * q * k + q_idx * k + threadIdx.x;
+    y[y_idx].x += x[x_idx].x;
+    y[y_idx].y += x[x_idx].y;
+  }
+}
+
+void BCMSumBackwardData(Complex *x, Complex *y, int n, int p, int q, int k) {
+  dim3 block_dim(k, 1 , 1);
+  dim3 grid_dim(n * q, 1, 1);
+  BCMSumBackwardDataKernel<<<grid_dim, block_dim>>>(x, y, p, q);
 }
 
 }

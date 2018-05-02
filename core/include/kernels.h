@@ -44,6 +44,14 @@ void BCMSumBackwardWeight(Real *x, Real *y,
             int n, int p, int q, int k);
 void BCMSumBackwardWeight(Complex *x, Complex *y,
             int n, int p, int q, int k);
+
+void BCMProductBackwardData(Complex *fft_dy, Complex *fft_w, Complex *dx,
+                int n, int p, int q, int k);
+
+void BCMSumBackwardData(Real *x, Real *y,
+            int n, int p, int q, int k);
+void BCMSumBackwardData(Complex *x, Complex *y,
+            int n, int p, int q, int k);
 }
 
 #endif // CORE_INCLUDE_KERNELS_H_
