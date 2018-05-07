@@ -2,8 +2,12 @@
 DNNMark is now supporting MIOpen. Right now DNNMark can run on both AMD and Nvidia platform.
 HCC, HIP, MIOpen and miopengemm are required in order to build MIOpen version of DNNMark.
 
-# Publication
-[1] Shi Dong and David Kaeli. 2017. DNNMark: A Deep Neural Network Benchmark Suite for GPUs. In Proceedings of the General Purpose GPUs (GPGPU-10). ACM, New York, NY, USA, 63-72.
+# Publications
+[1] Shi Dong and David Kaeli. 2017. *DNNMark: A Deep Neural Network Benchmark Suite for GPUs*. In Proceedings of the General Purpose GPUs (GPGPU-10). ACM, New York, NY, USA, 63-72.
+
+[2] Shi Dong, Xiang Gong, Yifan Sun, Trinayan Baruah, and David Kaeli. 2018. *Characterizing the Microarchitectural Implications of a Convolutional Neural Network (CNN) Execution on GPUs*. In Proceedings of the 2018 ACM/SPEC International Conference on Performance Engineering (ICPE '18). ACM, New York, NY, USA, 96-106. DOI: https://doi.org/10.1145/3184407.3184423 __*(Best Paper Award)*__
+
+[3] Yifan Sun, Saoni Mukherjee, Trinayan Baruah, Shi Dong, Julian Gutierrez, Prannoy Mohan, David Kaeli. 2018. *Evaluating Performance Tradeoffs on the Radeon Open Compute Platform*. ISPASS 2018
 
 # DNNMark
 Configurable benchmark suite of Deep Neural Networks
@@ -57,7 +61,9 @@ There is one known problem regarding gflags. Sometimes, the compile process comp
 After you download and unzip the DNNMark, you should go to its root directory and edit `setup.sh` to set up path to cuDNN. And then run `./setup.sh`. This will create a build directory and run cmake automatically. To build the code, go to build directory `build` and run `make`
 
 ## Usage
-To run the benchmarks that have been built, go to the directory `build` and you will see a directory `benchmarks`. Go inside and select the benchmark you want to run. Run command `./[name of benchmark] -config [path to config file] -debuginfo [1 or 0]` to execute the benchmark
+To run the benchmarks that have been built, go to the directory `build` and you will see a directory `benchmarks`. Go inside and select the benchmark you want to run. Run command `./[name of benchmark] -config [path to config file] -debuginfo [1 or 0]` to execute the benchmark.
+
+If you want to include warm up phase in the benchmark, one suggestion is that you mannually add it in the source code and use `-warmup [1 or 0]` to toggle the usage of the warm up phase. You can find one example the test_alexnet benchmark.
 
 # For Contributors
 1. Fork the repository to your own remote repository.
