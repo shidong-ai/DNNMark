@@ -60,6 +60,12 @@ void BCMSumForwardOptimized(Complex *x, Complex *y, int n, int p, int k, int q, 
 void BCMSumBackwardWeightOptimized(Complex *x, Complex *y, int n, int p, int q, int k, int tb_size);
 void BCMSumBackwardDataOptimized(Complex *x, Complex *y, int n, int p, int q, int k, int tb_size);
 
+// For backward weights
+void NPK2PNK(Complex *x, Complex *y, int n, int p, int k, int tb_size);
+void NQK2QNK(Complex *x, Complex *y, int n, int q, int k, int tb_size);
+// For backward data
+void PQK2QPK(Complex *x, Complex *y, int p, int q, int k, int tb_size);
+
 }
 
 #endif // CORE_INCLUDE_KERNELS_H_
