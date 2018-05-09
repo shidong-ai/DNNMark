@@ -316,7 +316,7 @@ class CirculantFullyConnectedLayer : public Layer<T> {
                   layer_id_, p_dnnmark_->GetTimer(), "BCMFcBwdFilter");
     for (int i = 0; i < num_tops_; i++) {
       dnnmarkFFT(y_plan_, top_diffs_[i]->Get(), (Complex *)fft_y_->Get());
-      dnnmarkFFT(x_plan_, bottoms_[i]->Get(), (Complex *)fft_x_->Get());
+      // The FFT of x can be saved
       CUDA_CALL(cudaDeviceSynchronize());
 
       BCMProductBackwardWeight((Complex *)fft_y_->Get(),
@@ -350,9 +350,7 @@ class CirculantFullyConnectedLayer : public Layer<T> {
                   layer_id_, p_dnnmark_->GetTimer(), "FcBwdData");
     for (int i = 0; i < num_tops_; i++) {
       // The FFT for dy can be saved
-      dnnmarkFFT(y_plan_, top_diffs_[i]->Get(), (Complex *)fft_y_->Get());
-      dnnmarkFFT(w_plan_, weights_->Get(), (Complex *)fft_w_->Get());
-      CUDA_CALL(cudaDeviceSynchronize());
+      // The FFT for w can be saved
 
       BCMProductBackwardData((Complex *)fft_y_->Get(),
                  (Complex *)fft_w_->Get(),

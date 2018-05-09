@@ -152,4 +152,100 @@ void BCMSumBackwardData(Complex *x, Complex *y, int n, int p, int q, int k) {
   BCMSumBackwardDataKernel<<<grid_dim, block_dim>>>(x, y, p, q);
 }
 
+__global__ void BCMSumForwardOptimizedKernel(Complex *x, Complex *y,
+                                int p, int q, int k) {
+  // Dimension of X is n * p * q * k (k is floor(n/2)+1)
+  // Dimension of Y is n * p * k (k is floor(n/2)+1)
+  // Sum over q
+  int tid = threadIdx.x;
+  int bid = blockIdx.x;
+  int idx = bid * blockDim.x + tid;
+  int n_idx = blockIdx.y;
+  int p_idx = idx / k;
+  int k_idx = idx % k;
+  if (idx < (p * k)) {
+    int y_idx = n_idx * p * k + idx;
+    y[y_idx].x = 0;
+    y[y_idx].y = 0;
+    for (int i = 0; i < q; i++) {
+      int x_idx = n_idx * p * q * k + p_idx * q * k + i * k + k_idx;
+      y[y_idx].x += x[x_idx].x;
+      y[y_idx].y += x[x_idx].y;
+    }
+  }
+
+}
+
+void BCMSumForwardOptimized(Complex *x, Complex *y,
+                            int n, int p, int q, int k, int tb_size) {
+  int block_size = (p * k + tb_size - 1) / tb_size;
+  dim3 block_dim(tb_size, 1, 1);
+  dim3 grid_dim(block_size, n, 1);
+  BCMSumForwardOptimizedKernel<<<grid_dim, block_dim>>>(x, y, p, q, k);
+}
+
+__global__ void BCMSumBackwardWeightOptimizedKernel(Complex *x, Complex *y,
+                                int q, int n, int k) {
+  // Dimension of X is p * q * n * k (k is floor(n/2)+1)
+  // Dimension of Y is p * p * k (k is floor(n/2)+1)
+  // Sum over n
+  int tid = threadIdx.x;
+  int bid = blockIdx.x;
+  int idx = bid * blockDim.x + tid;
+  int p_idx = blockIdx.y;
+  int q_idx = idx / k;
+  int k_idx = idx % k;
+  if (idx < (q * k)) {
+    int y_idx = p_idx * q * k + idx;
+    y[y_idx].x = 0;
+    y[y_idx].y = 0;
+    for (int i = 0; i < n; i++) {
+      int x_idx = p_idx * q * n * k + q_idx * n * k + i * k + k_idx;
+      y[y_idx].x += x[x_idx].x;
+      y[y_idx].y += x[x_idx].y;
+    }
+  }
+
+}
+
+void BCMSumBackwardWeightOptimized(Complex *x, Complex *y,
+                            int n, int p, int q, int k, int tb_size) {
+  int block_size = (q * k + tb_size - 1) / tb_size;
+  dim3 block_dim(tb_size, 1, 1);
+  dim3 grid_dim(block_size, p, 1);
+  BCMSumBackwardWeightOptimizedKernel<<<grid_dim, block_dim>>>(x, y, q, n, k);
+}
+
+__global__ void BCMSumBackwardDataOptimizedKernel(Complex *x, Complex *y,
+                                int q, int p, int k) {
+  // Dimension of X is n * q * p * k (k is floor(n/2)+1)
+  // Dimension of Y is n * q * k (k is floor(n/2)+1)
+  // Sum over n
+  int tid = threadIdx.x;
+  int bid = blockIdx.x;
+  int idx = bid * blockDim.x + tid;
+  int n_idx = blockIdx.y;
+  int q_idx = idx / k;
+  int k_idx = idx % k;
+  if (idx < (q * k)) {
+    int y_idx = n_idx * q * k + idx;
+    y[y_idx].x = 0;
+    y[y_idx].y = 0;
+    for (int i = 0; i < p; i++) {
+      int x_idx = n_idx * q * p * k + q_idx * p * k + i * k + k_idx;
+      y[y_idx].x += x[x_idx].x;
+      y[y_idx].y += x[x_idx].y;
+    }
+  }
+
+}
+
+void BCMSumBackwardDataOptimized(Complex *x, Complex *y,
+                            int n, int p, int q, int k, int tb_size) {
+  int block_size = (q * k + tb_size - 1) / tb_size;
+  dim3 block_dim(tb_size, 1, 1);
+  dim3 grid_dim(block_size, n, 1);
+  BCMSumBackwardDataOptimizedKernel<<<grid_dim, block_dim>>>(x, y, q, p, k);
+}
+
 }

@@ -31,27 +31,35 @@ namespace dnnmark {
 
 void BCMProductForward(Complex *fft_w, Complex *fft_x, Complex *y,
                 int n, int p, int q, int k);
+void BCMProductBackwardWeight(Complex *fft_dy, Complex *fft_x, Complex *dw,
+                int n, int p, int q, int k);
+void BCMProductBackwardData(Complex *fft_dy, Complex *fft_w, Complex *dx,
+                int n, int p, int q, int k);
 
 void BCMSumForward(Real *x, Real *y,
             int n, int p, int q, int k);
 void BCMSumForward(Complex *x, Complex *y,
             int n, int p, int q, int k);
-
-void BCMProductBackwardWeight(Complex *fft_dy, Complex *fft_x, Complex *dw,
-                int n, int p, int q, int k);
-
 void BCMSumBackwardWeight(Real *x, Real *y,
             int n, int p, int q, int k);
 void BCMSumBackwardWeight(Complex *x, Complex *y,
             int n, int p, int q, int k);
-
-void BCMProductBackwardData(Complex *fft_dy, Complex *fft_w, Complex *dx,
-                int n, int p, int q, int k);
-
 void BCMSumBackwardData(Real *x, Real *y,
             int n, int p, int q, int k);
 void BCMSumBackwardData(Complex *x, Complex *y,
             int n, int p, int q, int k);
+
+void BCMProductForwardOptimized(Complex *fft_w, Complex *fft_x, Complex *y,
+                int n, int p, int q, int k, int tb_size);
+void BCMProductBackwardWeightOptimized(Complex *fft_dy, Complex *fft_x, Complex *dw,
+                int n, int p, int q, int k, int tb_size);
+void BCMProductBackwardDataOptimized(Complex *fft_dy, Complex *fft_w, Complex *dx,
+                int n, int p, int q, int k, int tb_size);
+
+void BCMSumForwardOptimized(Complex *x, Complex *y, int n, int p, int k, int q, int tb_size);
+void BCMSumBackwardWeightOptimized(Complex *x, Complex *y, int n, int p, int q, int k, int tb_size);
+void BCMSumBackwardDataOptimized(Complex *x, Complex *y, int n, int p, int q, int k, int tb_size);
+
 }
 
 #endif // CORE_INCLUDE_KERNELS_H_
