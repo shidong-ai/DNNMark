@@ -112,7 +112,8 @@ const std::vector<std::string> activation_config_keywords = {
 // FC layer keywords
 const std::vector<std::string> fc_config_keywords = {
   "num_output",
-  "block_size"
+  "block_size",
+  "optimized"
 };
 
 // Softmax layer keywords

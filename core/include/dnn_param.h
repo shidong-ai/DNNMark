@@ -450,8 +450,9 @@ inline void SetupActivationParam(const std::string &var, const std::string &val,
 struct FullyConnectedParam {
   int output_num_;
   int block_size_;
+  bool optimized_;
   FullyConnectedParam()
-  : output_num_(4096), block_size_(32) {}
+  : output_num_(4096), block_size_(32), optimized_(false) {}
 };
 
 inline void SetupFcParam(const std::string &var, const std::string &val,
@@ -463,6 +464,12 @@ inline void SetupFcParam(const std::string &var, const std::string &val,
     }
     if (!var.compare("block_size")) {
       fc_param->block_size_ = atoi(val.c_str());
+    }
+    if (!var.compare("optimized")) {
+      if (!val.compare("true"))
+        fc_param->optimized_ = true;
+      else if (!val.compare("false"))
+        fc_param->optimized_ = false;
     }
   } else {
     LOG(FATAL) << var << ": Keywords not exists" << std::endl;

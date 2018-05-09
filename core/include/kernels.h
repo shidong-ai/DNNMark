@@ -50,21 +50,21 @@ void BCMSumBackwardData(Complex *x, Complex *y,
             int n, int p, int q, int k);
 
 void BCMProductForwardOptimized(Complex *fft_w, Complex *fft_x, Complex *y,
-                int n, int p, int q, int k, int tb_size);
+                int n, int p, int q, int k, int tb_size = 256);
 void BCMProductBackwardWeightOptimized(Complex *fft_dy, Complex *fft_x, Complex *dw,
-                int n, int p, int q, int k, int tb_size);
+                int n, int p, int q, int k, int tb_size = 256);
 void BCMProductBackwardDataOptimized(Complex *fft_dy, Complex *fft_w, Complex *dx,
-                int n, int p, int q, int k, int tb_size);
+                int n, int p, int q, int k, int tb_size = 256);
 
-void BCMSumForwardOptimized(Complex *x, Complex *y, int n, int p, int k, int q, int tb_size);
-void BCMSumBackwardWeightOptimized(Complex *x, Complex *y, int n, int p, int q, int k, int tb_size);
-void BCMSumBackwardDataOptimized(Complex *x, Complex *y, int n, int p, int q, int k, int tb_size);
+void BCMSumForwardOptimized(Complex *x, Complex *y, int n, int p, int k, int q, int tb_size = 256);
+void BCMSumBackwardWeightOptimized(Complex *x, Complex *y, int n, int p, int q, int k, int tb_size = 256);
+void BCMSumBackwardDataOptimized(Complex *x, Complex *y, int n, int p, int q, int k, int tb_size = 256);
 
 // For backward weights
-void NPK2PNK(Complex *x, Complex *y, int n, int p, int k, int tb_size);
-void NQK2QNK(Complex *x, Complex *y, int n, int q, int k, int tb_size);
+void NPK2PNK(Complex *x, Complex *y, int n, int p, int k, int tb_size = 256);
+void NQK2QNK(Complex *x, Complex *y, int n, int q, int k, int tb_size = 256);
 // For backward data
-void PQK2QPK(Complex *x, Complex *y, int p, int q, int k, int tb_size);
+void PQK2QPK(Complex *x, Complex *y, int p, int q, int k, int tb_size = 256);
 
 }
 
