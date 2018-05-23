@@ -224,4 +224,144 @@ void BCMProductBackwardDataOptimized(Complex *fft_dy, Complex *fft_w, Complex *d
   BCMProductBackwardDataOptimizedKernel<<<grid_dim, block_dim>>>(fft_dy, fft_w, dx, q, p, k);
 }
 
+__global__ void BCMProductForwardOptimized1Kernel(Complex *fft_w,
+                                                 Complex *fft_x,
+                                                 Complex *y,
+                                                 int p, int q, int k) {
+  // Dimension of W after FFT is p * q * k (k is floor(n/2)+1)
+  // Dimension of X after FFT is n * q * k (k is floor(n/2)+1)
+  // Dimension of Y is n * p * q * k (k is floor(n/2)+1)
+  int tid = threadIdx.x;
+  int tid_p = threadIdx.y;
+  int bid = blockIdx.x;
+  int bid_p = blockIdx.y;
+  int idx = bid * blockDim.x + tid;
+  int n_idx = blockIdx.z;
+  int q_idx = idx / k;
+  int k_idx = idx % k;
+  int p_idx = bid_p * blockDim.y + tid_p;
+
+  extern __shared__ Complex shared_mem[];
+
+  if (idx >= (k * q)) {
+    return;
+  }
+  int y_idx = n_idx * p * q * k + p_idx * q * k + idx;
+  int w_idx = p_idx * q * k + q_idx * k + k_idx;
+  int x_idx = n_idx * q * k + q_idx * k + k_idx;
+  shared_mem[tid].x = fft_x[x_idx].x;
+  shared_mem[tid].y = fft_x[x_idx].y;
+  __syncthreads();
+
+  y[y_idx].x = fft_w[w_idx].x * shared_mem[tid].x -
+               fft_w[w_idx].y * shared_mem[tid].y;
+  y[y_idx].y = fft_w[w_idx].x * shared_mem[tid].y +
+               fft_w[w_idx].y * shared_mem[tid].x;
+
+}
+
+void BCMProductForwardOptimized1(Complex *fft_w, Complex *fft_x, Complex *y,
+                int n, int p, int q, int k, int tb_size) {
+  int block_size = (k * q + tb_size -1 ) / tb_size;
+  int tb_size_p = (1024 / tb_size) > p ? p : (1024 / tb_size);
+  int block_size_p = p / tb_size_p;
+  dim3 block_dim(tb_size, tb_size_p, 1);
+  dim3 grid_dim(block_size, block_size_p, n);
+  
+  size_t shared_mem_size = tb_size * sizeof(Complex);
+  BCMProductForwardOptimized1Kernel<<<grid_dim, block_dim, shared_mem_size>>>(fft_w, fft_x, y, p, q, k);
+}
+
+__global__ void BCMProductBackwardWeightOptimized1Kernel(Complex *fft_dy,
+                                               Complex *fft_x, Complex *dw,
+                                               int q, int n, int k) {
+  // Dimension of dY after FFT is p * n * k (k is floor(n/2)+1)
+  // Dimension of X after FFT is q * n * k (k is floor(n/2)+1)
+  // Dimension of dW after this kernel is p * q * n * k (k is floor(n/2)+1)
+  int tid = threadIdx.x;
+  int tid_q = threadIdx.y;
+  int bid = blockIdx.x;
+  int bid_q = blockIdx.y;
+  int idx = bid * blockDim.x + tid;
+  int p_idx = blockIdx.z;
+  int q_idx = bid_q * blockDim.y + tid_q;
+  int n_idx = idx / k;
+  int k_idx = idx % k;
+
+  extern __shared__ Complex shared_mem[];
+
+  if (idx >= (n * k)) {
+    return;
+  }
+  int dw_idx = p_idx * q * n * k + q_idx * n * k + idx;
+  int dy_idx = p_idx * n * k + n_idx * k + k_idx;
+  int x_idx = q_idx * n * k + n_idx * k + k_idx;
+  shared_mem[tid].x = fft_dy[dy_idx].x;
+  shared_mem[tid].y = fft_dy[dy_idx].y;
+  __syncthreads();
+
+  dw[dw_idx].x = shared_mem[tid].x * fft_x[x_idx].x -
+               shared_mem[tid].y * fft_x[x_idx].y;
+  dw[dw_idx].y = shared_mem[tid].x * (0 - fft_x[x_idx].y) -
+               shared_mem[tid].y * fft_x[x_idx].x;
+}
+
+void BCMProductBackwardWeightOptimized1(Complex *fft_dy, Complex *fft_x, Complex *dw,
+                int n, int p, int q, int k, int tb_size) {
+  int block_size = (n * k + tb_size -1 ) / tb_size;
+  int tb_size_q = (1024 / tb_size) > q ? q : (1024 / tb_size);
+  int block_size_q = q / tb_size_q;
+  dim3 block_dim(tb_size, tb_size_q, 1);
+  dim3 grid_dim(block_size, block_size_q, p);
+  
+  size_t shared_mem_size = tb_size * sizeof(Complex);
+  BCMProductBackwardWeightOptimized1Kernel<<<grid_dim, block_dim, shared_mem_size>>>(fft_dy, fft_x, dw, q, n, k);
+}
+
+__global__ void BCMProductBackwardDataOptimized1Kernel(Complex *fft_dy,
+                                               Complex *fft_w, Complex *dx,
+                                               int q, int p, int k) {
+  // Dimension of dY after FFT is n * p * k (k is floor(n/2)+1)
+  // Dimension of X after FFT is q * p * k (k is floor(n/2)+1)
+  // Dimension of dW after this kernel is n * q * p * k (k is floor(n/2)+1)
+  int tid = threadIdx.x;
+  int tid_q = threadIdx.y;
+  int bid = blockIdx.x;
+  int bid_q = blockIdx.y;
+  int idx = bid * blockDim.x + tid;
+  int n_idx = blockIdx.z;
+  int q_idx = bid_q * blockDim.y + tid_q;
+  int p_idx = idx / k;
+  int k_idx = idx % k;
+
+  extern __shared__ Complex shared_mem[];
+
+  if (idx >= (p * k)) {
+    return;
+  }
+  int dx_idx = n_idx * q * p * k + q_idx * p * k + idx;
+  int dy_idx = n_idx * p * k + p_idx * k + k_idx;
+  int w_idx = q_idx * p * k + p_idx * k + k_idx;
+  shared_mem[tid].x = fft_dy[dy_idx].x;
+  shared_mem[tid].y = fft_dy[dy_idx].y;
+  __syncthreads();
+
+  dx[dx_idx].x = shared_mem[tid].x * fft_w[w_idx].x -
+               shared_mem[tid].y * fft_w[w_idx].y;
+  dx[dx_idx].y = shared_mem[tid].x * (0 - fft_w[w_idx].y) -
+               shared_mem[tid].y * fft_w[w_idx].x;
+}
+
+void BCMProductBackwardDataOptimized1(Complex *fft_dy, Complex *fft_w, Complex *dx,
+                int n, int p, int q, int k, int tb_size) {
+  int block_size = (p * k + tb_size -1 ) / tb_size;
+  int tb_size_q = (1024 / tb_size) > q ? q : (1024 / tb_size);
+  int block_size_q = q / tb_size_q;
+  dim3 block_dim(tb_size, tb_size_q, 1);
+  dim3 grid_dim(block_size, block_size_q, n);
+
+  size_t shared_mem_size = tb_size * sizeof(Complex);
+  BCMProductBackwardDataOptimized1Kernel<<<grid_dim, block_dim, shared_mem_size>>>(fft_dy, fft_w, dx, q, p, k);
+}
+
 }

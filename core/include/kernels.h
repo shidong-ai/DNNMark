@@ -56,6 +56,13 @@ void BCMProductBackwardWeightOptimized(Complex *fft_dy, Complex *fft_x, Complex 
 void BCMProductBackwardDataOptimized(Complex *fft_dy, Complex *fft_w, Complex *dx,
                 int n, int p, int q, int k, int tb_size = 256);
 
+void BCMProductForwardOptimized1(Complex *fft_w, Complex *fft_x, Complex *y,
+                int n, int p, int q, int k, int tb_size = 256);
+void BCMProductBackwardWeightOptimized1(Complex *fft_dy, Complex *fft_x, Complex *dw,
+                int n, int p, int q, int k, int tb_size = 256);
+void BCMProductBackwardDataOptimized1(Complex *fft_dy, Complex *fft_w, Complex *dx,
+                int n, int p, int q, int k, int tb_size = 256);
+
 void BCMSumForwardOptimized(Complex *x, Complex *y, int n, int p, int k, int q, int tb_size = 256);
 void BCMSumBackwardWeightOptimized(Complex *x, Complex *y, int n, int p, int q, int k, int tb_size = 256);
 void BCMSumBackwardDataOptimized(Complex *x, Complex *y, int n, int p, int q, int k, int tb_size = 256);

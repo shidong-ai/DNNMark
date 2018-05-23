@@ -271,7 +271,7 @@ class CirculantFullyConnectedLayer : public Layer<T> {
       CUDA_CALL(cudaDeviceSynchronize());
 
       if (fc_param_.optimized_) {
-        BCMProductForwardOptimized((Complex *)fft_w_->Get(),
+        BCMProductForwardOptimized1((Complex *)fft_w_->Get(),
                    (Complex *)fft_x_->Get(),
                    (Complex *)product_->Get(),
                    n_, p_, q_, fft_k_);
@@ -337,7 +337,7 @@ class CirculantFullyConnectedLayer : public Layer<T> {
         NQK2QNK((Complex *)fft_x_->Get(), (Complex *)sum_x_->Get(), n_, p_, q_, fft_k_);
 
         CUDA_CALL(cudaDeviceSynchronize());
-        BCMProductBackwardWeightOptimized((Complex *)sum_y_->Get(),
+        BCMProductBackwardWeightOptimized1((Complex *)sum_y_->Get(),
                    (Complex *)sum_x_->Get(),
                    (Complex *)product_->Get(),
                    n_, p_, q_, fft_k_);
@@ -386,7 +386,7 @@ class CirculantFullyConnectedLayer : public Layer<T> {
         PQK2QPK((Complex *)fft_w_->Get(), (Complex *)sum_w_->Get(), n_, p_, q_, fft_k_);
 
         CUDA_CALL(cudaDeviceSynchronize());
-        BCMProductBackwardDataOptimized((Complex *)fft_y_->Get(),
+        BCMProductBackwardDataOptimized1((Complex *)fft_y_->Get(),
                    (Complex *)sum_w_->Get(),
                    (Complex *)product_->Get(),
                    n_, p_, q_, fft_k_);
