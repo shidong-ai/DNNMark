@@ -36,10 +36,10 @@ template <typename T>
 class Data {
  private:
   PseudoNumGenerator *png_;
-  int size_;
+  size_t size_;
   T *gpu_ptr_;
  public:
-  Data(int size)
+  Data(size_t size)
   : size_(size) {
     LOG(INFO) << "Create Data chunk of size " << size_;
 #ifdef NVIDIA_CUDNN
@@ -94,7 +94,7 @@ class DataManager {
     gpu_data_pool_.clear();
   }
 
-  int CreateData(int size) {
+  int CreateData(size_t size) {
     int gen_chunk_id = num_data_chunks_;
     num_data_chunks_++;
     gpu_data_pool_.emplace(gen_chunk_id, std::make_shared<Data<T>>(size));
