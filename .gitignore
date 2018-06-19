@@ -5,6 +5,8 @@
 .project
 .cproject
 .settings
+.*
+!.gitignore
 
 ####################
 # Unfavorable dir #

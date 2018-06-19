@@ -16,6 +16,9 @@ option (HCC_ENABLE "Only run benchmark on AMD device" OFF)
 
 # Locate CUDA package 
 find_package(CUDA)
+SET(CMAKE_CXX_FLAGS -pthread)
+find_package(Threads)
+
 
 # Detect GPU device
 if(CUDA_FOUND AND ${CUDA_ENABLE})
@@ -65,6 +68,7 @@ if (CUDA_FOUND AND ${CUDA_ENABLE})
     message(FATAL_ERROR "Path to CuDNN is not defined")
   endif()
 
+  message(STATUS "CUDNN root: " ${CUDNN_ROOT})
   if (EXISTS ${CUDNN_ROOT})
     message(STATUS "CuDNN library root path: " ${CUDNN_ROOT})
     include_directories(${CUDNN_ROOT}/include)

@@ -3,7 +3,7 @@ run_mode=standalone
 
 [Convolution]
 name=conv1
-n=100
+n=126
 c=3
 h=256
 w=256
