@@ -10,6 +10,8 @@ grepp()
     echo $1 | grep "wgrad"
 }
 
+
+# Loop over BS
 for N in ${arr[@]};do
 
     conf=$(cat <<SETVAR

@@ -7,6 +7,7 @@
 .settings
 .*
 !.gitignore
+*_tmp.*
 
 ####################
 # Unfavorable dir #
