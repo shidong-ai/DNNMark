@@ -8,9 +8,11 @@
 .*
 !.gitignore
 *_tmp.*
+*.pyc
 
 ####################
 # Unfavorable dir #
 ####################
 libs/
 build/
+logs/

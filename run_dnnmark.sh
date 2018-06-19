@@ -75,13 +75,12 @@ while test $# -gt 0; do
             shift
             break;;
         -*)
-            MORE_OPTIONS="$1"
-            ;;
-        *)
             echo "Unknown option $1";
             echo "$usage"
             exit 1
             ;;
+        *)
+            break;;
     esac
     shift
 done
