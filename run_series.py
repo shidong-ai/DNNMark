@@ -28,10 +28,10 @@ for batch in batchsizes:
     for conv in conv_sizes:
         logname = "{}_conv{}_bs{}".format(logfile_base,conv,batch)
         logfile = os.path.join(logdir,"{}.log".format(logname))
+        command_pars = command+" -n {} -k {} --debug".format(batch,conv)
         if os.path.isfile(logfile):
             print "file",logfile,"exists."
         else:
-            command_pars = command+" -n {} -k {} --debug".format(batch,conv)
             task = {"comm":command_pars,"logfile":logfile,"batch":batch,"conv":conv,"nvsmi":True}
             tasks.append(task)
         logfile = os.path.join(logdir,"{}_%p.nvprof".format(logname))
@@ -41,6 +41,7 @@ for batch in batchsizes:
             profcommand = "nvprof -u s --profile-api-trace none --unified-memory-profiling off --profile-child-processes --csv --log-file {} {}".format(logfile,command_pars)
             task = {"comm":profcommand,"logfile":logfile,"batch":batch,"conv":conv,"nvsmi":False}
             tasks.append(task)
+
 print "Have",len(tasks),"tasks"
 gpu = -1
 for i in range(0,len(tasks)):
