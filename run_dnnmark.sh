@@ -15,6 +15,7 @@ $(basename $0)  [-n <number of images, batch size>]
                 [-u <stride>]
                 [-p <padding>]
                 [-b <benchmark executable, default=test_bwd_conv>]
+                [ --activation - add RELU activation]
                 [ --debug - debug info ]
                 [ --help  - usage info ]
 
@@ -33,7 +34,9 @@ S=3
 U=1
 P=0
 BENCH="test_bwd_conv"
+ACTIVATION=""
 debug=0
+
 
 while test $# -gt 0; do
     case "$1" in
@@ -71,6 +74,15 @@ while test $# -gt 0; do
         --debug)
             debug=1
             ;;
+        --debug)
+            ACTIVATION=$(cat <<SETACT
+[Activation]
+name=relu1
+previous_layer=conv1
+activation_mode=relu
+SETACT
+)
+            ;;
         --)
             shift
             break;;
@@ -89,7 +101,7 @@ done
 
 conf=$(cat <<SETVAR
 [DNNMark]
-run_mode=standalone
+run_mode=composed
 
 [Convolution]
 name=conv1
@@ -106,6 +118,9 @@ stride=$U
 conv_fwd_pref=fastest
 conv_bwd_filter_pref=fastest
 conv_bwd_data_pref=fastest
+
+$ACTIVATION
+
 SETVAR
 )
 

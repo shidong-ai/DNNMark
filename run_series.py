@@ -14,33 +14,37 @@ runs = 1
 batchsizes = range(10,410,10)
 # List of convolutional layer configurations
 conv_sizes = [32, 64, 128, 256]
+imsize = 32 # CIFAR images size
 epochs = 1
 tasks = []
+execs = ["test_bwd_conv","test_fwd_conv"]
 logdir = "logs/dnnmark_timings_and_profiles/"
-logfile_base="dnn_bwd_conv"
+
 command = "./run_dnnmark.sh"
 if not os.path.exists(logdir):
     os.makedirs(logdir)
 print "Logdir",logdir
 
 
-for batch in batchsizes:
-    for conv in conv_sizes:
-        logname = "{}_conv{}_bs{}".format(logfile_base,conv,batch)
-        logfile = os.path.join(logdir,"{}.log".format(logname))
-        command_pars = command+" -n {} -k {} --debug".format(batch,conv)
-        if os.path.isfile(logfile):
-            print "file",logfile,"exists."
-        else:
-            task = {"comm":command_pars,"logfile":logfile,"batch":batch,"conv":conv,"nvsmi":True}
-            tasks.append(task)
-        logfile = os.path.join(logdir,"{}_%p.nvprof".format(logname))
-        if os.path.isfile(logfile):
-            print "file",logfile,"exists."
-        else:
-            profcommand = "nvprof -u s --profile-api-trace none --unified-memory-profiling off --profile-child-processes --csv --log-file {} {}".format(logfile,command_pars)
-            task = {"comm":profcommand,"logfile":logfile,"batch":batch,"conv":conv,"nvsmi":False}
-            tasks.append(task)
+for exe in execs:
+    logfile_base="dnn_{}".format(exe)
+    for batch in batchsizes:
+        for conv in conv_sizes:
+            logname = "{}_conv{}_bs{}".format(logfile_base,conv,batch)
+            logfile = os.path.join(logdir,"{}.log".format(logname))
+            command_pars = command+" -n {} -k {} -w {} -h {} --debug".format(batch,conv,imsize,imsize)
+            if os.path.isfile(logfile):
+                print "file",logfile,"exists."
+            else:
+                task = {"comm":command_pars,"logfile":logfile,"batch":batch,"conv":conv,"nvsmi":True}
+                tasks.append(task)
+            logfile = os.path.join(logdir,"{}_%p.nvprof".format(logname))
+            if os.path.isfile(logfile):
+                print "file",logfile,"exists."
+            else:
+                profcommand = "nvprof -u s --profile-api-trace none --unified-memory-profiling off --profile-child-processes --csv --log-file {} {}".format(logfile,command_pars)
+                task = {"comm":profcommand,"logfile":logfile,"batch":batch,"conv":conv,"nvsmi":False}
+                tasks.append(task)
 
 print "Have",len(tasks),"tasks"
 gpu = -1
