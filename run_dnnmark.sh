@@ -74,7 +74,7 @@ while test $# -gt 0; do
         --debug)
             debug=1
             ;;
-        --debug)
+        --relu)
             ACTIVATION=$(cat <<SETACT
 [Activation]
 name=relu1

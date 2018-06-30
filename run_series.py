@@ -11,14 +11,14 @@ import os
 
 gpus = range(0,1)
 runs = 1
-batchsizes = range(10,410,10)
+batchsizes = [10] + range(20,610,20)
 # List of convolutional layer configurations
-conv_sizes = [32, 64, 128, 256]
+conv_sizes = [32, 64, 128, 256, 512]
 imsize = 32 # CIFAR images size
 epochs = 1
 tasks = []
-execs = ["test_bwd_conv","test_fwd_conv"]
-logdir = "logs/dnnmark_timings_and_profiles/"
+execs = ["test_bwd_conv_relu","test_fwd_conv_relu"]
+logdir = "logs/dnnmark_timings_and_profiles_with_relu/"
 
 command = "./run_dnnmark.sh"
 if not os.path.exists(logdir):
@@ -32,7 +32,7 @@ for exe in execs:
         for conv in conv_sizes:
             logname = "{}_conv{}_bs{}".format(logfile_base,conv,batch)
             logfile = os.path.join(logdir,"{}.log".format(logname))
-            command_pars = command+" -n {} -k {} -w {} -h {} --debug".format(batch,conv,imsize,imsize)
+            command_pars = command+" -n {} -k {} -w {} -h {} -b {} --relu --debug".format(batch,conv,imsize,imsize,exe)
             if os.path.isfile(logfile):
                 print "file",logfile,"exists."
             else:

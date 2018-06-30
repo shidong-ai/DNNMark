@@ -8,36 +8,45 @@ import random
 
 # Read minibatch size and 1st epoch time from files.
 # Store in a DataFrame.
-def fileToDF(logfile, pars, debug=False):
-    batch_learn_pattern = None
-    batch_conv_pattern = None
-    conv = None
-    if "batch_learn_pattern" in pars:
-        batch_learn_pattern = pars["batch_learn_pattern"]
-        columns = ["batch","learn","epoch","time"]
+def fileToDF(logfile_path, pars, debug=False):
+    filename_pattern = None # Get columns values from filename
 
-    if "batch_conv_pattern" in pars:
-        batch_conv_pattern = pars["batch_conv_pattern"]
-        columns = ["batch","conv","epoch","time"]
+    if "columns" in pars:
+        filename_pattern = pars["filename_pattern"]
+        fix_columns = pars["columns"]
+
+    var_columns =  ["time"]
     output_pattern = pars["output_pattern"]
-
+    
     remove_str = None
     if "remov_str" in pars:
         remove_str = pars["remove_str"]
 
 
-    logfile = logfile.strip(" \n")
+    logfile_path = logfile_path.strip(" \n")
+    logfile = os.path.basename(logfile_path)
     if debug:
         print "Reading",logfile
-        print "columns=",columns
-    with open(logfile,"r") as f:
-        lines = f.readlines()
-        batch = 0
-        time = 0
-        epoch = 0
+        print "columns=",fix_columns + var_columns
+    with open(logfile_path,"r") as f:
+        fix_values = []
         ind = 0 # DataFrame row numebr (index)
 
-        df = pd.DataFrame(data=None,columns=columns)
+        if filename_pattern is not None:
+            ms = filename_pattern.match(logfile)
+            if ms:
+                for i in range(len(fix_columns)):
+                    fix_values.append(ms.group(i+1))
+                if debug:
+                    print "Parsed file name to:",fix_values
+            else:
+                print logfile,"didnt match pattern",filename_pattern.pattern
+
+        df = pd.DataFrame(data=None,columns=fix_columns + var_columns)
+        time = 0
+        ind = 0 # DataFrame row numebr (index)
+        row = []
+        lines = f.readlines()
         for line in lines:
             s = line.strip(' \n')
             if remove_str:
@@ -47,24 +56,12 @@ def fileToDF(logfile, pars, debug=False):
                 time = float(m2.group(1))
                 if debug:
                     print "\"{}\" found in \"{}\"".format(output_pattern.pattern,s)
-                    print batch,conv,epoch,time
-                df.loc[ind] = [batch,conv,epoch,time]
+                    print time
+                row = fix_values + [time]
+                if debug: print "Appending row:",row
+                df.loc[ind] = row
                 ind += 1
                 continue
-
-            if batch_learn_pattern is not None:
-                m = batch_learn_pattern.match(s)
-                if m:
-                    batch = int(m.group(1))
-                    conv = float(m.group(2))
-                    if debug: print logfile,": b",batch," l",conv
-                    continue
-            if batch_conv_pattern is not None:
-                m = batch_conv_pattern.match(s)
-                if m:
-                    batch = int(m.group(1))
-                    conv = m.group(2)
-                    if debug: print logfile,": b",batch," conv",conv
 
     if debug:
         print df.head()
