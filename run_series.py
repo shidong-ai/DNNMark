@@ -17,7 +17,7 @@ conv_sizes = [32, 64, 128, 256, 512]
 imsize = 32 # CIFAR images size
 epochs = 1
 tasks = []
-execs = ["test_bwd_conv_relu","test_fwd_conv_relu"]
+execs = ["test_fwd_composed_model","test_bwd_composed_model"]
 logdir = "logs/dnnmark_timings_and_profiles_with_relu/"
 
 command = "./run_dnnmark.sh"

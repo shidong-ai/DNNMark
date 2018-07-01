@@ -17,7 +17,8 @@ set(SUBDIRECTORIES
   test_bwd_dropout
   test_fwd_bypass
   test_bwd_bypass
-  test_composed_model
+  test_fwd_composed_model
+  test_bwd_composed_model
   test_alexnet
 )       
 
