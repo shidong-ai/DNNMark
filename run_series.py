@@ -11,14 +11,14 @@ import os
 
 gpus = range(0,1)
 runs = 1
-batchsizes = [10] + range(20,610,20)
+batchsizes = [10] + range(20,160,20)
 # List of convolutional layer configurations
 conv_sizes = [32, 64, 128, 256, 512]
 imsize = 32 # CIFAR images size
 epochs = 1
 tasks = []
 execs = ["test_fwd_composed_model","test_bwd_composed_model"]
-logdir = "logs/dnnmark_timings_and_profiles_with_relu/"
+logdir = "logs/dnnmark_gpu_traces_with_relu/"
 
 command = "./run_dnnmark.sh"
 if not os.path.exists(logdir):
@@ -42,7 +42,7 @@ for exe in execs:
             if os.path.isfile(logfile):
                 print "file",logfile,"exists."
             else:
-                profcommand = "nvprof -u s --profile-api-trace none --unified-memory-profiling off --profile-child-processes --csv --log-file {} {}".format(logfile,command_pars)
+                profcommand = "nvprof -u s --profile-api-trace none --unified-memory-profiling off --profile-child-processes --print-gpu-trace --csv --log-file {} {}".format(logfile,command_pars)
                 task = {"comm":profcommand,"logfile":logfile,"batch":batch,"conv":conv,"nvsmi":False}
                 tasks.append(task)
 
