@@ -12,6 +12,7 @@ import os
 gpus = range(0,1)
 runs = 1
 batchsizes = [10] + range(20,160,20)
+
 # List of convolutional layer configurations
 conv_sizes = [32, 64, 128, 256, 512]
 imsize = 32 # CIFAR images size
