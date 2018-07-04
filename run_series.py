@@ -18,7 +18,7 @@ imsize = 32 # CIFAR images size
 epochs = 1
 tasks = []
 execs = ["test_fwd_composed_model","test_bwd_composed_model"]
-logdir = "logs/dnnmark_gpu_traces_with_relu/"
+logdir = "logs/dnnmark_V100_gpu_traces_composed_model/"
 
 command = "./run_dnnmark.sh"
 if not os.path.exists(logdir):
