@@ -180,10 +180,9 @@ class FullyConnectedLayer : public Layer<T> {
   void BackwardPropagation() {
     if (p_dnnmark_->getRunMode() == STANDALONE ||
         !previous_layer_name_.compare("null")) {
-      // Fill the top and top diff data
+      // Fill the top diff data
       for (int i = 0; i < num_tops_; i++) {
-        tops_[i]->Filler();
-        tops_[i]->Filler();
+        top_diffs_[i]->Filler();
       }
       // Fill the bottom data
       for (int i = 0; i < num_bottoms_; i++) {
