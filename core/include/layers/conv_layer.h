@@ -178,11 +178,12 @@ class ConvolutionLayer : public Layer<T> {
       fwd_workspace_id_ = data_manager_->CreateData(fwd_workspace_size_);
       fwd_workspace_ = data_manager_->GetData(fwd_workspace_id_);
       has_fwd_workspace_ = true;
-    } 
+    }
 
     // Set convolution backward filter/weights algorithm
     // Use default algorithm for now
     conv_algo_.SetBwdFilterAlgo(conv_param_.algo_);
+    LOG(INFO) << "Setting Bwd Filter Algo to " << conv_param_.algo_;
 
     // Allocate workspace
     conv_algo_.GetBwdFilterWorkspaceSize(*(p_dnnmark_->GetHandle()),

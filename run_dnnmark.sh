@@ -71,6 +71,9 @@ while test $# -gt 0; do
         -b)
             BENCH="$2";shift;
             ;;
+        --algo)
+            CBFA="$2";shift;
+            ;;
         --debug)
             debug=1
             ;;
@@ -97,7 +100,9 @@ SETACT
     shift
 done
 
-
+if [ $CBFA ];then
+    CUDNN_CBFA="algo=$CBFA"
+fi
 
 conf=$(cat <<SETVAR
 [DNNMark]
@@ -118,6 +123,7 @@ stride=$U
 conv_fwd_pref=fastest
 conv_bwd_filter_pref=fastest
 conv_bwd_data_pref=fastest
+$CUDNN_CBFA
 
 $ACTIVATION
 
