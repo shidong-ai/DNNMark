@@ -3,20 +3,20 @@
 
     [Convolution]
     name=conv1
-    n=10
-    c=3
-    h=32
-    w=32
+    n=$N
+    c=$C
+    h=$H
+    w=$W
     previous_layer=null
     conv_mode=convolution
-    num_output=32
-    kernel_size=3
-    pad=1
-    stride=1
+    num_output=$K
+    kernel_size=$S
+    pad=$P
+    stride=$U
     conv_fwd_pref=fastest
     conv_bwd_filter_pref=fastest
     conv_bwd_data_pref=fastest
-
+    $CUDNN_CBFA
 
     [BatchNorm]
     name=batchnorm1
@@ -31,8 +31,3 @@
     previous_layer=batchnorm1
     activation_mode=relu
 
-    [FullyConnected]
-    name=fc7
-    previous_layer=relu1
-    num_output=10
- 
