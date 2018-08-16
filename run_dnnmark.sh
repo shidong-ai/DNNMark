@@ -132,7 +132,7 @@ SETVAR
 
 echo "$conf" > $config_file
 
-./build/benchmarks/"$BENCH"/dnnmark_"$BENCH" -config $config_file -debuginfo $debug
+./build/benchmarks/"$BENCH"/dnnmark_"$BENCH" -config $config_file -debuginfo $debug -warmup 1
 
 
 

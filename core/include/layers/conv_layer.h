@@ -150,6 +150,7 @@ class ConvolutionLayer : public Layer<T> {
     }
 
     // Only one set of weights is considered
+
     int weights_size = conv_param_.output_num_ *
                        input_dim_.c_ *
                        conv_param_.kernel_size_h_ *
@@ -182,8 +183,9 @@ class ConvolutionLayer : public Layer<T> {
 
     // Set convolution backward filter/weights algorithm
     // Use default algorithm for now
+    LOG(INFO) << "Setting Bwd Filter Algo to " << conv_param_.algo_ << " (default was: " << conv_algo_.GetBwdFilterAlgo() << ")";
     conv_algo_.SetBwdFilterAlgo(conv_param_.algo_);
-    LOG(INFO) << "Setting Bwd Filter Algo to " << conv_param_.algo_;
+
 
     // Allocate workspace
     conv_algo_.GetBwdFilterWorkspaceSize(*(p_dnnmark_->GetHandle()),

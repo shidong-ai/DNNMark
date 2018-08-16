@@ -1,17 +1,17 @@
 // The MIT License (MIT)
-// 
+//
 // Copyright (c) 2016 Northeastern University
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -95,7 +95,7 @@ class DataTensor : public Descriptor {
 #ifdef AMD_MIOPEN
   miopenTensorDescriptor_t desc_;
 #endif
-  
+
  public:
   DataTensor()
   : Descriptor() {
@@ -592,7 +592,7 @@ class ConvAlgo {
   : fwd_algo_(CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM),
     bwd_filter_algo_(CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0),
     bwd_data_algo_(CUDNN_CONVOLUTION_BWD_DATA_ALGO_0) {}
-  
+
   void SetFwdAlgo(std::string algo) {
     if (!algo.compare("fft")) {
       fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_FFT;
@@ -648,7 +648,14 @@ class ConvAlgo {
       bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT;
     } else if (!algo.compare("winograd")) {
       bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD;
+    } else if (!algo.compare("0")) {
+      bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
+    } else if (!algo.compare("1")) {
+      bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
+    } else if (!algo.compare("3")) {
+      bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3;
     }
+    LOG(INFO) << "Set Bwd Filter Algo to " << bwd_filter_algo_;
   }
   void SetBwdFilterAlgo(const Handle &handle, RunMode mode, int idx,
                         const DataTensor<T> &bottom_desc,
@@ -664,7 +671,7 @@ class ConvAlgo {
                 conv_desc.GetFilter(),
                 pref,
                 -1,
-                &bwd_filter_algo_));   
+                &bwd_filter_algo_));
   }
   void FindBwdFilterAlgo(const Handle &handle, RunMode mode, int idx,
                          const DataTensor<T> &bottom_desc,
@@ -712,7 +719,7 @@ class ConvAlgo {
                 bottom_desc.Get(),
                 pref,
                 -1,
-                &bwd_data_algo_));   
+                &bwd_data_algo_));
   }
   void FindBwdDataAlgo(const Handle &handle, RunMode mode, int idx,
                        const DataTensor<T> &bottom_desc,
@@ -802,7 +809,7 @@ class ConvAlgo {
   : fwd_algo_(miopenConvolutionFwdAlgoGEMM),
     bwd_filter_algo_(miopenConvolutionBwdWeightsAlgoGEMM),
     bwd_data_algo_(miopenConvolutionBwdDataAlgoGEMM) {}
-  
+
   void SetFwdAlgo(miopenConvFwdAlgorithm_t fwd_algo) {
     fwd_algo_ = fwd_algo;
   }
