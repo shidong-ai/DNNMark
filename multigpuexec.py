@@ -118,7 +118,7 @@ def runTask(task,gpu,nvsmi=False,delay=10):
         # Save stdout to logfile
         logfile = task["logfile"]+".nvsmi"
         fl = open(logfile,"w")
-        command="nvidia-smi -i {} -lms {} --query-gpu=timestamp,name,memory.total,memory.used --format=csv,noheader,nounits".format(gpu,sampling_rate)
+        command="nvidia-smi -i {} -lms {} --query-gpu=timestamp,name,memory.total,memory.used,memory.free --format=csv,noheader,nounits".format(gpu,sampling_rate)
         p = subprocess.Popen(command.split(" "),stdout=fl, stderr=subprocess.STDOUT, bufsize=1, shell=False)
         time.sleep(sampling_period)
         p.kill()

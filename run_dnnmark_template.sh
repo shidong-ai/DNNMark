@@ -33,7 +33,7 @@ W=256
 K=128
 S=3
 U=1
-P=0
+P=1
 BENCH="test_bwd_composed_model"
 debug=0
 

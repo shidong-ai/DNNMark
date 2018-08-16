@@ -10,14 +10,14 @@ import time
 import os
 
 gpus = range(0,1)
-batchsizes = [10] + range(20,110,20) + range(150, 410, 50)
+batchsizes = [10] + range(20,110,20) + range(150, 510, 50)
 
 # List of convolutional layer configurations
-conv_sizes = [64, 128, 256]
+conv_sizes = [64, 128, 256, 512]
 backfilterconvalgos=[0,1,3]
 imsizes = [32, 64, 128]
 tasks = []
-logdir = "logs/dnnmark_Mouse_gpu_traces_composed_model_backfilterconvalgo/"
+logdir = "logs/dnnmark_Mouse_gpu_traces_composed_model_backfilterconvalgo_mod1/"
 
 command = "./run_dnnmark_template.sh"
 if not os.path.exists(logdir):
@@ -25,13 +25,13 @@ if not os.path.exists(logdir):
 print "Logdir",logdir
 runs = 3
 
-logfile_base="dnn_convolution_algo"
+logfile_base="dnn_convolution"
 for imsize in imsizes:
     for batch in batchsizes:
         for conv in conv_sizes:
             for algo in backfilterconvalgos:
                 for run in range(runs):
-                    logname = "{}_{}_imsize{}_conv{}_bs{}".format(logfile_base,algo,imsize,conv,batch)
+                    logname = "{}_imsize{}_conv{}_bs{}_algo{}".format(logfile_base,imsize,conv,batch,algo)
                     logfile = os.path.join(logdir,"{}_{}.log".format(logname,run))
                     command_pars = command+" -n {} -k {} -w {} -h {} --algo {} --debug".format(batch,conv,imsize,imsize,algo)
                     if os.path.isfile(logfile):
