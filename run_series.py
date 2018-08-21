@@ -11,12 +11,13 @@ import os
 import math
 
 gpus = range(0,1)
-batchsizes = range(10,30,10)
+batchsizes = range(10,110,10) + range(120,510,20)
 datasetsize = 50000
 # List of convolutional layer configurations
 conv_sizes = [512]
+channels = 512 # Number of channel in input data
 backfilterconvalgos=[0,1,3]
-imsizes = [32]
+imsizes = [2, 32]
 nvprof = False
 tasks = []
 logdir = "logs/dnnmark_Mouse_gpu_traces_composed_model_backfilterconvalgo_mod2/"
@@ -25,7 +26,7 @@ command = "./run_dnnmark_template.sh"
 if not os.path.exists(logdir):
     os.makedirs(logdir)
 print "Logdir",logdir
-runs = 5
+runs = 3
 
 logfile_base="dnn_convolution"
 for imsize in imsizes:
@@ -37,7 +38,7 @@ for imsize in imsizes:
                 for run in range(runs):
                     logname = "{}_imsize{}_conv{}_bs{}_algo{}".format(logfile_base,imsize,conv,batch,algo)
                     logfile = os.path.join(logdir,"{}_{}.log".format(logname,run))
-                    command_pars = command+" -n {} -k {} -w {} -h {} --algo {} --debug --iter {}".format(batch,conv,imsize,imsize,algo,iterations)
+                    command_pars = command+" -c {} -n {} -k {} -w {} -h {} --algo {} --iter {}".format(channels,batch,conv,imsize,imsize,algo,iterations)
                     if os.path.isfile(logfile):
                         print "file",logfile,"exists."
                     else:
