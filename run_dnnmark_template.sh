@@ -106,7 +106,7 @@ echo "-----------"
 echo "Benchmark: $BENCH"
 echo "Iterations:$ITER"
 
-./build/benchmarks/"$BENCH"/dnnmark_"$BENCH" -config $config_file -debuginfo $debug --warmup 1 --iterations $ITER
+./build/benchmarks/"$BENCH"/dnnmark_"$BENCH" -config $config_file --warmup 1 --iterations $ITER
 
 
 
