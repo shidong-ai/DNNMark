@@ -4,7 +4,7 @@
 # Uses conf_multiconv_mod.dnntemplate configuration file template.
 # 2018 (C) Peter Bryzgalov @ CHITECH Stair Lab
 
-usage=$(cat <<USAGEBLOCK
+usage=$(cat <<- USAGEBLOCK
 Run DNNMark with parameters from CLI.
 Usage:
 $(basename $0)  [-n <number of images, batch size>]
@@ -16,6 +16,7 @@ $(basename $0)  [-n <number of images, batch size>]
                 [-u <stride>]
                 [-p <padding>]
                 [ --algo <cudnnConvolutionBwdFilterAlgo_t> - cuDNN algorithm for backward filter convolution]
+                [ --iter <int> - number of FWD+BWD passes to measure time]
                 [ --debug - debug info ]
                 [ --help  - usage info ]
 
@@ -28,13 +29,14 @@ config_file="conf_tmp.dnnmark"
 # Defaults
 N=64
 C=3
-H=256
-W=256
+H=32
+W=32
 K=128
 S=3
 U=1
 P=1
-BENCH="test_bwd_composed_model"
+BENCH="test_composed_model"
+ITER=1
 debug=0
 
 
@@ -71,6 +73,9 @@ while test $# -gt 0; do
         --algo)
             CBFA="$2";shift;
             ;;
+        --iter)
+            ITER="$2";shift;
+            ;;
         --debug)
             debug=1
             ;;
@@ -92,14 +97,16 @@ if [ $CBFA ];then
     CUDNN_CBFA="algo=$CBFA"
 fi
 
-conf="$(echo EOF;cat $template; echo $EOF)"
+conf="$(echo EOF;cat $template;echo EOF)"
 
-eval "cat <<$conf" > $config_file
+eval "cat <<$conf" >$config_file
 echo "Config: ---"
 cat $config_file
 echo "-----------"
+echo "Benchmark: $BENCH"
+echo "Iterations:$ITER"
 
-./build/benchmarks/"$BENCH"/dnnmark_"$BENCH" -config $config_file -debuginfo $debug
+./build/benchmarks/"$BENCH"/dnnmark_"$BENCH" -config $config_file -debuginfo $debug --warmup 1 --iterations $ITER
 
 
 

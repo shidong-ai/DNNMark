@@ -30,4 +30,3 @@
     name=relu1
     previous_layer=batchnorm1
     activation_mode=relu
-
