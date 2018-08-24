@@ -14,10 +14,10 @@ gpus = range(0,1)
 batchsizes = range(10,110,10) + range(120,510,20)
 datasetsize = 50000
 # List of convolutional layer configurations
-conv_sizes = [512]
-channels = 512 # Number of channel in input data
+conv_sizes = [256, 512]
+channels_sizes = [256, 512] # Number of channel in input data
 backfilterconvalgos=[0,1,3]
-imsizes = [2, 32]
+imsizes = [2,3,4,6,8]
 nvprof = False
 tasks = []
 logdir = "logs/dnnmark_Mouse_gpu_traces_composed_model_backfilterconvalgo_mod2/"
@@ -30,27 +30,28 @@ runs = 3
 
 logfile_base="dnn_convolution"
 for imsize in imsizes:
-    for batch in batchsizes:
-        iterations = int(math.ceil(datasetsize/batch))
-        print "BS: {}, Iterations: {}".format(batch,iterations)
+    for channels in channels_sizes:
         for conv in conv_sizes:
-            for algo in backfilterconvalgos:
-                for run in range(runs):
-                    logname = "{}_imsize{}_conv{}_bs{}_algo{}".format(logfile_base,imsize,conv,batch,algo)
-                    logfile = os.path.join(logdir,"{}_{}.log".format(logname,run))
-                    command_pars = command+" -c {} -n {} -k {} -w {} -h {} --algo {} --iter {}".format(channels,batch,conv,imsize,imsize,algo,iterations)
-                    if os.path.isfile(logfile):
-                        print "file",logfile,"exists."
-                    else:
-                        task = {"comm":command_pars,"logfile":logfile,"batch":batch,"conv":conv,"nvsmi":True}
-                        tasks.append(task)
-                if nvprof:
-                    logfile = os.path.join(logdir,"{}_%p.nvprof".format(logname))
-                    if os.path.isfile(logfile):
-                        print "file",logfile,"exists."
-                    else:
-                        profcommand = "nvprof -u s --profile-api-trace none --unified-memory-profiling off --profile-child-processes --csv --log-file {} {}".format(logfile,command_pars)
-                        task = {"comm":profcommand,"logfile":logfile,"batch":batch,"conv":conv,"nvsmi":False}
+            for batch in batchsizes:
+                iterations = int(math.ceil(datasetsize/batch))
+                print "BS: {}, Iterations: {}".format(batch,iterations)
+                for algo in backfilterconvalgos:
+                    for run in range(runs):
+                        logname = "{}_imsize{}_channels{}_conv{}_bs{}_algo{}".format(logfile_base,imsize,channels,conv,batch,algo)
+                        logfile = os.path.join(logdir,"{}_{}.log".format(logname,run))
+                        command_pars = command+" -c {} -n {} -k {} -w {} -h {} --algo {} --iter {}".format(channels,batch,conv,imsize,imsize,algo,iterations)
+                        if os.path.isfile(logfile):
+                            print "file",logfile,"exists."
+                        else:
+                            task = {"comm":command_pars,"logfile":logfile,"batch":batch,"conv":conv,"nvsmi":True}
+                            tasks.append(task)
+                    if nvprof:
+                        logfile = os.path.join(logdir,"{}_%p.nvprof".format(logname))
+                        if os.path.isfile(logfile):
+                            print "file",logfile,"exists."
+                        else:
+                            profcommand = "nvprof -u s --profile-api-trace none --unified-memory-profiling off --profile-child-processes --csv --log-file {} {}".format(logfile,command_pars)
+                            task = {"comm":profcommand,"logfile":logfile,"batch":batch,"conv":conv,"nvsmi":False}
                         tasks.append(task)
 
 print "Have",len(tasks),"tasks"
