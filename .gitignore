@@ -9,7 +9,7 @@
 !.gitignore
 *_tmp.*
 *.pyc
-
+*.nvvp
 ####################
 # Unfavorable dir #
 ####################

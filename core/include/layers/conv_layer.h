@@ -24,6 +24,7 @@
 #define CORE_INCLUDE_LAYERS_CONV_LAYER_H_
 
 #include "dnn_layer.h"
+#include "stdio.h"
 
 namespace dnnmark {
 
@@ -184,7 +185,20 @@ class ConvolutionLayer : public Layer<T> {
     // Set convolution backward filter/weights algorithm
     // Use default algorithm for now
     LOG(INFO) << "Setting Bwd Filter Algo to " << conv_param_.algo_ << " (default was: " << conv_algo_.GetBwdFilterAlgo() << ")";
-    conv_algo_.SetBwdFilterAlgo(conv_param_.algo_);
+    if (!conv_param_.algo_.compare("cudnn")) {
+        // Chainer default behaviour
+        // Use cuDNN function cudnnGetConvolutionBackwardFilterAlgorithm
+        conv_algo_.SetBwdFilterAlgo(*(p_dnnmark_->GetHandle()),
+                                         p_dnnmark_->getRunMode(), layer_id_,
+                                         bottom_desc_,
+                                         top_desc_,
+                                         desc_,
+                                         conv_param_.conv_bwd_filter_pref_);
+        LOG(INFO) << "Set cuDNN recommended conv. bwd filter alg. to " << conv_algo_.GetBwdFilterAlgo();
+        printf("cuDNN recommended bwd convolution filter algorithm: %d\n",conv_algo_.GetBwdFilterAlgo());
+    } else {
+        conv_algo_.SetBwdFilterAlgo(conv_param_.algo_);
+    }
 
 
     // Allocate workspace
