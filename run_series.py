@@ -16,8 +16,8 @@ datasetsize = 50000
 # List of convolutional layer configurations
 conv_sizes = [256, 512]
 channels_sizes = [256, 512] # Number of channel in input data
-backfilterconvalgos=[0,1,3]
-imsizes = [2,3,4,6,8]
+backfilterconvalgos=[0,1,3,"cudnn"]
+imsizes = [2,3,4]
 nvprof = False
 tasks = []
 logdir = "logs/dnnmark_Mouse_gpu_traces_composed_model_backfilterconvalgo_mod2/"
