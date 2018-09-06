@@ -33,12 +33,13 @@ __global__ void NPK2PNK_Kernel(Complex *x, Complex *y, int n, int p, int k) {
   int p_idx = blockDim.y;
   int n_idx = idx / k;
   int k_idx = idx % k;
-  if (idx < (n * k)) {
-    int x_idx = n_idx * p * k + p_idx * k + k_idx;
-    int y_idx = p_idx * n * k + bid * blockDim.x + tid;
-    y[y_idx].x = x[x_idx].x;
-    y[y_idx].y = x[x_idx].y;
-  }
+  if (idx >= (n * k))
+    return;
+  int x_idx = n_idx * p * k + p_idx * k + k_idx;
+  int y_idx = p_idx * n * k + bid * blockDim.x + tid;
+  y[y_idx].x = x[x_idx].x;
+  y[y_idx].y = x[x_idx].y;
+
 }
 
 void NPK2PNK(Complex *x, Complex *y, int n, int p, int k, int tb_size) {
@@ -55,12 +56,12 @@ __global__ void NQK2QNK_Kernel(Complex *x, Complex *y, int n, int q, int k) {
   int q_idx = blockDim.y;
   int n_idx = idx / k;
   int k_idx = idx % k;
-  if (idx < (n * k)) {
-    int x_idx = n_idx * q * k + q_idx * k + k_idx;
-    int y_idx = q_idx * n * k + bid * blockDim.x + tid;
-    y[y_idx].x = x[x_idx].x;
-    y[y_idx].y = x[x_idx].y;
-  }
+  if (idx >= (n * k))
+    return;
+  int x_idx = n_idx * q * k + q_idx * k + k_idx;
+  int y_idx = q_idx * n * k + bid * blockDim.x + tid;
+  y[y_idx].x = x[x_idx].x;
+  y[y_idx].y = x[x_idx].y;
 }
 
 void NQK2QNK(Complex *x, Complex *y, int n, int q, int k, int tb_size) {
@@ -77,12 +78,14 @@ __global__ void PQK2QPK_Kernel(Complex *x, Complex *y, int p, int q, int k) {
   int q_idx = blockDim.y;
   int p_idx = idx / k;
   int k_idx = idx % k;
-  if (idx < (p * k)) {
-    int x_idx = p_idx * q * k + q_idx * k + k_idx;
-    int y_idx = q_idx * p * k + bid * blockDim.x + tid;
-    y[y_idx].x = x[x_idx].x;
-    y[y_idx].y = x[x_idx].y;
-  }
+  if (idx >= (p * k))
+    return;
+
+  int x_idx = p_idx * q * k + q_idx * k + k_idx;
+  int y_idx = q_idx * p * k + bid * blockDim.x + tid;
+  y[y_idx].x = x[x_idx].x;
+  y[y_idx].y = x[x_idx].y;
+
 }
 
 void PQK2QPK(Complex *x, Complex *y, int p, int q, int k, int tb_size) {

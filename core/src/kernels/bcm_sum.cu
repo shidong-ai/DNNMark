@@ -31,10 +31,13 @@ __global__ void BCMSumForwardKernel(Real *x, Real *y, int q) {
   int k = blockDim.x;
   int y_idx = blockIdx.x * k + threadIdx.x;
   y[y_idx] = 0;
+  Real temp;
+  temp = 0;
   for (int i = 0; i < q; i++) {
     int x_idx = blockIdx.x * q * k + i * k + threadIdx.x;
-    y[y_idx] += x[x_idx];
+    temp += x[x_idx];
   }
+  y[y_idx] = temp;
 
 }
 
@@ -50,13 +53,16 @@ __global__ void BCMSumForwardKernel(Complex *x, Complex *y, int q) {
   // Sum over q
   int k = blockDim.x;
   int y_idx = blockIdx.x * k + threadIdx.x;
-  y[y_idx].x = 0;
-  y[y_idx].y = 0;
+  Complex temp;
+  temp.x = 0;
+  temp.y = 0;
   for (int i = 0; i < q; i++) {
     int x_idx = blockIdx.x * q * k + i * k + threadIdx.x;
-    y[y_idx].x += x[x_idx].x;
-    y[y_idx].y += x[x_idx].y;
+    temp.x += x[x_idx].x;
+    temp.y += x[x_idx].y;
   }
+  y[y_idx].x = temp.x;
+  y[y_idx].y = temp.y;
 
 }
 
@@ -72,11 +78,12 @@ __global__ void BCMSumBackwardWeightKernel(Real *x, Real *y, int n) {
   // Sum over n
   int k = blockDim.x;
   int y_idx = blockIdx.x * k + threadIdx.x;
-  y[y_idx] = 0;
+  Real temp = 0;
   for (int i = 0; i < n; i++) {
     int x_idx = i * gridDim.x * k + blockIdx.x * k + threadIdx.x;
-    y[y_idx] += x[x_idx];
+    temp += x[x_idx];
   }
+  y[y_idx] = temp;
 
 }
 
@@ -92,13 +99,16 @@ __global__ void BCMSumBackwardWeightKernel(Complex *x, Complex *y, int n) {
   // Sum over n
   int k = blockDim.x;
   int y_idx = blockIdx.x * k + threadIdx.x;
-  y[y_idx].x = 0;
-  y[y_idx].y = 0;
+  Complex temp;
+  temp.x = 0;
+  temp.y = 0;
   for (int i = 0; i < n; i++) {
     int x_idx = i * gridDim.x * k + blockIdx.x * k + threadIdx.x;
-    y[y_idx].x += x[x_idx].x;
-    y[y_idx].y += x[x_idx].y;
+    temp.x += x[x_idx].x;
+    temp.y += x[x_idx].y;
   }
+  y[y_idx].x = temp.x;
+  y[y_idx].y = temp.y;
 }
 
 void BCMSumBackwardWeight(Complex *x, Complex *y, int n, int p, int q, int k) {
@@ -113,13 +123,14 @@ __global__ void BCMSumBackwardDataKernel(Real *x, Real *y, int p, int q) {
   // Sum over p
   int k = blockDim.x;
   int y_idx = blockIdx.x * k + threadIdx.x;
-  y[y_idx] = 0;
+  Real temp = 0;
   int n_idx = blockIdx.x / q;
   int q_idx = blockIdx.x % q;
   for (int i = 0; i < p; i++) {
     int x_idx = n_idx * p * q * k + i * q * k + q_idx * k + threadIdx.x;
-    y[y_idx] += x[x_idx];
+    temp += x[x_idx];
   }
+  y[y_idx] = temp;
 
 }
 
@@ -135,15 +146,18 @@ __global__ void BCMSumBackwardDataKernel(Complex *x, Complex *y, int p, int q) {
   // Sum over p
   int k = blockDim.x;
   int y_idx = blockIdx.x * k + threadIdx.x;
-  y[y_idx].x = 0;
-  y[y_idx].y = 0;
+  Complex temp;
+  temp.x = 0;
+  temp.y = 0;
   int n_idx = blockIdx.x / q;
   int q_idx = blockIdx.x % q;
   for (int i = 0; i < p; i++) {
     int x_idx = n_idx * p * q * k + i * q * k + q_idx * k + threadIdx.x;
-    y[y_idx].x += x[x_idx].x;
-    y[y_idx].y += x[x_idx].y;
+    temp.x += x[x_idx].x;
+    temp.y += x[x_idx].y;
   }
+  y[y_idx].x = temp.x;
+  y[y_idx].y = temp.y;
 }
 
 void BCMSumBackwardData(Complex *x, Complex *y, int n, int p, int q, int k) {
@@ -163,16 +177,20 @@ __global__ void BCMSumForwardOptimizedKernel(Complex *x, Complex *y,
   int n_idx = blockIdx.y;
   int p_idx = idx / k;
   int k_idx = idx % k;
-  if (idx < (p * k)) {
-    int y_idx = n_idx * p * k + idx;
-    y[y_idx].x = 0;
-    y[y_idx].y = 0;
-    for (int i = 0; i < q; i++) {
-      int x_idx = n_idx * p * q * k + p_idx * q * k + i * k + k_idx;
-      y[y_idx].x += x[x_idx].x;
-      y[y_idx].y += x[x_idx].y;
-    }
+  if (idx >= (p * k))
+    return;
+
+  int y_idx = n_idx * p * k + idx;
+  Complex temp;
+  temp.x = 0;
+  temp.y = 0;
+  for (int i = 0; i < q; i++) {
+    int x_idx = n_idx * p * q * k + p_idx * q * k + i * k + k_idx;
+    temp.x += x[x_idx].x;
+    temp.y += x[x_idx].y;
   }
+  y[y_idx].x = temp.x;
+  y[y_idx].y = temp.y;
 
 }
 
@@ -195,16 +213,20 @@ __global__ void BCMSumBackwardWeightOptimizedKernel(Complex *x, Complex *y,
   int p_idx = blockIdx.y;
   int q_idx = idx / k;
   int k_idx = idx % k;
-  if (idx < (q * k)) {
-    int y_idx = p_idx * q * k + idx;
-    y[y_idx].x = 0;
-    y[y_idx].y = 0;
-    for (int i = 0; i < n; i++) {
-      int x_idx = p_idx * q * n * k + q_idx * n * k + i * k + k_idx;
-      y[y_idx].x += x[x_idx].x;
-      y[y_idx].y += x[x_idx].y;
-    }
+  if (idx >= (q * k))
+    return;
+
+  int y_idx = p_idx * q * k + idx;
+  Complex temp;
+  temp.x = 0;
+  temp.y = 0;
+  for (int i = 0; i < n; i++) {
+    int x_idx = p_idx * q * n * k + q_idx * n * k + i * k + k_idx;
+    temp.x += x[x_idx].x;
+    temp.y += x[x_idx].y;
   }
+  y[y_idx].x = temp.x;
+  y[y_idx].y = temp.y;
 
 }
 
@@ -227,16 +249,20 @@ __global__ void BCMSumBackwardDataOptimizedKernel(Complex *x, Complex *y,
   int n_idx = blockIdx.y;
   int q_idx = idx / k;
   int k_idx = idx % k;
-  if (idx < (q * k)) {
-    int y_idx = n_idx * q * k + idx;
-    y[y_idx].x = 0;
-    y[y_idx].y = 0;
-    for (int i = 0; i < p; i++) {
-      int x_idx = n_idx * q * p * k + q_idx * p * k + i * k + k_idx;
-      y[y_idx].x += x[x_idx].x;
-      y[y_idx].y += x[x_idx].y;
-    }
+  if (idx >= (q * k))
+    return;
+
+  int y_idx = n_idx * q * k + idx;
+  Complex temp;
+  temp.x = 0;
+  temp.y = 0;
+  for (int i = 0; i < p; i++) {
+    int x_idx = n_idx * q * p * k + q_idx * p * k + i * k + k_idx;
+    temp.x += x[x_idx].x;
+    temp.y += x[x_idx].y;
   }
+  y[y_idx].x = temp.x;
+  y[y_idx].y = temp.y;
 
 }
 
