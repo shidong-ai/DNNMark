@@ -11,24 +11,26 @@ import os
 import math
 
 gpus = range(0,1)
-batchsizes = range(10,110,10) + range(120,510,20)
+runs = 2
+# batchsizes = range(10,110,10) + range(120,510,20)
+batchsizes = [7,8,9] + range(10,50,2) + range(50,160,10) +  range(160,200,20) + range(200,500,50)
 datasetsize = 50000
 # List of convolutional layer configurations
 conv_sizes = [256, 512]
 channels_sizes = [256, 512] # Number of channel in input data
 backfilterconvalgos=[0,1,3,"cudnn"]
-imsizes = [2,3,4]
+imsizes = [2,4]
 nvprof = False
+with_memory = False
 tasks = []
-logdir = "logs/dnnmark_Mouse_gpu_traces_composed_model_backfilterconvalgo_mod2/"
+logdir = "logs/dnnmark_composed_model_microseries/"
 
 command = "./run_dnnmark_template.sh"
 if not os.path.exists(logdir):
     os.makedirs(logdir)
 print "Logdir",logdir
-runs = 3
 
-logfile_base="dnn_convolution"
+logfile_base="dnn_convolution_mouse"
 for imsize in imsizes:
     for channels in channels_sizes:
         for conv in conv_sizes:
@@ -43,7 +45,7 @@ for imsize in imsizes:
                         if os.path.isfile(logfile):
                             print "file",logfile,"exists."
                         else:
-                            task = {"comm":command_pars,"logfile":logfile,"batch":batch,"conv":conv,"nvsmi":True}
+                            task = {"comm":command_pars,"logfile":logfile,"batch":batch,"conv":conv,"nvsmi":with_memory}
                             tasks.append(task)
                     if nvprof:
                         logfile = os.path.join(logdir,"{}_%p.nvprof".format(logname))
@@ -64,6 +66,7 @@ for i in range(0,len(tasks)):
     f.write("GPU: {}\n".format(gpu_info))
     f.close()
     multigpuexec.runTask(tasks[i],gpu,nvsmi=tasks[i]["nvsmi"],delay=0)
+    print tasks[i]["logfile"]
     print "{}/{} tasks".format(i+1,len(tasks))
     time.sleep(1)
 
