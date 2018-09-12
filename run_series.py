@@ -30,7 +30,7 @@ if not os.path.exists(logdir):
     os.makedirs(logdir)
 print "Logdir",logdir
 
-logfile_base="dnn_convolution_mouse"
+logfile_base="dnnmark_mouse_composedmodel"
 for imsize in imsizes:
     for channels in channels_sizes:
         for conv in conv_sizes:
