@@ -15,6 +15,7 @@ runs = 2
 # batchsizes = range(10,110,10) + range(120,510,20)
 batchsizes = [7,8,9] + range(10,50,2) + range(50,160,10) +  range(160,200,20) + range(200,500,50)
 datasetsize = 50000
+nvprof_data = 500
 # List of convolutional layer configurations
 conv_sizes = [256, 512]
 channels_sizes = [256, 512] # Number of channel in input data
@@ -35,9 +36,9 @@ for imsize in imsizes:
     for channels in channels_sizes:
         for conv in conv_sizes:
             for batch in batchsizes:
-                iterations = int(math.ceil(datasetsize/batch))
-                print "BS: {}, Iterations: {}".format(batch,iterations)
                 for algo in backfilterconvalgos:
+                    iterations = int(math.ceil(datasetsize/batch))
+                    print "BS: {}, Iterations: {}".format(batch,iterations)
                     for run in range(runs):
                         logname = "{}_imsize{}_channels{}_conv{}_bs{}_algo{}".format(logfile_base,imsize,channels,conv,batch,algo)
                         logfile = os.path.join(logdir,"{}_{}.log".format(logname,run))
@@ -48,6 +49,9 @@ for imsize in imsizes:
                             task = {"comm":command_pars,"logfile":logfile,"batch":batch,"conv":conv,"nvsmi":with_memory}
                             tasks.append(task)
                     if nvprof:
+                        iterations = int(math.ceil(nvprof_data/batch))
+                        print "BS: {}, Iterations: {}".format(batch,iterations)
+                        command_pars = command+" -c {} -n {} -k {} -w {} -h {} --algo {} --iter {}".format(channels,batch,conv,imsize,imsize,algo,iterations)
                         logfile = os.path.join(logdir,"{}_%p.nvprof".format(logname))
                         if os.path.isfile(logfile):
                             print "file",logfile,"exists."
