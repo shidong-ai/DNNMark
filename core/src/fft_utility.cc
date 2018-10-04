@@ -46,6 +46,7 @@ size_t FFTPlan::Set(FFTPlanType plan_type, int nx, FFTType type, int batch) {
   switch (plan_type) {
     case FFT_1D:
       CUFFT_CALL(cufftMakePlan1d(plan_, nx, (cufftType_t)type, batch, &workspace_size));
+      LOG(INFO) << "FFT workspace size: " << workspace_size;
       break;
     default:
       LOG(FATAL) << "FFT plan type NOT supported";

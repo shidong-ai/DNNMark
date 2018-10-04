@@ -74,10 +74,11 @@ class DataManager {
   // Memory pool indexed by chunk id
   std::map<int, std::shared_ptr<Data<T>>> gpu_data_pool_;
   int num_data_chunks_;
+  int all_size_in_byte_;
 
   // Constructor
   DataManager()
-  : num_data_chunks_(0) {
+  : num_data_chunks_(0), all_size_in_byte_(0) {
   }
 
   // Memory manager instance
@@ -97,8 +98,10 @@ class DataManager {
   int CreateData(int size) {
     int gen_chunk_id = num_data_chunks_;
     num_data_chunks_++;
+    all_size_in_byte_ += size;
     gpu_data_pool_.emplace(gen_chunk_id, std::make_shared<Data<T>>(size));
     LOG(INFO) << "Create data with ID: " << gen_chunk_id;
+    LOG(INFO) << "Statically allocated data of size (MB): " << (all_size_in_byte_/(1024*1024));
     return gen_chunk_id;
   }
 

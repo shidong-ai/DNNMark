@@ -149,7 +149,7 @@ class FullyConnectedLayer : public Layer<T> {
 
     // Prepare CuBLAS parameters
     int M = fc_param_.output_num_;
-    int N = input_dim_.n_;;
+    int N = input_dim_.n_;
     int K = num_rows_weights_;
     int lda = K;
     int ldb = K;

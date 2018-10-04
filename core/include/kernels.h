@@ -73,6 +73,13 @@ void NQK2QNK(Complex *x, Complex *y, int n, int q, int k, int tb_size = 256);
 // For backward data
 void PQK2QPK(Complex *x, Complex *y, int p, int q, int k, int tb_size = 256);
 
+// Fused Kernels
+void BCMForward(Complex *fft_w, Complex *fft_x, Complex *y,
+                int n, int p, int q, int k);
+void BCMBackwardWeight(Complex *fft_dy, Complex *fft_x, Complex *dw,
+                int n, int p, int q, int k);
+void BCMBackwardData(Complex *fft_dy, Complex *fft_w, Complex *dx,
+                int n, int p, int q, int k);
 }
 
 #endif // CORE_INCLUDE_KERNELS_H_
