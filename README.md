@@ -6,21 +6,37 @@ HCC, HIP, MIOpen and miopengemm are required in order to build MIOpen version of
 Bibtex is as below:
 
 @inproceedings{Dong:2017:DDN:3038228.3038239,
+
  author = {Dong, Shi and Kaeli, David},
+ 
  title = {DNNMark: A Deep Neural Network Benchmark Suite for GPUs},
+ 
  booktitle = {Proceedings of the General Purpose GPUs},
+ 
  series = {GPGPU-10},
+ 
  year = {2017},
+ 
  isbn = {978-1-4503-4915-4},
+ 
  location = {Austin, TX, USA},
+ 
  pages = {63--72},
+ 
  numpages = {10},
+ 
  url = {http://doi.acm.org/10.1145/3038228.3038239},
+ 
  doi = {10.1145/3038228.3038239},
+ 
  acmid = {3038239},
+ 
  publisher = {ACM},
+ 
  address = {New York, NY, USA},
+ 
  keywords = {Benchmark Suite, Deep Neural Network, GPU, cuDNN},
+ 
 }
 
 
