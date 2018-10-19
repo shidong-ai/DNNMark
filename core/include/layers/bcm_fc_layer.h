@@ -20,8 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef CORE_INCLUDE_LAYERS_CIRCULANT_FC_LAYER_H_ 
-#define CORE_INCLUDE_LAYERS_CIRCULATN_FC_LAYER_H_
+#ifndef CORE_INCLUDE_LAYERS_BCM_FC_LAYER_H_ 
+#define CORE_INCLUDE_LAYERS_BCM_FC_LAYER_H_
 
 #include "dnn_layer.h"
 #include "fft_utility.h"
@@ -31,7 +31,7 @@
 namespace dnnmark {
 
 template <typename T>
-class CirculantFullyConnectedLayer : public Layer<T> {
+class BCMFullyConnectedLayer : public Layer<T> {
   // using declaration for calling member from base class
   using Layer<T>::p_dnnmark_;
   using Layer<T>::layer_id_;
@@ -105,7 +105,7 @@ class CirculantFullyConnectedLayer : public Layer<T> {
   int sum_x_chunk_id_;
 
  public:
-  CirculantFullyConnectedLayer(DNNMark<T> *p_dnnmark)
+  BCMFullyConnectedLayer(DNNMark<T> *p_dnnmark)
   : Layer<T>(p_dnnmark),
     fc_param_(),
     w_plan_(), x_plan_(), y_plan_(),
