@@ -39,7 +39,7 @@ const std::vector<std::string> layer_section_keywords = {
   "[LRN]",
   "[Activation]",
   "[FullyConnected]",
-  "[CBMFullyConnected]",
+  "[BCMFullyConnected]",
   "[Softmax]",
   "[BatchNorm]",
   "[Dropout]",

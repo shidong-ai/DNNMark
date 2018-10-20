@@ -195,6 +195,13 @@ enum LayerType {
   BYPASS
 };
 
+enum BCMOptimType {
+  NO = 0,
+  O1,
+  O2,
+  KF //Kernel fusion
+};
+
 } // namespace dnnmark
 
 #endif // CORE_INCLUDE_COMMON_H_

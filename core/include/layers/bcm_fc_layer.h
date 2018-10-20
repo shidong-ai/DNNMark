@@ -24,9 +24,7 @@
 #define CORE_INCLUDE_LAYERS_BCM_FC_LAYER_H_
 
 #include "dnn_layer.h"
-#include "fft_utility.h"
-#include "fft_wrapper.h"
-#include "kernels.h"
+#include "bcm.h"
 
 namespace dnnmark {
 
@@ -60,9 +58,6 @@ class BCMFullyConnectedLayer : public Layer<T> {
   // Weights related
   int num_rows_weights_;
   int num_cols_weights_;
-
-  // Swap sum and IFFT
-  bool swap_;
 
   // Use notation in the BCM paper
   int n_; // batch size
@@ -114,9 +109,6 @@ class BCMFullyConnectedLayer : public Layer<T> {
     ifft_backward_weight_plan_(),
     ifft_backward_data_plan_() {
     Layer<T>::has_learnable_params_ = true;
-
-    // Optimized implementation
-    swap_ = true;
   }
 
   FullyConnectedParam *getFullyConnectedParam() { return &fc_param_; }
@@ -180,13 +172,10 @@ class BCMFullyConnectedLayer : public Layer<T> {
     w_plan_.Set(FFT_1D, k_, R2C, p_ * q_);
     x_plan_.Set(FFT_1D, k_, R2C, n_ * q_);
     y_plan_.Set(FFT_1D, k_, R2C, n_ * p_);
-    if (swap_) {
-      ifft_forward_plan_.Set(FFT_1D, k_, C2R, n_ * p_);
-      ifft_backward_weight_plan_.Set(FFT_1D, k_, C2R, p_ * q_);
-      ifft_backward_data_plan_.Set(FFT_1D, k_, C2R, n_ * q_);
-    } else {
-      ifft_plan_.Set(FFT_1D, k_, C2R, n_ * p_ * q_);
-    }
+    ifft_forward_plan_.Set(FFT_1D, k_, C2R, n_ * p_);
+    ifft_backward_weight_plan_.Set(FFT_1D, k_, C2R, p_ * q_);
+    ifft_backward_data_plan_.Set(FFT_1D, k_, C2R, n_ * q_);
+    ifft_plan_.Set(FFT_1D, k_, C2R, n_ * p_ * q_);
 
     // Create weight data
     int weights_size = p_ * q_ * k_;
@@ -219,29 +208,26 @@ class BCMFullyConnectedLayer : public Layer<T> {
     product_chunk_id_ = data_manager_->CreateData(product_size);
     product_ = data_manager_->GetData(product_chunk_id_);
 
-    int sum_k;
-    if (swap_) {
-      sum_k = fft_k_ * 2;
-      int sum_y_size = n_ * p_ * sum_k;
-      sum_y_chunk_id_ = data_manager_->CreateData(sum_y_size);
-      sum_y_ = data_manager_->GetData(sum_y_chunk_id_);
+    int sum_k = fft_k_ * 2;
 
-      int sum_w_size = p_ * q_ * sum_k;
-      sum_w_chunk_id_ = 
-        data_manager_->CreateData(sum_w_size);
-      sum_w_ =
-        data_manager_->GetData(sum_w_chunk_id_);
+    int sum_y_size = n_ * p_ * sum_k;
+    sum_y_chunk_id_ = data_manager_->CreateData(sum_y_size);
+    sum_y_ = data_manager_->GetData(sum_y_chunk_id_);
 
-      int sum_x_size = n_ * q_ * sum_k;
-      sum_x_chunk_id_ =
-        data_manager_->CreateData(sum_x_size);
-      sum_x_ = data_manager_->GetData(sum_x_chunk_id_);
-    } else {
-      sum_k = k_;
-      int sum_size = n_ * p_ * q_ * sum_k;
-      sum_chunk_id_ = data_manager_->CreateData(sum_size);
-      sum_ = data_manager_->GetData(sum_chunk_id_);
-    }
+    int sum_w_size = p_ * q_ * sum_k;
+    sum_w_chunk_id_ = 
+      data_manager_->CreateData(sum_w_size);
+    sum_w_ =
+      data_manager_->GetData(sum_w_chunk_id_);
+
+    int sum_x_size = n_ * q_ * sum_k;
+    sum_x_chunk_id_ =
+      data_manager_->CreateData(sum_x_size);
+    sum_x_ = data_manager_->GetData(sum_x_chunk_id_);
+
+    int sum_size = n_ * p_ * q_ * k_;
+    sum_chunk_id_ = data_manager_->CreateData(sum_size);
+    sum_ = data_manager_->GetData(sum_chunk_id_);
 
   }
 
@@ -266,50 +252,43 @@ class BCMFullyConnectedLayer : public Layer<T> {
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_, p_dnnmark_->GetTimer(), "BCMFcFwd");
     for (int i = 0; i < num_bottoms_; i++) {
-      dnnmarkFFT(w_plan_, weights_->Get(), (Complex *)fft_w_->Get());
-      dnnmarkFFT(x_plan_, bottoms_[i]->Get(), (Complex *)fft_x_->Get());
-      CUDA_CALL(cudaDeviceSynchronize());
-
-      if (fc_param_.optimized_) {
-        //BCMProductForwardOptimized1((Complex *)fft_w_->Get(),
-        //           (Complex *)fft_x_->Get(),
-        //           (Complex *)product_->Get(),
-        //           n_, p_, q_, fft_k_);
-        BCMForward((Complex *)fft_w_->Get(),
-                   (Complex *)fft_x_->Get(),
-                   (Complex *)sum_y_->Get(),
-                   n_, p_, q_, fft_k_);
-       
-      } else {
-        BCMProductForward((Complex *)fft_w_->Get(),
-                   (Complex *)fft_x_->Get(),
-                   (Complex *)product_->Get(),
-                   n_, p_, q_, fft_k_);
+      if (fc_param_.optimization_ == NO) {
+        dnnmarkBCMForward<T>(w_plan_,
+                          x_plan_,
+                          ifft_plan_,
+                          weights_->Get(), bottoms_[i]->Get(),
+                          (Complex *)fft_w_->Get(), (Complex *)fft_x_->Get(),
+                          tops_[i]->Get(),
+                          product_->Get(), sum_->Get(),
+                          n_, p_, q_, k_);
+      } else if (fc_param_.optimization_ == O1) {
+        dnnmarkBCMForwardO1<T>(w_plan_,
+                            x_plan_,
+                            ifft_forward_plan_,
+                            weights_->Get(), bottoms_[i]->Get(),
+                            (Complex *)fft_w_->Get(), (Complex *)fft_x_->Get(),
+                            tops_[i]->Get(),
+                            product_->Get(), sum_y_->Get(),
+                            n_, p_, q_, k_);
+      } else if (fc_param_.optimization_ == O2) {
+        dnnmarkBCMForwardO2<T>(w_plan_,
+                            x_plan_,
+                            ifft_forward_plan_,
+                            weights_->Get(), bottoms_[i]->Get(),
+                            (Complex *)fft_w_->Get(), (Complex *)fft_x_->Get(),
+                            tops_[i]->Get(),
+                            sum_w_->Get(), product_->Get(), sum_y_->Get(),
+                            n_, p_, q_, k_);
+      } else if (fc_param_.optimization_ == KF) {
+        dnnmarkBCMForwardKF<T>(w_plan_,
+                            x_plan_,
+                            ifft_forward_plan_,
+                            weights_->Get(), bottoms_[i]->Get(),
+                            (Complex *)fft_w_->Get(), (Complex *)fft_x_->Get(),
+                            tops_[i]->Get(),
+                            sum_y_->Get(),
+                            n_, p_, q_, k_);
       }
-      CUDA_CALL(cudaDeviceSynchronize());
-
-      if (swap_) {
-        // This is the implementation of after swap of IFFT and sum
-        if (fc_param_.optimized_) {
-          //BCMSumForward((Complex *)product_->Get(),
-          //       (Complex *)sum_y_->Get(),
-          //       n_, p_, q_, fft_k_);
-        } else {
-          BCMSumForwardOptimized((Complex *)product_->Get(),
-                 (Complex *)sum_y_->Get(),
-                 n_, p_, q_, fft_k_);
-        }
-        //CUDA_CALL(cudaDeviceSynchronize());
-
-        dnnmarkIFFT(ifft_forward_plan_, (Complex *)sum_y_->Get(), tops_[i]->Get());
-      } else {
-        // This is the original implementation
-        dnnmarkIFFT(ifft_plan_, (Complex *)product_->Get(), sum_->Get());
-        CUDA_CALL(cudaDeviceSynchronize());
-        BCMSumForward(sum_->Get(), tops_[i]->Get(),
-               n_, p_, q_, k_);
-      }
-      
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_, p_dnnmark_->GetTimer(), "BCMFcFwd");
@@ -333,52 +312,39 @@ class BCMFullyConnectedLayer : public Layer<T> {
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_, p_dnnmark_->GetTimer(), "BCMFcBwdFilter");
     for (int i = 0; i < num_tops_; i++) {
-      dnnmarkFFT(y_plan_, top_diffs_[i]->Get(), (Complex *)fft_y_->Get());
-      // The FFT of x can be saved
-      CUDA_CALL(cudaDeviceSynchronize());
-      if (fc_param_.optimized_) {
-        // Reuse the sum_y and sum_x here
-        //NPK2PNK((Complex *)fft_y_->Get(), (Complex *)sum_y_->Get(), n_, p_, fft_k_);
-        //NQK2QNK((Complex *)fft_x_->Get(), (Complex *)sum_x_->Get(), n_, q_, fft_k_);
-
-        //CUDA_CALL(cudaDeviceSynchronize());
-        //BCMProductBackwardWeightOptimized1((Complex *)sum_y_->Get(),
-        //           (Complex *)sum_x_->Get(),
-        //           (Complex *)product_->Get(),
-        //           n_, p_, q_, fft_k_);
-        BCMBackwardWeight((Complex *)fft_y_->Get(),
-                   (Complex *)fft_x_->Get(),
-                   (Complex *)sum_w_->Get(),
-                   n_, p_, q_, fft_k_);
-      } else {
-        BCMProductBackwardWeight((Complex *)sum_y_->Get(),
-                   (Complex *)sum_x_->Get(),
-                   (Complex *)product_->Get(),
-                   n_, p_, q_, fft_k_);
-      }
-      CUDA_CALL(cudaDeviceSynchronize());
-
-      if (swap_) {
-        // This is the implementation of after swap of IFFT and sum
-        if (fc_param_.optimized_) {
-          //BCMSumBackwardWeightOptimized((Complex *)product_->Get(),
-          //       (Complex *)sum_w_->Get(),
-          //       n_, p_, q_, fft_k_);
-        } else {
-          BCMSumBackwardWeight((Complex *)product_->Get(),
-                 (Complex *)sum_w_->Get(),
-                 n_, p_, q_, fft_k_);
-        }
-        //CUDA_CALL(cudaDeviceSynchronize());
-
-        dnnmarkIFFT(ifft_backward_weight_plan_,
-          (Complex *)sum_w_->Get(), weights_diff_->Get());
-      } else {
-        // This is the original implementation
-        dnnmarkIFFT(ifft_plan_, (Complex *)product_->Get(), sum_->Get());
-        CUDA_CALL(cudaDeviceSynchronize());
-        BCMSumBackwardWeight(sum_->Get(), tops_[i]->Get(),
-               n_, p_, q_, k_);
+      if (fc_param_.optimization_ == NO) {
+        dnnmarkBCMBackwardWeight<T>(y_plan_,
+                                 ifft_backward_weight_plan_,
+                                 top_diffs_[i]->Get(), (Complex *)fft_y_,
+                                 (Complex *)fft_x_,
+                                 weights_diff_->Get(),
+                                 product_->Get(), sum_->Get(),
+                                 n_, p_, q_, k_);
+      } else if (fc_param_.optimization_ == O1) {
+        dnnmarkBCMBackwardWeightO1<T>(y_plan_,
+                                   ifft_backward_weight_plan_,
+                                   top_diffs_[i]->Get(), (Complex *)fft_y_,
+                                   (Complex *)fft_x_,
+                                   weights_diff_->Get(),
+                                   sum_y_->Get(), sum_x_->Get(),
+                                   product_->Get(), sum_w_->Get(),
+                                   n_, p_, q_, k_);
+      } else if (fc_param_.optimization_ == O2) {
+        dnnmarkBCMBackwardWeightO2<T>(y_plan_,
+                                   ifft_backward_weight_plan_,
+                                   top_diffs_[i]->Get(), (Complex *)fft_y_,
+                                   (Complex *)fft_x_,
+                                   weights_diff_->Get(),
+                                   product_->Get(), sum_w_->Get(),
+                                   n_, p_, q_, k_);
+      } else if (fc_param_.optimization_ == KF) {
+        dnnmarkBCMBackwardWeightKF<T>(y_plan_,
+                                   ifft_backward_weight_plan_,
+                                   top_diffs_[i]->Get(), (Complex *)fft_y_,
+                                   (Complex *)fft_x_,
+                                   weights_diff_->Get(),
+                                   sum_w_->Get(),
+                                   n_, p_, q_, k_);
       }
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
@@ -388,50 +354,30 @@ class BCMFullyConnectedLayer : public Layer<T> {
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_, p_dnnmark_->GetTimer(), "FcBwdData");
     for (int i = 0; i < num_tops_; i++) {
-      // The FFT for dy can be saved
-      // The FFT for w can be saved
-      if (fc_param_.optimized_) {
-        // Reuse the sum_w here
-        //PQK2QPK((Complex *)fft_w_->Get(), (Complex *)sum_w_->Get(), p_, q_, fft_k_);
-
-        //CUDA_CALL(cudaDeviceSynchronize());
-        //BCMProductBackwardDataOptimized1((Complex *)fft_y_->Get(),
-        //           (Complex *)sum_w_->Get(),
-        //           (Complex *)product_->Get(),
-        //           n_, p_, q_, fft_k_);
-        BCMBackwardData((Complex *)fft_y_->Get(),
-                   (Complex *)fft_w_->Get(),
-                   (Complex *)sum_x_->Get(),
-                   n_, p_, q_, fft_k_);
-      } else {
-        BCMProductBackwardData((Complex *)fft_y_->Get(),
-                   (Complex *)fft_w_->Get(),
-                   (Complex *)product_->Get(),
-                   n_, p_, q_, fft_k_);
-      }
-      CUDA_CALL(cudaDeviceSynchronize());
-
-      if (swap_) {
-        // This is the implementation of after swap of IFFT and sum
-        if (fc_param_.optimized_) {
-          //BCMSumBackwardDataOptimized((Complex *)product_->Get(),
-          //       (Complex *)sum_x_->Get(),
-          //       n_, p_, q_, fft_k_);
-        } else {
-          BCMSumBackwardData((Complex *)product_->Get(),
-                 (Complex *)sum_x_->Get(),
-                 n_, p_, q_, fft_k_);
-        }
-        //CUDA_CALL(cudaDeviceSynchronize());
-
-        dnnmarkIFFT(ifft_backward_data_plan_,
-          (Complex *)sum_x_->Get(), bottom_diffs_[i]->Get());
-      } else {
-        // This is the original implementation
-        dnnmarkIFFT(ifft_plan_, (Complex *)product_->Get(), sum_->Get());
-        CUDA_CALL(cudaDeviceSynchronize());
-        BCMSumBackwardData(sum_->Get(), tops_[i]->Get(),
-               n_, p_, q_, k_);
+      if (fc_param_.optimization_ == NO) {
+        dnnmarkBCMBackwardData<T>(ifft_backward_data_plan_,
+                               (Complex *)fft_y_, (Complex *)fft_w_,
+                               bottom_diffs_[i]->Get(),
+                               product_->Get(), sum_->Get(),
+                               n_, p_, q_, k_);
+      } else if (fc_param_.optimization_ == O1) {
+        dnnmarkBCMBackwardDataO1<T>(ifft_backward_data_plan_,
+                                 (Complex *)fft_y_, (Complex *)fft_w_,
+                                 bottom_diffs_[i]->Get(),
+                                 sum_w_->Get(), product_->Get(), sum_x_->Get(),
+                                 n_, p_, q_, k_);
+      } else if (fc_param_.optimization_ == O2) {
+        dnnmarkBCMBackwardDataO2<T>(ifft_backward_data_plan_,
+                                 (Complex *)fft_y_, (Complex *)fft_w_,
+                                 bottom_diffs_[i]->Get(),
+                                 product_->Get(), sum_x_->Get(),
+                                 n_, p_, q_, k_);
+      } else if (fc_param_.optimization_ == KF) {
+        dnnmarkBCMBackwardDataKF<T>(ifft_backward_data_plan_,
+                                 (Complex *)fft_y_, (Complex *)fft_w_,
+                                 bottom_diffs_[i]->Get(),
+                                 sum_x_->Get(),
+                                 n_, p_, q_, k_);
       }
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
