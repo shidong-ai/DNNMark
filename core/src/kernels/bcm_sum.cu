@@ -171,7 +171,7 @@ __global__ void BCMSumBackwardWeightO2Kernel(Complex *x, Complex *y,
   // Dimension of X is p * q * n * k (k is floor(n/2)+1)
   // Dimension of Y is p * q * k (k is floor(n/2)+1)
   // Sum over n
-  int y_idx = blockIdx.y * q * k + blockIdx.x * q + threadIdx.x;
+  int y_idx = blockIdx.y * q * k + blockIdx.x * k + threadIdx.x;
   Complex temp;
   temp.x = 0;
   temp.y = 0;
