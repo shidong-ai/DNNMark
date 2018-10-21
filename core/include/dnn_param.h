@@ -452,7 +452,7 @@ struct FullyConnectedParam {
   int block_size_;
   BCMOptimType optimization_;
   FullyConnectedParam()
-  : output_num_(4096), block_size_(32), optimization_(KF) {}
+  : output_num_(4096), block_size_(32), optimization_(NO) {}
 };
 
 inline void SetupFcParam(const std::string &var, const std::string &val,
@@ -465,7 +465,7 @@ inline void SetupFcParam(const std::string &var, const std::string &val,
     if (!var.compare("block_size")) {
       fc_param->block_size_ = atoi(val.c_str());
     }
-    if (!var.compare("optimized")) {
+    if (!var.compare("optimization")) {
       if (!val.compare("NO"))
         fc_param->optimization_ = NO;
       else if (!val.compare("O1"))

@@ -315,16 +315,16 @@ class BCMFullyConnectedLayer : public Layer<T> {
       if (fc_param_.optimization_ == NO) {
         dnnmarkBCMBackwardWeight<T>(y_plan_,
                                  ifft_backward_weight_plan_,
-                                 top_diffs_[i]->Get(), (Complex *)fft_y_,
-                                 (Complex *)fft_x_,
+                                 top_diffs_[i]->Get(), (Complex *)fft_y_->Get(),
+                                 (Complex *)fft_x_->Get(),
                                  weights_diff_->Get(),
                                  product_->Get(), sum_->Get(),
                                  n_, p_, q_, k_);
       } else if (fc_param_.optimization_ == O1) {
         dnnmarkBCMBackwardWeightO1<T>(y_plan_,
                                    ifft_backward_weight_plan_,
-                                   top_diffs_[i]->Get(), (Complex *)fft_y_,
-                                   (Complex *)fft_x_,
+                                   top_diffs_[i]->Get(), (Complex *)fft_y_->Get(),
+                                   (Complex *)fft_x_->Get(),
                                    weights_diff_->Get(),
                                    sum_y_->Get(), sum_x_->Get(),
                                    product_->Get(), sum_w_->Get(),
@@ -332,16 +332,16 @@ class BCMFullyConnectedLayer : public Layer<T> {
       } else if (fc_param_.optimization_ == O2) {
         dnnmarkBCMBackwardWeightO2<T>(y_plan_,
                                    ifft_backward_weight_plan_,
-                                   top_diffs_[i]->Get(), (Complex *)fft_y_,
-                                   (Complex *)fft_x_,
+                                   top_diffs_[i]->Get(), (Complex *)fft_y_->Get(),
+                                   (Complex *)fft_x_->Get(),
                                    weights_diff_->Get(),
                                    product_->Get(), sum_w_->Get(),
                                    n_, p_, q_, k_);
       } else if (fc_param_.optimization_ == KF) {
         dnnmarkBCMBackwardWeightKF<T>(y_plan_,
                                    ifft_backward_weight_plan_,
-                                   top_diffs_[i]->Get(), (Complex *)fft_y_,
-                                   (Complex *)fft_x_,
+                                   top_diffs_[i]->Get(), (Complex *)fft_y_->Get(),
+                                   (Complex *)fft_x_->Get(),
                                    weights_diff_->Get(),
                                    sum_w_->Get(),
                                    n_, p_, q_, k_);
@@ -356,25 +356,25 @@ class BCMFullyConnectedLayer : public Layer<T> {
     for (int i = 0; i < num_tops_; i++) {
       if (fc_param_.optimization_ == NO) {
         dnnmarkBCMBackwardData<T>(ifft_backward_data_plan_,
-                               (Complex *)fft_y_, (Complex *)fft_w_,
+                               (Complex *)fft_y_->Get(), (Complex *)fft_w_->Get(),
                                bottom_diffs_[i]->Get(),
                                product_->Get(), sum_->Get(),
                                n_, p_, q_, k_);
       } else if (fc_param_.optimization_ == O1) {
         dnnmarkBCMBackwardDataO1<T>(ifft_backward_data_plan_,
-                                 (Complex *)fft_y_, (Complex *)fft_w_,
+                                 (Complex *)fft_y_->Get(), (Complex *)fft_w_->Get(),
                                  bottom_diffs_[i]->Get(),
                                  sum_w_->Get(), product_->Get(), sum_x_->Get(),
                                  n_, p_, q_, k_);
       } else if (fc_param_.optimization_ == O2) {
         dnnmarkBCMBackwardDataO2<T>(ifft_backward_data_plan_,
-                                 (Complex *)fft_y_, (Complex *)fft_w_,
+                                 (Complex *)fft_y_->Get(), (Complex *)fft_w_->Get(),
                                  bottom_diffs_[i]->Get(),
                                  product_->Get(), sum_x_->Get(),
                                  n_, p_, q_, k_);
       } else if (fc_param_.optimization_ == KF) {
         dnnmarkBCMBackwardDataKF<T>(ifft_backward_data_plan_,
-                                 (Complex *)fft_y_, (Complex *)fft_w_,
+                                 (Complex *)fft_y_->Get(), (Complex *)fft_w_->Get(),
                                  bottom_diffs_[i]->Get(),
                                  sum_x_->Get(),
                                  n_, p_, q_, k_);
