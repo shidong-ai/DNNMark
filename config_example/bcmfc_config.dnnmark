@@ -1,9 +1,9 @@
 [DNNMark]
 run_mode=standalone
 
-[CBMFullyConnected]
+[BCMFullyConnected]
 name=relu1
-n=100
+n=128
 c=8192
 h=1
 w=1
