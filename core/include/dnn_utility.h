@@ -536,7 +536,7 @@ class DropoutDesc : public Descriptor {
 #endif
   }
 
-  void SetReserveSpaceSize(DataTensor<T> bottom_desc,
+  void SetReserveSpaceSize(DataTensor<T> &bottom_desc,
                            size_t *reserve_space_size) {
 #ifdef NVIDIA_CUDNN
     CUDNN_CALL(cudnnDropoutGetReserveSpaceSize(bottom_desc.Get(),
