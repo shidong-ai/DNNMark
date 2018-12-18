@@ -153,7 +153,7 @@ class DropoutLayer : public Layer<T> {
               desc_,
               bottom_desc_, bottoms_[i]->Get(),
               top_desc_, tops_[i]->Get(),
-              reserve_space_,
+              reserve_space_->Get(),
               reserve_space_size_
               );
     }
@@ -180,7 +180,7 @@ class DropoutLayer : public Layer<T> {
               desc_,
               top_desc_, top_diffs_[i]->Get(),
               bottom_desc_, bottom_diffs_[i]->Get(),
-              reserve_space_,
+              reserve_space_->Get(),
               reserve_space_size_
               );
     }
