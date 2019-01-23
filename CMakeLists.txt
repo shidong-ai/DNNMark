@@ -181,7 +181,7 @@ elseif(HCC_FOUND AND ${HCC_ENABLE})
   message(STATUS "DNNMark Source files: " ${DNNMARK_SOURCES})
 
   # Find rocBLAS libraries
-  find_library(ROCBLAS_LIBRARY rocblas-hcc ${ROCBLAS_ROOT}/lib)
+  find_library(ROCBLAS_LIBRARY rocblas ${ROCBLAS_ROOT}/lib)
 
   # Find MIOpen libraries
   find_library(MIOPEN_LIBRARY MIOpen ${MIOPEN_ROOT}/lib)

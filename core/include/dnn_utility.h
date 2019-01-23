@@ -476,7 +476,7 @@ class BypassDesc : public Descriptor {
 #endif
 #ifdef AMD_MIOPEN
       MIOPEN_CALL(miopenSetActivationDescriptor(activation_desc_,
-                 miopenActivationPATHTRU,
+                 miopenActivationPASTHRU,
                  0, 0, 0));
 #endif
     }
