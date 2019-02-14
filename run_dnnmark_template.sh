@@ -16,7 +16,7 @@ $(basename $0)  [-n <number of images, batch size>]
                 [-u <stride>]
                 [-p <padding>]
                 [ --algo <cudnnConvolutionBwdFilterAlgo_t> - cuDNN algorithm for backward filter convolution]
-				[ --bwd_filter_pref <fastest/no_workspace/specify_workspace_limit> - cuDNN backward filter algorithm selection preference]
+                [ --bwd_filter_pref <fastest/no_workspace/specify_workspace_limit> - cuDNN backward filter algorithm selection preference]
                 [ --algod <cudnnConvolutionBwdDataAlgo_t> - cuDNN algorithm for backward data convolution]
                 [-b <benchmark executable, default=test_bwd_conv>]
                 [ --iter <int> - number of FWD+BWD passes to measure time]
@@ -29,7 +29,7 @@ Configuration saved in temporary file conf_tmp.dnnmark
 USAGEBLOCK
 )
 
-template="conf_bn_conv_mod.dnntemplate"
+template="conf_convolution_block.dnntemplate"
 config_file="conf_tmp.dnnmark"
 conv_bwd_filter_pref="fastest"
 # Defaults
@@ -86,9 +86,9 @@ while test $# -gt 0; do
         --algo)
             CBFA="$2";shift;
             ;;
-		--bwd_filter_pref)
-			conv_bwd_filter_pref="$2";shift;
-			;;
+        --bwd_filter_pref)
+            conv_bwd_filter_pref="$2";shift;
+            ;;
         --algod)
             CBDA="$2";shift;
             ;;

@@ -14,9 +14,10 @@
     pad=$P
     stride=$U
     conv_fwd_pref=fastest
-    conv_bwd_filter_pref=fastest
+    conv_bwd_filter_pref=$conv_bwd_filter_pref
     conv_bwd_data_pref=fastest
     $CUDNN_CBFA
+    $CUDNN_CBDA
 
     [BatchNorm]
     name=batchnorm1
