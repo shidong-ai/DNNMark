@@ -23,6 +23,8 @@
 #ifndef CORE_INCLUDE_LAYERS_POOL_LAYER_H_
 #define CORE_INCLUDE_LAYERS_POOL_LAYER_H_
 
+#include <cmath>
+
 #include "dnn_layer.h"
 #include "dnn_wrapper.h"
 
