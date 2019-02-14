@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # Wrapper API for DNNMark
-# Uses conf_multiconv_mod.dnntemplate configuration file template.
 # 2018 (C) Peter Bryzgalov @ CHITECH Stair Lab
 
 usage=$(cat <<- USAGEBLOCK
