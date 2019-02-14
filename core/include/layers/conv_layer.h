@@ -24,7 +24,7 @@
 #define CORE_INCLUDE_LAYERS_CONV_LAYER_H_
 
 #include "dnn_layer.h"
-#include "stdio.h"
+#include <iostream>
 
 namespace dnnmark {
 
@@ -184,7 +184,6 @@ class ConvolutionLayer : public Layer<T> {
 
     // Set convolution backward filter/weights algorithm
     // Use default algorithm for now
-    LOG(INFO) << "Setting Bwd Filter Algo to " << conv_param_.algo_ << " (default was: " << conv_algo_.GetBwdFilterAlgo() << ")";
     if (!conv_param_.algo_.compare("cudnn")) {
         // Chainer default behaviour
         // Use cuDNN function cudnnGetConvolutionBackwardFilterAlgorithm
@@ -195,8 +194,24 @@ class ConvolutionLayer : public Layer<T> {
                                          desc_,
                                          conv_param_.conv_bwd_filter_pref_);
         LOG(INFO) << "Set cuDNN recommended conv. bwd filter alg. to " << conv_algo_.GetBwdFilterAlgo();
-        printf("cuDNN recommended bwd convolution filter algorithm: %d\n",conv_algo_.GetBwdFilterAlgo());
+        std::cout << "cuDNN recommended bwd convolution filter algorithm:"<<conv_algo_.GetBwdFilterAlgo()<<"\n";
+    } else if (conv_param_.algo_ == "auto" ) {
+        // Query cuDNN for the fastest BWD convolution filter gradient algorithm.
+        // Use cuDNN function cudnnFindConvolutionBackwardFilterAlgorithm (called inside FindBwdFilterAlgo())
+
+        // NOTE: The below code selects algorithms prior to run, during setup phase.
+        // FindBwdFilterAlgoEx must be called during run phase through dnn_wrapper.
+        //conv_algo_.SetBwdFilterAlgo("autoex");
+        conv_algo_.FindBwdFilterAlgo(*(p_dnnmark_->GetHandle()),
+                                         p_dnnmark_->getRunMode(), layer_id_,
+                                         bottom_desc_,
+                                         desc_,
+                                         top_desc_);
+        LOG(INFO) << "cuDNN fastest bwd conv. filter algo.:" << conv_algo_.GetBwdFilterAlgo();
+        std::cout << "cuDNN fastest bwd conv. filter algorithm:"<<conv_algo_.GetBwdFilterAlgo()<<"\n";
     } else {
+        // Use default algorithm for now
+        LOG(INFO) << "Setting Bwd Filter Algo to " << conv_param_.algo_;
         conv_algo_.SetBwdFilterAlgo(conv_param_.algo_);
     }
 
@@ -217,7 +232,9 @@ class ConvolutionLayer : public Layer<T> {
 
     // Set convolution backward data algorithm
     // Use default algorithm for now
-    conv_algo_.SetBwdDataAlgo(conv_param_.algo_);
+    conv_algo_.SetBwdDataAlgo(conv_param_.algod_);
+    LOG(INFO) << "BWD conv. data algo set to:"<< static_cast<int>(conv_algo_.getDataAlgo());
+    // std::cout << "cuDNN recommended BWD convolution data algorithm:"<<conv_algo_.GetBwdDataAlgo()<<"\n";
 
     // Allocate workspace
     conv_algo_.GetBwdDataWorkspaceSize(*(p_dnnmark_->GetHandle()),
