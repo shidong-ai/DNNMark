@@ -17,8 +17,11 @@ set(SUBDIRECTORIES
   test_bwd_dropout
   test_fwd_bypass
   test_bwd_bypass
+  test_fwd_composed_model
+  test_bwd_composed_model
   test_composed_model
   test_alexnet
+  test_VGG
 )       
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})

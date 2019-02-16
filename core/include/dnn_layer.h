@@ -1,17 +1,17 @@
 // The MIT License (MIT)
-// 
+//
 // Copyright (c) 2016 Northeastern University
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef CORE_INCLUDE_DNN_LAYER_H_ 
+#ifndef CORE_INCLUDE_DNN_LAYER_H_
 #define CORE_INCLUDE_DNN_LAYER_H_
 
 #include <vector>
@@ -50,7 +50,7 @@ class Layer {
   DataDim output_dim_;
   DataTensor<T> bottom_desc_;
   DataTensor<T> top_desc_;
-  DataManager<T> *data_manager_;  
+  DataManager<T> *data_manager_;
 
   int num_bottoms_;
   // Layer bottom data
@@ -80,9 +80,13 @@ class Layer {
   DataDim *getOutputDim() { return &output_dim_; }
   void setLayerName(const char *layer_name) {
     layer_name_.assign(layer_name);
+    // Debug info
+    LOG(INFO) << "Layer name: " << layer_name_;
   }
   void setPrevLayerName(const char *previous_layer_name) {
     previous_layer_name_.assign(previous_layer_name);
+    // Debug info
+    LOG(INFO) << "Previous layer: " << previous_layer_name_;
   }
   void setLayerId(int layer_id) { layer_id_ = layer_id; }
   int getLayerId() { return layer_id_; }
@@ -112,11 +116,14 @@ class Layer {
       // Standalone mode or the first layer in composed mode
       //
       if (p_dnnmark_->getRunMode() == COMPOSED)
-        if (previous_layer_name_.compare("null"))
+        if (previous_layer_name_.compare("null")!=0) {
+          LOG(INFO) << "Problems with "<< layer_name_ << " <- "
+                    << previous_layer_name_ << " "
+                    << previous_layer_name_.compare("null");
           LOG(FATAL) << "When composed as composed mode, the first layer "
                      << "should set data dimension "
                      << "and have a <null> previous layer";
-
+        }
       // Set bottom tensor
       bottom_desc_.Set(input_dim_.n_,
                        input_dim_.c_,
@@ -144,7 +151,7 @@ class Layer {
       //
       CHECK_EQ(p_dnnmark_->getRunMode(), COMPOSED);
       if (p_dnnmark_->isLayerExist(previous_layer_name_)) {
-        Layer<T> *previous_layer = 
+        Layer<T> *previous_layer =
           p_dnnmark_->GetLayerByName(previous_layer_name_);
         num_bottoms_ = previous_layer->getNumTops();
         num_tops_ = num_bottoms_;
@@ -173,7 +180,7 @@ class Layer {
           bottom_diff_chunk_ids_.push_back(
             previous_layer->getTopDiffChunkID(i));
           bottom_diffs_.push_back(
-            data_manager_->GetData(bottom_diff_chunk_ids_[i]));         
+            data_manager_->GetData(bottom_diff_chunk_ids_[i]));
         }
       } else {
         LOG(FATAL) << "Wrong previous layer name!!!";

@@ -64,6 +64,7 @@ const std::vector<std::string> data_config_keywords = {
 const std::vector<std::string> conv_config_keywords = {
   "conv_mode",
   "algo",
+  "algod",
   "propagation",
   "num_output",
   "kernel_size",

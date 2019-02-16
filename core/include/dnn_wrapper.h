@@ -1,17 +1,17 @@
 // The MIT License (MIT)
-// 
+//
 // Copyright (c) 2016 Northeastern University
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,11 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef CORE_INCLUDE_DNN_WRAPPER_H_ 
+#ifndef CORE_INCLUDE_DNN_WRAPPER_H_
 #define CORE_INCLUDE_DNN_WRAPPER_H_
 
 #include <iostream>
-
+#include <string>
 #include "common.h"
 #include "dnn_utility.h"
 #include "data_manager.h"
@@ -156,7 +156,24 @@ inline void dnnmarkConvolutionBackwardFilter(const Handle &handle,
                                              const void *beta,
                                              void *dw) {
 #ifdef NVIDIA_CUDNN
+  // std::string conv_algo_param;
+  cudnnFilterDescriptor_t filter_t = conv_desc.GetFilter();
   ProfilerStart(handle, mode, idx, timer, "ConvBwdFilter");
+  // conv_algo_param = conv_algo->GetBwdFilterAlgoParameter();
+  // // std::cout << "algo_param "<< conv_algo_param <<"\n";
+  // if (conv_algo_param == "autoex") {
+  //   conv_algo->checkAlgo4DataShape(bottom_desc.Get(),top_desc.Get(), filter_t);
+  //   // ,workspace_in_bytes);
+  //   conv_algo->FindBwdFilterAlgoEx(handle, mode, idx,
+  //                             bottom_desc,
+  //                             conv_desc,
+  //                             top_desc,
+  //                             x, dy, dw,
+  //                             workspace, workspace_in_bytes);
+
+  //   LOG(INFO) << "cuDNN AUTO selected conv. bwd filter alg. to " << conv_algo->GetBwdFilterAlgo();
+  //   std::cout << "cuDNN AUTO selected bwd convolution filter algorithm:"<<conv_algo->GetBwdFilterAlgo()<<"\n";
+  // }
   CUDNN_CALL(cudnnConvolutionBackwardFilter(
              mode == COMPOSED ?
              handle.GetCudnn(idx) : handle.GetCudnn(),
@@ -167,7 +184,7 @@ inline void dnnmarkConvolutionBackwardFilter(const Handle &handle,
              conv_algo->GetBwdFilterAlgo(),
              workspace, workspace_in_bytes,
              beta,
-             conv_desc.GetFilter(), dw));
+             filter_t, dw));
   ProfilerStop(handle, mode, idx, timer, "ConvBwdFilter");
 #endif
 #ifdef AMD_MIOPEN
@@ -198,75 +215,75 @@ inline void dnnmarkConvolutionBackwardFilter(const Handle &handle,
 //
 
 template <typename T>
-inline void dnnmarkPoolingForward(const Handle &handle, 
-		RunMode mode, int idx, 
+inline void dnnmarkPoolingForward(const Handle &handle,
+		RunMode mode, int idx,
 		const PoolingDesc<T> &pooling_desc,
-		const void *alpha, 
-		const DataTensor<T> &x_desc, 
-		const void *x, 
-		const void *beta, 
-		const DataTensor<T> &y_desc, 
-		void * y, 
+		const void *alpha,
+		const DataTensor<T> &x_desc,
+		const void *x,
+		const void *beta,
+		const DataTensor<T> &y_desc,
+		void * y,
 		Data<T> *workspace,
 		size_t workspace_in_bytes) {
 #ifdef NVIDIA_CUDNN
   CUDNN_CALL(cudnnPoolingForward(
 				mode == COMPOSED ? handle.GetCudnn(idx) : handle.GetCudnn(),
 				pooling_desc.Get(),
-				alpha, 
-				x_desc.Get(), x, 
-				beta, 
+				alpha,
+				x_desc.Get(), x,
+				beta,
 				y_desc.Get(), y));
 #endif
 #ifdef AMD_MIOPEN
 	MIOPEN_CALL(miopenPoolingForward(
 		        mode == COMPOSED ? handle.GetMIOpen(idx):handle.GetMIOpen(),
-		        pooling_desc.Get(), 
-		        alpha, 
-		        x_desc.Get(), x, 
-		        beta, 
-		        y_desc.Get(), y, 
+		        pooling_desc.Get(),
+		        alpha,
+		        x_desc.Get(), x,
+		        beta,
+		        y_desc.Get(), y,
 		        false,
 		        workspace->Get(), workspace_in_bytes));
 #endif
 }
 
 template <typename T>
-inline void dnnmarkPoolingBackward(const Handle &handle, 
-		RunMode mode, int idx, 
-		const PoolingDesc<T> &pooling_desc, 
-		const void *alpha, 
+inline void dnnmarkPoolingBackward(const Handle &handle,
+		RunMode mode, int idx,
+		const PoolingDesc<T> &pooling_desc,
+		const void *alpha,
 		const DataTensor<T> &y_desc,
-		const void *y, 
+		const void *y,
 		const DataTensor<T> &dy_desc,
-		const void *dy, 
-		const DataTensor<T> &x_desc, 
+		const void *dy,
+		const DataTensor<T> &x_desc,
 		const void *x,
-		const void *beta, 
-		const DataTensor<T> &dx_desc, 
-		void *dx, 
+		const void *beta,
+		const DataTensor<T> &dx_desc,
+		void *dx,
 		Data<T> *workspace) {
 #ifdef NVIDIA_CUDNN
 	CUDNN_CALL(cudnnPoolingBackward(
-				mode == COMPOSED ? handle.GetCudnn(idx) : handle.GetCudnn(), 
-				pooling_desc.Get(), 
-				alpha, 
-				y_desc.Get(), y, 
-				dy_desc.Get(), dy, 
-				x_desc.Get(), x, 
-				beta, 
+				mode == COMPOSED ? handle.GetCudnn(idx) : handle.GetCudnn(),
+				pooling_desc.Get(),
+				alpha,
+				y_desc.Get(), y,
+				dy_desc.Get(), dy,
+				x_desc.Get(), x,
+				beta,
 				dx_desc.Get(), dx));
 #endif
 #ifdef AMD_MIOPEN
 	MIOPEN_CALL(miopenPoolingBackward(
 				mode == COMPOSED ? handle.GetMIOpen() : handle.GetMIOpen(),
-				pooling_desc.Get(), 
-				alpha, 
-				y_desc.Get(), y, 
-				dy_desc.Get(), dy, 
-				x_desc.Get(), x, 
-				beta, 
-				dx_desc.Get(), dx, 
+				pooling_desc.Get(),
+				alpha,
+				y_desc.Get(), y,
+				dy_desc.Get(), dy,
+				x_desc.Get(), x,
+				beta,
+				dx_desc.Get(), dx,
 				workspace->Get()));
 #endif
 }

@@ -1,9 +1,7 @@
 #include <iostream>
-#include "stdio.h"
 #include "common.h"
 #include "dnnmark.h"
 #include "usage.h"
-#include <gflags/gflags.h>
 
 using namespace dnnmark;
 
@@ -11,12 +9,13 @@ int main(int argc, char **argv) {
   INIT_FLAGS(argc, argv);
   INIT_LOG(argv);
   LOG(INFO) << "DNNMark suites: Start...";
-  DNNMark<TestType> dnnmark(3);
+  DNNMark<TestType> dnnmark(58);
   dnnmark.ParseAllConfig(FLAGS_config);
+
   dnnmark.Initialize();
+  // Warm up
   if (FLAGS_warmup) {
     for (int i = 0; i < 5; i++) {
-      LOG(INFO) << "Warming up...";
       dnnmark.Forward();
       dnnmark.Backward();
     }
@@ -30,10 +29,11 @@ int main(int argc, char **argv) {
     dnnmark.Backward();
   }
   dnnmark.GetTimer()->SumRecords();
+
   dnnmark.TearDown();
 
   LOG(INFO) << "Total running time(ms): " << dnnmark.GetTimer()->GetTotalTime();
-  printf("Total running time(ms): %f\n", dnnmark.GetTimer()->GetTotalTime());
   LOG(INFO) << "DNNMark suites: Tear down...";
+  printf("Total running time(ms): %f\n", dnnmark.GetTimer()->GetTotalTime());
   return 0;
 }

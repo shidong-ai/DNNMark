@@ -1,17 +1,17 @@
 // The MIT License (MIT)
-// 
+//
 // Copyright (c) 2016 Northeastern University
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -95,7 +95,7 @@ class DataTensor : public Descriptor {
 #ifdef AMD_MIOPEN
   miopenTensorDescriptor_t desc_;
 #endif
-  
+
  public:
   DataTensor()
   : Descriptor() {
@@ -586,13 +586,21 @@ class ConvAlgo {
   cudnnConvolutionFwdAlgo_t fwd_algo_;
   cudnnConvolutionBwdFilterAlgo_t bwd_filter_algo_;
   cudnnConvolutionBwdDataAlgo_t bwd_data_algo_;
+  std::string bwd_filter_algo_par;
 
- public:
+ public:  
   ConvAlgo()
   : fwd_algo_(CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM),
     bwd_filter_algo_(CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0),
-    bwd_data_algo_(CUDNN_CONVOLUTION_BWD_DATA_ALGO_0) {}
+    bwd_data_algo_(CUDNN_CONVOLUTION_BWD_DATA_ALGO_0),
+    bwd_filter_algo_par("") {}
+    
+
+  cudnnConvolutionBwdDataAlgo_t getDataAlgo(){
+    return (bwd_data_algo_);
+  }
   
+
   void SetFwdAlgo(std::string algo) {
     if (!algo.compare("fft")) {
       fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_FFT;
@@ -644,11 +652,39 @@ class ConvAlgo {
     bwd_filter_algo_ = bwd_filter_algo;
   }
   void SetBwdFilterAlgo(std::string algo) {
+    if (algo.empty()) {
+        return;
+    }
     if (!algo.compare("fft")) {
       bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT;
     } else if (!algo.compare("winograd")) {
       bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD;
+    } else if (stoi(algo) == 0) {
+      bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
+    } else if (stoi(algo) == 1) {
+      bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
+    } else if (stoi(algo) == 2) {
+      bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT;
+    } else if (stoi(algo) == 3) {
+      bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3;
+    } else if (stoi(algo) == 4) {
+      bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD;
+    } else if (stoi(algo) == 5) {
+      bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED;
+    } else if (stoi(algo) == 6) {
+      bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT_TILING;
+    } else if (algo.compare("")) {
+      std::cout << "Using algo "<< algo << "\n";
+      bwd_filter_algo_par = algo;
     }
+    LOG(INFO) << "cuDNN algos: " << CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0 << " "
+             << CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1 << " "
+             << "FFT:" << CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT << " "
+             << CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3 << " "
+             << "WIN:" << CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD << " "
+             << "WIN_NONFUSED:" << CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED << " "
+             << "FFT_TILING:" << CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT_TILING << "\n";
+    LOG(INFO) << "Set Bwd Filter Algo to " << bwd_filter_algo_ << " with " << algo;
   }
   void SetBwdFilterAlgo(const Handle &handle, RunMode mode, int idx,
                         const DataTensor<T> &bottom_desc,
@@ -664,7 +700,7 @@ class ConvAlgo {
                 conv_desc.GetFilter(),
                 pref,
                 -1,
-                &bwd_filter_algo_));   
+                &bwd_filter_algo_));
   }
   void FindBwdFilterAlgo(const Handle &handle, RunMode mode, int idx,
                          const DataTensor<T> &bottom_desc,
@@ -679,8 +715,12 @@ class ConvAlgo {
                top_desc.Get(),
                conv_desc.GetConv(),
                conv_desc.GetFilter(),
-               1, returned_algo_count,
+               3, returned_algo_count,
                perf_results));
+    std::cout << "cuDNN call returned_algo_count :" << *returned_algo_count <<"\n";
+    cudnnConvolutionBwdFilterAlgo_t algo = static_cast<cudnnConvolutionBwdFilterAlgo_t>(perf_results->algo);
+    std::cout << "cuDNN call result :" << perf_results->algo <<"\n";
+    std::cout << "cuDNN casted result :" << algo <<"\n";
     if (*returned_algo_count > 0) {
       bwd_filter_algo_ = perf_results->algo;
     } else {
@@ -688,14 +728,57 @@ class ConvAlgo {
     }
   }
 
+  void FindBwdFilterAlgoEx(const Handle &handle, RunMode mode, int idx,
+                         const DataTensor<T> &bottom_desc,
+                         const ConvolutionDesc<T> &conv_desc,
+                         const DataTensor<T> &top_desc,
+                         const void *w,
+                         const void *dy,
+                         void       *dx,
+                         void       *workSpace,
+                         size_t     workspace_size)
+  {
+    cudnnConvolutionBwdFilterAlgoPerf_t *perf_results;
+    int *returned_algo_count;
+    CUDNN_CALL(cudnnFindConvolutionBackwardFilterAlgorithmEx(
+               mode == COMPOSED ?
+               handle.GetCudnn(idx) : handle.GetCudnn(),
+               bottom_desc.Get(), w,
+               top_desc.Get(), dy,
+               conv_desc.GetConv(),
+               conv_desc.GetFilter(), dx,
+               1, returned_algo_count,
+               perf_results,
+               workSpace, workspace_size));
+    if (*returned_algo_count > 0) {
+      bwd_filter_algo_ = perf_results->algo;
+    } else {
+      bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
+    }
+  }
+
+
+
+
   void SetBwdDataAlgo(cudnnConvolutionBwdDataAlgo_t bwd_data_algo) {
     bwd_data_algo_ = bwd_data_algo;
   }
   void SetBwdDataAlgo(std::string algo) {
+    if (algo.empty()) {
+        return;
+    }
     if (!algo.compare("fft")) {
       bwd_data_algo_ = CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT;
     } else if (!algo.compare("winograd")) {
       bwd_data_algo_ = CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD;
+    } else if (!algo.compare("0")) {
+      bwd_data_algo_ = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
+    } else if (!algo.compare("1")) {
+      bwd_data_algo_ = CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
+    } else if (!algo.compare("winograd_nonfused")) {
+      bwd_data_algo_ = CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD_NONFUSED;
+    } else if (!algo.compare("fft_tiling")) {
+      bwd_data_algo_ = CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT_TILING;
     }
   }
   void SetBwdDataAlgo(const Handle &handle, RunMode mode, int idx,
@@ -712,7 +795,7 @@ class ConvAlgo {
                 bottom_desc.Get(),
                 pref,
                 -1,
-                &bwd_data_algo_));   
+                &bwd_data_algo_));
   }
   void FindBwdDataAlgo(const Handle &handle, RunMode mode, int idx,
                        const DataTensor<T> &bottom_desc,
@@ -754,6 +837,12 @@ class ConvAlgo {
                fwd_algo_,
                workspace_size));
   }
+
+  std::string GetBwdFilterAlgoParameter() {
+    return bwd_filter_algo_par;
+  }
+
+
   cudnnConvolutionBwdFilterAlgo_t GetBwdFilterAlgo() const {
     return bwd_filter_algo_;
   }
@@ -790,6 +879,39 @@ class ConvAlgo {
                bwd_data_algo_,
                workspace_size));
   }
+
+  // Dictionary for storing best bwd convolution algorithms
+  std::map<std::string, int> Algo4DataShape;
+
+  void checkAlgo4DataShape(const cudnnTensorDescriptor_t x,
+                                            const cudnnTensorDescriptor_t dy,
+                                            const cudnnFilterDescriptor_t dw)
+                                             // size_t workspace_in_bytes)
+  {
+
+    int n,c,h, w, k, nStride, cStride, hStride, wStride;
+    cudnnDataType_t datat;
+    cudnnTensorFormat_t format;
+    std::cout << "Call to checkAlgo4DataShape \n";
+    CUDNN_CALL(cudnnGetTensor4dDescriptor(x,
+                                          &datat,
+                                          &n, &c, &h, &w,
+                                          &nStride, &cStride, &hStride, &wStride));
+    std::cout << "x shape: " << n <<" "<< c << " " << h << "x" << w << "\n";
+    CUDNN_CALL(cudnnGetTensor4dDescriptor(dy,
+                                          &datat,
+                                          &n, &c, &h, &w,
+                                          &nStride, &cStride, &hStride, &wStride));
+    std::cout << "dy shape: " << n <<" "<< c << " " << h << "x" << w << "\n";
+    CUDNN_CALL(cudnnGetFilter4dDescriptor(dw,
+                                          &datat, &format,
+                                          &k, &c, &h, &w));
+    std::cout << "dw shape: " << k <<" "<< c << " " << h << "x" << w << "\n";
+    // std::string hash = std::to_string(x)+"/"+std::to_string(*dy)+"/"+std::to_string(*dw)+"/"+std::to_string(workspace_in_bytes);
+    // std::cout << "datashape hash:" << hash << "x:" << x << "dy:" << y << "w:" << w  "\n";
+  }
+
+
 #endif
 #ifdef AMD_MIOPEN
  private:
@@ -802,7 +924,7 @@ class ConvAlgo {
   : fwd_algo_(miopenConvolutionFwdAlgoGEMM),
     bwd_filter_algo_(miopenConvolutionBwdWeightsAlgoGEMM),
     bwd_data_algo_(miopenConvolutionBwdDataAlgoGEMM) {}
-  
+
   void SetFwdAlgo(miopenConvFwdAlgorithm_t fwd_algo) {
     fwd_algo_ = fwd_algo;
   }
