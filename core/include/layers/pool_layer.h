@@ -26,6 +26,8 @@
 #include "dnn_layer.h"
 #include "dnn_wrapper.h"
 
+#include <cmath>
+
 namespace dnnmark {
 
 template <typename T>
