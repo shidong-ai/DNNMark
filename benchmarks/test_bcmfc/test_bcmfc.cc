@@ -20,6 +20,7 @@ int main(int argc, char **argv) {
       dnnmark.Backward();
     }
   }
+  dnnmark.GetTimer()->Clear();
   dnnmark.Forward();
   dnnmark.Backward();
   dnnmark.GetTimer()->SumRecords();
