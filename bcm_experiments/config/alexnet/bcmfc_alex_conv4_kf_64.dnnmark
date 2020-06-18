@@ -1,0 +1,12 @@
+[DNNMark]
+run_mode=standalone
+
+[BCMFullyConnected]
+name=relu1
+n=12544
+c=3456
+h=1
+w=1
+num_output=384
+block_size=64
+optimization=KF

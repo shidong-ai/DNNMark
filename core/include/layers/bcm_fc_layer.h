@@ -352,7 +352,7 @@ class BCMFullyConnectedLayer : public Layer<T> {
 
     // Fully connected backward data computation
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_, p_dnnmark_->GetTimer(), "FcBwdData");
+                  layer_id_, p_dnnmark_->GetTimer(), "BCMFcBwdData");
     for (int i = 0; i < num_tops_; i++) {
       if (fc_param_.optimization_ == NO) {
         dnnmarkBCMBackwardData<T>(ifft_backward_data_plan_,
@@ -381,7 +381,7 @@ class BCMFullyConnectedLayer : public Layer<T> {
       }
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
-                  layer_id_, p_dnnmark_->GetTimer(), "FcBwdData");
+                  layer_id_, p_dnnmark_->GetTimer(), "BCMFcBwdData");
   }
 
 };
