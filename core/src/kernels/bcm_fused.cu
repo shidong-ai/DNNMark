@@ -84,8 +84,7 @@ void BCMForward(Complex *fft_w, Complex *fft_x, Complex *y,
       std::cout << "Error: " << cudaGetErrorString(err) << std::endl;
 }
 
-
-__global__ void BCMBackwardWeightKernel(Complex *fft_dy,
+__global__ void BCMBackwardWeightKernel1(Complex *fft_dy,
                                         Complex *fft_x, Complex *dw,
                                         int n, int p, int q, int k) {
   // Dimension of dY after FFT is p * n * k (k is floor(n/2)+1)
@@ -124,6 +123,94 @@ __global__ void BCMBackwardWeightKernel(Complex *fft_dy,
   dw[dw_idx] = temp;
 }
 
+__global__ void BCMBackwardWeightKernel2(Complex *fft_dy,
+                                        Complex *fft_x, Complex *dw,
+                                        int start_n, int n, int p, int q, int k) {
+  // Dimension of dY after FFT is p * n * k (k is floor(n/2)+1)
+  // Dimension of X after FFT is q * n * k (k is floor(n/2)+1)
+  // Dimension of dW after this kernel is p * q * k (k is floor(n/2)+1)
+  int k_idx = threadIdx.x;
+  int q_tid = threadIdx.y;
+  int q_bid = blockIdx.y;
+  int p_idx = blockIdx.z;
+  int q_idx = q_bid * blockDim.y + q_tid;
+
+  extern __shared__ Complex shared_mem[];
+
+  int dw_idx = p_idx * q * k + q_idx * k + k_idx;
+
+  if (q_tid == 0) {
+    int temp_idx = 0;
+    for (int n_idx = start_n; n_idx < n+start_n; n_idx++) {
+      int dy_idx = n_idx * p * k + p_idx * k + k_idx;
+      shared_mem[temp_idx * k + k_idx].x = fft_dy[dy_idx].x;
+      shared_mem[temp_idx * k + k_idx].y = fft_dy[dy_idx].y;
+      temp_idx++;
+    }
+  }
+  __syncthreads();
+
+  Complex temp = dw[dw_idx];
+  int temp_idx = 0;
+  for (int n_idx = start_n; n_idx < n+start_n; n_idx++) {
+    int share_mem_idx = temp_idx * k + k_idx;
+    int x_idx = n_idx * q * k + q_idx * k + k_idx;
+    temp.x += fft_x[x_idx].x * shared_mem[share_mem_idx].x -
+                 fft_x[x_idx].y * shared_mem[share_mem_idx].y;
+    temp.y += fft_x[x_idx].x * shared_mem[share_mem_idx].y -
+               fft_x[x_idx].y * shared_mem[share_mem_idx].x;
+    temp_idx++;
+  }
+  dw[dw_idx] = temp;
+}
+
+__global__ void BCMBackwardWeightKernelMulti(Complex *fft_dy,
+                                        Complex *fft_x, Complex *dw,
+                                        int n, int p, int q, int k) {
+  // Dimension of dY after FFT is p * n * k (k is floor(n/2)+1)
+  // Dimension of X after FFT is q * n * k (k is floor(n/2)+1)
+  // Dimension of dW after this kernel is p * q * k (k is floor(n/2)+1)
+  int k_idx = threadIdx.x;
+  int q_tid = threadIdx.y;
+  int q_bid = blockIdx.y;
+  int p_idx = blockIdx.z;
+  int q_idx = q_bid * blockDim.y + q_tid;
+
+  extern __shared__ Complex shared_mem[];
+
+  int dw_idx = p_idx * q * k + q_idx * k + k_idx;
+
+  Complex temp;
+  temp.x = 0;
+  temp.y = 0;
+  int temp_idx;
+  for (int i = 0; i < n; i+=128) {
+    temp_idx = 0;
+    if (q_tid == 0) {
+      for (int n_idx = i; n_idx < i+128; n_idx++) {
+        if (n_idx >= n) break;
+        int dy_idx = n_idx * p * k + p_idx * k + k_idx;
+        shared_mem[temp_idx * k + k_idx].x = fft_dy[dy_idx].x;
+        shared_mem[temp_idx * k + k_idx].y = fft_dy[dy_idx].y;
+        temp_idx++;
+      }
+    }
+    __syncthreads();   
+    temp_idx = 0;
+    for (int n_idx = i; n_idx < i+128; n_idx++) {
+      if (n_idx >= n) break;
+      int share_mem_idx = temp_idx * k + k_idx;
+      int x_idx = n_idx * q * k + q_idx * k + k_idx;
+      temp.x += fft_x[x_idx].x * shared_mem[share_mem_idx].x -
+                   fft_x[x_idx].y * shared_mem[share_mem_idx].y;
+      temp.y += fft_x[x_idx].x * shared_mem[share_mem_idx].y -
+                 fft_x[x_idx].y * shared_mem[share_mem_idx].x;
+      temp_idx++;
+    }
+  }
+  dw[dw_idx] = temp;
+}
+
 void BCMBackwardWeight(Complex *fft_dy, Complex *fft_x, Complex *dw,
                 int n, int p, int q, int k) {
   int block_size = (k - 1) * 2;
@@ -131,13 +218,37 @@ void BCMBackwardWeight(Complex *fft_dy, Complex *fft_x, Complex *dw,
   int bid_q = q / tid_q;
   dim3 block_dim(k, tid_q, 1);
   dim3 grid_dim(1, bid_q, p);
+  int new_n = n > 128 ? 128 : n;
+  int n_seg = n / new_n;
 
   // Shared memory is the limitation
-  size_t shared_mem_size = n * k * sizeof(Complex);
-  BCMBackwardWeightKernel<<<grid_dim, block_dim, shared_mem_size>>>(fft_dy, fft_x, dw, n, p, q, k);
-  cudaError err = cudaGetLastError();
-  if ( cudaSuccess != err )
-      std::cout << "Error: " << cudaGetErrorString(err) << std::endl;
+  size_t shared_mem_size = 0;
+  int start_n = 0;
+  if (n_seg == 1) {
+  //if (true) {
+    shared_mem_size = n * k * sizeof(Complex);
+    BCMBackwardWeightKernel1<<<grid_dim, block_dim, shared_mem_size>>>(fft_dy, fft_x, dw, n, p, q, k);
+    cudaError err = cudaGetLastError();
+    if ( cudaSuccess != err )
+        std::cout << "Error: " << cudaGetErrorString(err) << std::endl;
+  }
+  //else if (n_seg <= 4) {
+  //  for (int i = 0; i < n_seg; i++) {
+  //    shared_mem_size = new_n * k * sizeof(Complex);
+  //    BCMBackwardWeightKernel<<<grid_dim, block_dim, shared_mem_size>>>(fft_dy, fft_x, dw, start_n, new_n, p, q, k);
+  //    cudaError err = cudaGetLastError();
+  //    if ( cudaSuccess != err )
+  //        std::cout << "Error: " << cudaGetErrorString(err) << std::endl;
+  //    start_n += new_n;
+  //  }
+  //}
+  else if (n_seg <= 8) {
+    shared_mem_size = new_n * k * sizeof(Complex);
+    BCMBackwardWeightKernelMulti<<<grid_dim, block_dim, shared_mem_size>>>(fft_dy, fft_x, dw, n, p, q, k);
+    cudaError err = cudaGetLastError();
+    if ( cudaSuccess != err )
+        std::cout << "Error: " << cudaGetErrorString(err) << std::endl;
+  }
 }
 
 __global__ void BCMBackwardDataKernel(Complex *fft_dy,

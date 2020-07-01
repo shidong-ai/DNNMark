@@ -26,6 +26,8 @@
 #include "dnn_layer.h"
 #include "bcm.h"
 
+#include <iostream>
+
 namespace dnnmark {
 
 template <typename T>
@@ -308,43 +310,68 @@ class BCMFullyConnectedLayer : public Layer<T> {
       }
     }
 
+    int new_n = n_ > 256 ? 256 : n_;
+    int n_seg = n_ / new_n;
+
     // Fully connected backward weights computation
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_, p_dnnmark_->GetTimer(), "BCMFcBwdFilter");
     for (int i = 0; i < num_tops_; i++) {
-      if (fc_param_.optimization_ == NO) {
-        dnnmarkBCMBackwardWeight<T>(y_plan_,
-                                 ifft_backward_weight_plan_,
-                                 top_diffs_[i]->Get(), (Complex *)fft_y_->Get(),
-                                 (Complex *)fft_x_->Get(),
-                                 weights_diff_->Get(),
-                                 product_->Get(), sum_->Get(),
-                                 n_, p_, q_, k_);
-      } else if (fc_param_.optimization_ == O1) {
-        dnnmarkBCMBackwardWeightO1<T>(y_plan_,
+      if (n_seg <= 1) {
+        if (fc_param_.optimization_ == NO) {
+          dnnmarkBCMBackwardWeight<T>(y_plan_,
                                    ifft_backward_weight_plan_,
                                    top_diffs_[i]->Get(), (Complex *)fft_y_->Get(),
                                    (Complex *)fft_x_->Get(),
                                    weights_diff_->Get(),
-                                   sum_y_->Get(), sum_x_->Get(),
-                                   product_->Get(), sum_w_->Get(),
+                                   product_->Get(), sum_->Get(),
                                    n_, p_, q_, k_);
-      } else if (fc_param_.optimization_ == O2) {
-        dnnmarkBCMBackwardWeightO2<T>(y_plan_,
-                                   ifft_backward_weight_plan_,
-                                   top_diffs_[i]->Get(), (Complex *)fft_y_->Get(),
-                                   (Complex *)fft_x_->Get(),
-                                   weights_diff_->Get(),
-                                   product_->Get(), sum_w_->Get(),
-                                   n_, p_, q_, k_);
-      } else if (fc_param_.optimization_ == KF) {
-        dnnmarkBCMBackwardWeightKF<T>(y_plan_,
-                                   ifft_backward_weight_plan_,
-                                   top_diffs_[i]->Get(), (Complex *)fft_y_->Get(),
-                                   (Complex *)fft_x_->Get(),
-                                   weights_diff_->Get(),
-                                   sum_w_->Get(),
-                                   n_, p_, q_, k_);
+        } else if (fc_param_.optimization_ == O1) {
+          dnnmarkBCMBackwardWeightO1<T>(y_plan_,
+                                     ifft_backward_weight_plan_,
+                                     top_diffs_[i]->Get(), (Complex *)fft_y_->Get(),
+                                     (Complex *)fft_x_->Get(),
+                                     weights_diff_->Get(),
+                                     sum_y_->Get(), sum_x_->Get(),
+                                     product_->Get(), sum_w_->Get(),
+                                     n_, p_, q_, k_);
+        } else if (fc_param_.optimization_ == O2) {
+          dnnmarkBCMBackwardWeightO2<T>(y_plan_,
+                                     ifft_backward_weight_plan_,
+                                     top_diffs_[i]->Get(), (Complex *)fft_y_->Get(),
+                                     (Complex *)fft_x_->Get(),
+                                     weights_diff_->Get(),
+                                     product_->Get(), sum_w_->Get(),
+                                     n_, p_, q_, k_);
+        } else if (fc_param_.optimization_ == KF) {
+          dnnmarkBCMBackwardWeightKF<T>(y_plan_,
+                                     ifft_backward_weight_plan_,
+                                     top_diffs_[i]->Get(), (Complex *)fft_y_->Get(),
+                                     (Complex *)fft_x_->Get(),
+                                     weights_diff_->Get(),
+                                     sum_w_->Get(),
+                                     n_, p_, q_, k_);
+        }
+      } else {
+        int M = q_ * k_; 
+        int N = p_ * k_;
+        int K = n_;
+        int lda = M;
+        int ldb = N;
+        int ldc = M;
+        bool is_a_transpose = false;
+        bool is_b_transpose = true;
+        T scale_alpha = (T)1.0;
+        T scale_beta = (T)0.0;
+        dnnmarkGEMM(*(p_dnnmark_->GetHandle()),
+                    p_dnnmark_->getRunMode(), layer_id_,
+                    is_a_transpose, is_b_transpose,
+                    M, N, K,
+                    &scale_alpha,
+                    bottoms_[i]->Get(), lda,
+                    top_diffs_[i]->Get(), ldb,
+                    &scale_beta,
+                    weights_diff_->Get(), ldc);
       }
     }
     ProfilerStop(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),

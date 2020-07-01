@@ -3,7 +3,7 @@ run_mode=standalone
 
 [BCMFullyConnected]
 name=relu1
-n=6272
+n=784
 c=4608
 h=1
 w=1

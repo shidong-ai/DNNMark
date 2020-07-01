@@ -3,7 +3,7 @@ run_mode=standalone
 
 [FullyConnected]
 name=relu1
-n=23328
+n=729
 c=2432
 h=1
 w=1

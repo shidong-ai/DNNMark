@@ -1,0 +1,11 @@
+[DNNMark]
+run_mode=standalone
+
+[FullyConnected]
+name=relu1
+n=12544
+c=576
+h=1
+w=1
+num_output=128
+
