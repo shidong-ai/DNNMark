@@ -1,4 +1,3 @@
-// The MIT License (MIT)
 // 
 // Copyright (c) 2016 Northeastern University
 // 
@@ -184,7 +183,7 @@ class BCMFullyConnectedLayer : public Layer<T> {
     weights_chunk_id_ = data_manager_->CreateData(weights_size);
     weights_ = data_manager_->GetData(weights_chunk_id_);
     weights_diff_chunk_id_ =
-      data_manager_->CreateData(weights_size);
+      data_manager_->CreateData(weights_size * k_);
     weights_diff_ = data_manager_->GetData(weights_diff_chunk_id_);
 
     // Fill the weight data

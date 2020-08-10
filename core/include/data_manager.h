@@ -65,6 +65,7 @@ class Data {
     png_->GenerateUniformData(gpu_ptr_, size_);
   }
   T *Get() { return gpu_ptr_; }
+  int Size() { return size_; }
 };
 
 

@@ -200,7 +200,6 @@ class FullyConnectedLayer : public Layer<T> {
     int ldc = M;
     bool is_a_transpose = false;
     bool is_b_transpose = true;
-
     // Fully connected backward weights computation
     ProfilerStart(*(p_dnnmark_->GetHandle()), p_dnnmark_->getRunMode(),
                   layer_id_, p_dnnmark_->GetTimer(), "FcBwdFilter");

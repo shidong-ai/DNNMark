@@ -3,9 +3,9 @@ run_mode=standalone
 
 [FullyConnected]
 name=relu1
-n=1024
-c=8192
+n=3136
+c=2304
 h=1
 w=1
-num_output=4096
+num_output=512
 
