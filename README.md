@@ -31,6 +31,8 @@ Bibtex is as below:
 
 [3] Yifan Sun, Saoni Mukherjee, Trinayan Baruah, Shi Dong, Julian Gutierrez, Prannoy Mohan, David Kaeli. 2018. *Evaluating Performance Tradeoffs on the Radeon Open Compute Platform*. ISPASS 2018
 
+[4] Shi Dong, Pu Zhao, Xue Lin, David Kaeli. 2020. *Exploring GPU acceleration of Deep Neural Networks using Block Circulant Matrices*. Parallel Computing
+
 # DNNMark
 Configurable benchmark suite of Deep Neural Networks
 
