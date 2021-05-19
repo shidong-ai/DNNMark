@@ -33,6 +33,8 @@ Bibtex is as below:
 
 [4] Shi Dong, Pu Zhao, Xue Lin, David Kaeli. 2020. *Exploring GPU acceleration of Deep Neural Networks using Block Circulant Matrices*. Parallel Computing
 
+[5] Shi Dong, Yifan Sun, Nicolas Bohm Agostini, Elmira Karimi, Daniel Lowell, Jing Zhou, Jose Cano, Jose L. Abellan, David Kaeli, "Spartan: A Sparsity-Adaptive Framework to Accelerate Deep Neural Network Training on GPUs," in IEEE Transactions on Parallel and Distributed Systems, vol. 32, no. 10, pp. 2448-2463, 1 Oct. 2021
+
 # DNNMark
 Configurable benchmark suite of Deep Neural Networks
 
